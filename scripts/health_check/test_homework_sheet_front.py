@@ -23,9 +23,12 @@ CEO (ceo.html の CeoHwSheet = 生徒詳細「📚 宿題」と 📤 一括割�
       提出したら点数と ○×・期限前は正解を出さず「M/D から」・バッジを 1 減らす・一覧に戻ると 📝 4/5・「📝 結果を見る」・
       409 (別の端末で提出済み) は一覧を読み直して提出済みの結果 (期限の翌日を過ぎていれば正解の記号・期限後)・422 / 503 / 404 / 通信失敗・
       answer_sheet_ready が無ければ今までどおり・hw-sheet.js が読めない / 正解表が無いときは ✓完了 を出さずに案内・
-      やり直し後は前の下書きを使わない・プリントのボタン
+      やり直し後は前の下書きを使わない・プリントのボタン・二度押しで開き直さない・409 で一覧を読めない / まだ未提出 / 正解表が無いときも
+      ボタンを「⏳ 採点中…」のまま残さない・返事を待つ間も「← 宿題一覧に戻る」で戻れて、返事が来たら一覧を読み直す
+      (別の解答用紙を開いていたら描き替えない・通信失敗は赤いトーストで下書きは残る)
   [3] マイページ (mypage.js の宿題欄を偽の DOM で): ✅ 完了する を出さない・画面いっぱいの重ねで解答用紙・提出・閉じたら読み直す・
-      提出済みは「✅ 提出 (JST)」と 📝 4/5・期限後・完了時刻は JST
+      提出済みは「✅ 提出 (JST)」と 📝 4/5・期限後・完了時刻は JST・二度押しでも重ねは 1 枚・返事待ちでも「× 閉じる」で閉じられて
+      返事が来たら一覧を読み直す・409 で一覧を読めなくても「✅ 提出済み」と閉じて開き直す案内
   [4] CEO の CeoHwSheet (ceo.html の inline script を本物のサーバの応答で): 表が無ければ「✍️ 答え方」を出さない・確認表 (問1 ウ …)・
       数が合わない / 確認中は割当を止める・正誤は 2 択に固定・同じプリントの前の正解表を入れる (打った正解は勝手に消さない)・
       プリント / 科目を替えたら前のプリントから自動で入れた正解は消して止める (正解表の無いプリントに前の正解を ✅ のまま付けない)・
@@ -299,7 +302,7 @@ JS_PURE = r"""
     ok('結果: 見せてよいときは正解の記号 (どれでも正解は イ/エ)・期限後・JST', rh2.indexOf('正解: ア') >= 0 && rh2.indexOf('正解: イ/エ') >= 0
        && rh2.indexOf('期限後') >= 0 && rh2.indexOf('提出: 2026-10-16 08:30') >= 0, rh2);
   } catch (e) {
-    ok('例外なし', false, String((e && e.stack) || e));
+    ok('例外なし', false, String(e && e.message || e) + ' ' + String((e && e.stack) || ''));
   }
   __emit();
 })();
@@ -308,8 +311,12 @@ JS_PURE = r"""
 # ---------------------------------------------------------------------------------------------------------------
 # [2] 塾生アプリ (class.html)
 JS_CLASS_SHEET_SETUP = r"""
-var CALLS = [], CONFIRMS = [], CONFIRM_OK = true;
+var CALLS = [], CONFIRMS = [], CONFIRM_OK = true, PENDING = [];
 window.confirm = function (m) { CONFIRMS.push(String(m)); return CONFIRM_OK; };
+function fakeResp(r) {
+  return { ok: r.status >= 200 && r.status < 300, status: r.status,
+           json: function () { return Promise.resolve(JSON.parse(JSON.stringify(r.body))); } };
+}
 fetch = function (url, opts) {
   var path = String(url).replace(/^https?:\/\/[^\/]+/, '');
   var key = path.split('?')[0];
@@ -317,8 +324,12 @@ fetch = function (url, opts) {
   var r = Object.prototype.hasOwnProperty.call(API, key) ? API[key] : { status: 200, body: {} };
   if (typeof r === 'function') r = r(opts);
   if (r && r.reject) return Promise.reject(new TypeError('Failed to fetch'));
-  return Promise.resolve({ ok: r.status >= 200 && r.status < 300, status: r.status,
-                           json: function () { return Promise.resolve(JSON.parse(JSON.stringify(r.body))); } });
+  // { defer: 応答 } = 返事を待たせる (PENDING の関数を呼ぶと返す・reject も可)
+  if (r && r.defer) {
+    var rr = r.defer;
+    return new Promise(function (res, rej) { PENDING.push(function () { if (rr.reject) rej(new TypeError('Failed to fetch')); else res(fakeResp(rr)); }); });
+  }
+  return Promise.resolve(fakeResp(r));
 };
 window.fetch = fetch;
 function clone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -359,6 +370,8 @@ function press(q, v, el) { return clickIn(el || body(), { 'data-hs-q': String(q)
 function act(name, el) { return clickIn(el || body(), { 'data-hs-act': name }); }
 function row(i, el) { return (el || body())._qs['[data-hs-row="' + i + '"]']; }
 function posts() { return CALLS.filter(function (c) { return c.method === 'POST'; }); }
+function listGets() { return CALLS.filter(function (c) { return c.method === 'GET' && c.path.split('?')[0] === '/api/student/homework'; }).length; }
+function msgText() { return body()._qs['[data-hs-msg]'] ? body()._qs['[data-hs-msg]'].textContent : ''; }
 """
 
 JS_CLASS_SHEET_CASES = r"""
@@ -527,8 +540,119 @@ JS_CLASS_SHEET_CASES = r"""
     eq('解答用紙の画面の「プリントを開く」は POST /api/student/homework/{id}/print', CALLS.filter(function (c) { return c.path.indexOf('/print') >= 0; }).map(function (c) { return c.method + ' ' + c.path; }),
        ['POST /api/student/homework/' + A + '/print']);
     eq('… 先に開いたタブをプリントへ', OPENED[0] && OPENED[0].location.href, 'https://example.invalid/lesson-prints/eng_kankeishi_front_01.pdf');
+
+    // (C15) 二度押し: 「✏️ 解答用紙に答える」を続けて 2 回押しても開き直さない (同じ画面のまま・選んだ答えも消えない)
+    var NET = '通信できませんでした。電波のよいところでもう一度押してね（答えはこの端末に残っています）';
+    [A, B, C, E].forEach(function (x) { window.AJHwSheet.clearDraft(7, x); });
+    setApi({ '/api/student/homework': { status: 200, body: FX.L0 } });
+    await bootSheetPage();
+    var btnA = sheetBtn(A);
+    btnA.dispatch('click');
+    var ctl1 = body().__hsCtl;
+    press(0, 2);
+    btnA.dispatch('click');   // 2 回目のタップが元のボタンに届いた
+    var row0 = row(0) ? row(0).innerHTML : '(描き直された)';
+    ok('二度押し: 開き直さない (同じ画面・選んだ答え 問1 イ はそのまま)', !!ctl1 && body().__hsCtl === ctl1
+       && row0.indexOf('class="hs-c hs-sel" data-hs-q="0" data-hs-v="2"') >= 0, row0);
+    act('back'); await flush();
+    ok('… 戻った後はまた開ける', (sheetBtn(A).dispatch('click'), body().innerHTML.indexOf('data-hs-view="form"') >= 0) && body().__hsCtl && body().__hsCtl !== ctl1);
+    window.AJHwSheet.clearDraft(7, A);
+
+    // (C16) 409 (別の端末で提出済み) なのに一覧を読み直せない: ボタンを「⏳ 採点中…」のまま残さない・戻れる
+    setApi({ '/api/student/homework': { status: 200, body: FX.L0 } });
+    await bootSheetPage();
+    sheetBtn(B).dispatch('click');
+    press(0, 3); press(1, 2); press(2, 2);
+    API['/api/student/homework/' + B + '/sheet'] = FX.R_B409;
+    API['/api/student/homework'] = { reject: true };
+    var b409 = act('submit'); await flush();
+    eq('409 + 一覧を読めない: ボタンは「✅ 提出済み」(押せない・「⏳ 採点中…」のまま残さない)', [b409.disabled, b409.textContent], [true, '✅ 提出済み']);
+    eq('… 一覧で開き直す案内', msgText(), 'この解答用紙はもう提出済みです。「← 宿題一覧に戻る」で一覧に戻って開き直すと、結果が見られます');
+    eq('… トーストは「もう提出済み」', ELS.toast && ELS.toast.textContent, 'この解答用紙はもう提出済みです');
+    ok('… 解答用紙の画面のまま', body().innerHTML.indexOf('data-hs-view="form"') >= 0);
+    API['/api/student/homework'] = { status: 200, body: FX.L1 };
+    act('back'); await flush();
+    ok('… 「← 宿題一覧に戻る」で一覧 (提出済みの 📝 2/3)', body().innerHTML.indexOf('data-hs-view') < 0 && cardOf(B).indexOf('📝 2/3') >= 0, cardOf(B));
+    // 一覧は読めたが、その宿題がまだ未提出 (その間に塾長がやり直しにした) → ボタンを戻す
+    setApi({ '/api/student/homework': { status: 200, body: FX.L0 } });
+    await bootSheetPage();
+    sheetBtn(B).dispatch('click');
+    API['/api/student/homework/' + B + '/sheet'] = FX.R_B409;
+    var b409b = act('submit'); await flush();
+    eq('409 + 一覧ではまだ未提出: ボタンを戻す', [b409b.disabled, b409b.textContent], [false, '📤 提出する（1 回だけ）']);
+    eq('… サーバの理由を出す', msgText(), '❌ 提出できませんでした。' + FX.R_B409.body.detail);
+    window.AJHwSheet.clearDraft(7, B);
+
+    // (C17) 409 (正解表が見つかりません) → 「提出済み」とは言わず、理由を出してボタンを戻す・下書きは残す
+    setApi({ '/api/student/homework': { status: 200, body: FX.L0 } });
+    await bootSheetPage();
+    sheetBtn(E).dispatch('click');
+    press(0, 8); press(1, 1);
+    var NOKEY = 'この解答用紙の正解表が見つかりません。塾長に知らせてください。';
+    API['/api/student/homework/' + E + '/sheet'] = { status: 409, body: { detail: NOKEY } };
+    var bE = act('submit'); await flush();
+    eq('409 (正解表が無い): ボタンを戻す', [bE.disabled, bE.textContent], [false, '📤 提出する（1 回だけ）']);
+    eq('… サーバの理由を出す', msgText(), '❌ 提出できませんでした。' + NOKEY);
+    ok('… 「もう提出済み」とは言わない', String(ELS.toast && ELS.toast.textContent).indexOf('提出済み') < 0, ELS.toast && ELS.toast.textContent);
+    eq('… 下書きは残る', JSON.parse(store._m['aj_hw_sheet_v1:7:' + E] || '{}').a, [8, 1]);
+    API['/api/student/homework'] = { reject: true };
+    var bE2 = act('submit'); await flush();
+    eq('409 (正解表が無い) + 一覧も読めない: やはりボタンを戻す', [bE2.disabled, bE2.textContent, msgText()], [false, '📤 提出する（1 回だけ）', '❌ 提出できませんでした。' + NOKEY]);
+    window.AJHwSheet.clearDraft(7, E);
+
+    // (C18) 返事を待つ間も「← 宿題一覧に戻る」で戻れる → 返事が来たら一覧を読み直す (結果の画面で一覧を描き替えない)
+    setApi({ '/api/student/homework': { status: 200, body: FX.L0 } });
+    await bootSheetPage();
+    sheetBtn(A).dispatch('click');
+    FX.ANS_A.forEach(function (v, i) { if (v != null) press(i, v); });
+    PENDING = [];
+    API[POST_A] = { defer: FX.R_A };
+    var bA = act('submit'); await flush();
+    eq('返事待ち: ボタンは採点中', [bA.disabled, bA.textContent, PENDING.length], [true, '⏳ 採点中…', 1]);
+    var nG = listGets();
+    act('back'); await flush();
+    ok('返事待ちでも「← 宿題一覧に戻る」で戻れる (一覧を読み直す)', listGets() === nG + 1 && body().innerHTML.indexOf('data-hs-view') < 0 && !!sheetBtn(A),
+       body().innerHTML.slice(0, 200));
+    eq('… 戻ったことをトーストで知らせる', ELS.toast && ELS.toast.textContent, '⏳ 提出を送っています。結果は宿題一覧に出ます');
+    API['/api/student/homework'] = { status: 200, body: FX.L1 };
+    PENDING.shift()(); await flush();
+    eq('返事が来たら結果をトーストで', ELS.toast && ELS.toast.textContent, '提出しました！ 4 / 5 正解');
+    eq('… 一覧を読み直す (提出済みの 📝 4/5・バッジはサーバの数 = 二重に減らさない)', [listGets(), cardOf(A).indexOf('📝 4/5') >= 0, ELS.hwBadge.textContent], [nG + 2, true, 3]);
+    ok('… 一覧を結果の画面で描き替えない', body().innerHTML.indexOf('data-hs-view') < 0);
+    eq('… 下書きを消す', Object.prototype.hasOwnProperty.call(store._m, 'aj_hw_sheet_v1:7:' + A), false);
+
+    // (C19) 返事待ちで戻って別の解答用紙を開いていたら、その画面は描き替えず一覧も読み直さない
+    setApi({ '/api/student/homework': { status: 200, body: FX.L0 } });
+    await bootSheetPage();
+    sheetBtn(A).dispatch('click');
+    press(0, 3);
+    PENDING = []; API[POST_A] = { defer: FX.R_A };
+    act('submit'); await flush();
+    act('back'); await flush();
+    sheetBtn(C).dispatch('click');
+    var hC = body().innerHTML, nG2 = listGets();
+    PENDING.shift()(); await flush();
+    ok('返事が来ても開いている解答用紙 (正誤) はそのまま・一覧を読み直さない', body().innerHTML === hC && listGets() === nG2
+       && hC.indexOf('data-hs-view="form"') >= 0 && hC.indexOf('正誤 マーク') >= 0, body().innerHTML.slice(0, 200));
+    eq('… 結果はトーストで', ELS.toast && ELS.toast.textContent, '提出しました！ 4 / 5 正解');
+    act('back'); await flush();
+
+    // (C20) 返事待ちで戻った後に通信失敗 → 赤いトーストで知らせる・下書きは残る
+    window.AJHwSheet.clearDraft(7, A);
+    setApi({ '/api/student/homework': { status: 200, body: FX.L0 } });
+    await bootSheetPage();
+    sheetBtn(A).dispatch('click');
+    press(0, 3);
+    PENDING = []; API[POST_A] = { defer: { reject: true } };
+    act('submit'); await flush();
+    act('back'); await flush();
+    var hL = body().innerHTML;
+    PENDING.shift()(); await flush();
+    eq('戻った後に通信失敗: 赤いトースト', [ELS.toast && ELS.toast.textContent, ELS.toast && ELS.toast.className], ['❌ 提出できませんでした。' + NET, 'toast show err']);
+    eq('… 下書きは残る (開き直せば続きから)', JSON.parse(store._m['aj_hw_sheet_v1:7:' + A] || '{}').a, [3, null, null, null, null]);
+    ok('… 一覧のまま (描き替えない)', body().innerHTML === hL);
   } catch (e) {
-    ok('例外なし', false, String((e && e.stack) || e));
+    ok('例外なし', false, String(e && e.message || e) + ' ' + String((e && e.stack) || ''));
   }
   __emit();
 })();
@@ -551,13 +675,18 @@ function alert(m) { ALERTS.push(String(m)); }
 function getCurrentStudent() { return { id: 7, name: 'テスト生徒A' }; }   // 架空
 function _canUseStudyMgmt() { return true; }
 function _gdRich(s) { return String(s == null ? '' : s); }
-var API = {}, CALLS = [];
+var API = {}, CALLS = [], PENDING = [];
+function slSettle(r) {
+  if (r && r.status >= 400) { var e = new Error((r.body && r.body.detail) || ('HTTP ' + r.status)); e.status = r.status; return Promise.reject(e); }
+  return Promise.resolve(JSON.parse(JSON.stringify(r.body)));
+}
 function slApiFetch(path, opts) {
   var key = String(path).split('?')[0];
   CALLS.push({ path: String(path), method: (opts && opts.method) || 'GET', body: opts && opts.body });
   var r = Object.prototype.hasOwnProperty.call(API, key) ? API[key] : { status: 200, body: {} };
-  if (r && r.status >= 400) { var e = new Error((r.body && r.body.detail) || ('HTTP ' + r.status)); e.status = r.status; return Promise.reject(e); }
-  return Promise.resolve(JSON.parse(JSON.stringify(r.body)));
+  // { defer: 応答 } = 返事を待たせる (PENDING の関数を呼ぶと返す)
+  if (r && r.defer) { var rr = r.defer; return new Promise(function (res, rej) { PENDING.push(function () { slSettle(rr).then(res, rej); }); }); }
+  return slSettle(r);
 }
 var SECTION, ELS, BODY = new FakeEl('body'), HEAD = new FakeEl('head');
 BODY.appendChild = function (c) { this.children.push(c); c.parentNode = this; return c; };
@@ -594,6 +723,9 @@ function clickIn(el, attrs) { var t = target(attrs); el.dispatch('click', { targ
 function overlay() { return BODY.children.filter(function (c) { return c.className === 'hs-overlay'; })[0]; }
 function cardsOf(html) { return String(html).split('<div class="hw-item"').slice(1); }
 function cardOf(id) { return cardsOf(list().innerHTML).filter(function (x) { return x.indexOf('data-hw-id="' + id + '"') >= 0; })[0] || ''; }
+function overlays() { return BODY.children.filter(function (c) { return c.className === 'hs-overlay'; }).length; }
+function lastToast() { var t = BODY.children.filter(function (c) { return c.id === 'aj-hw-sheet-toast'; }); return t.length ? t[t.length - 1].textContent : ''; }
+function listGetsMy() { return CALLS.filter(function (c) { return c.path.indexOf('/api/student/homework?') === 0; }).length; }
 """
 
 JS_MYPAGE_SHEET_CASES = r"""
@@ -657,8 +789,54 @@ JS_MYPAGE_SHEET_CASES = r"""
     await initHomeworkSection(); await flush();
     window.AJHwSheet = keep;
     ok('hw-sheet.js なし: ✅ 完了する を出さず再読み込みの案内', cardOf(A).indexOf('data-hw-complete') < 0 && cardOf(A).indexOf('ページを再読み込みしてね') >= 0, cardOf(A));
+
+    // 二度押し: 「✏️ 解答用紙に答える」を続けて 2 回押しても重ねは 1 枚 (重ねた 2 枚目の下に 1 枚目が残らない)
+    [A, B].forEach(function (x) { window.AJHwSheet.clearDraft(7, x); });
+    newSection(); setLists(FX.L0);
+    await initHomeworkSection(); await flush();
+    clickList('data-hw-sheet', A);
+    var ov1 = overlay();
+    clickList('data-hw-sheet', A);
+    eq('二度押ししても重ねは 1 枚', overlays(), 1);
+    ok('… 1 枚目の重ねのまま', overlay() === ov1);
+    // 返事を待つ間も「× 閉じる」で閉じられる → 返事が来たら一覧を読み直す
+    inner = ov1.children[0];
+    FX.ANS_A.forEach(function (v, i) { if (v != null) clickIn(inner, { 'data-hs-q': String(i), 'data-hs-v': String(v) }); });
+    PENDING = [];
+    API['/api/student/homework/' + A + '/sheet'] = { defer: FX.R_A };
+    var sbm = clickIn(inner, { 'data-hs-act': 'submit' }); await flush();
+    eq('返事待ち: 採点中', [sbm.disabled, sbm.textContent, PENDING.length], [true, '⏳ 採点中…', 1]);
+    var nG = listGetsMy();
+    clickIn(inner, { 'data-hs-act': 'back' }); await flush();
+    ok('返事待ちでも「× 閉じる」で閉じられる (重ねを外す・スクロールを戻す)', overlays() === 0 && BODY.style.overflow === '');
+    eq('… 閉じたことをトーストで知らせる', lastToast(), '⏳ 提出を送っています。結果は宿題一覧に出ます');
+    eq('… 閉じた時点ではまだ読み直さない', listGetsMy(), nG);
+    setLists(FX.L1);
+    PENDING.shift()(); await flush();
+    eq('返事が来たら一覧を読み直す', listGetsMy(), nG + 1);
+    eq('… 結果をトーストで', lastToast(), '提出しました！ 4 / 5 正解');
+    ok('… 重ねは出し直さない', overlays() === 0);
+    clickList('data-hw-sheet', A);
+    ok('閉じた後はまた開ける (読み直した一覧 = 提出済みの結果)', overlays() === 1 && overlay().children[0].innerHTML.indexOf('data-hs-view="result"') >= 0);
+    clickIn(overlay().children[0], { 'data-hs-act': 'back' }); await flush();
+
+    // 409 で一覧を読み直せない → ボタンを「⏳ 採点中…」のまま残さない (「× 閉じる」で開き直す案内)
+    newSection(); setLists(FX.L0);
+    await initHomeworkSection(); await flush();
+    clickList('data-hw-sheet', B);
+    inner = overlay().children[0];
+    API['/api/student/homework/' + B + '/sheet'] = FX.R_B409;
+    API['/api/student/homework'] = { status: 500, body: { detail: 'Internal Server Error' } };
+    var b409 = clickIn(inner, { 'data-hs-act': 'submit' }); await flush();
+    eq('409 + 一覧を読めない: 「✅ 提出済み」(押せない)', [b409.disabled, b409.textContent], [true, '✅ 提出済み']);
+    eq('… 「× 閉じる」で開き直す案内', inner._qs['[data-hs-msg]'] && inner._qs['[data-hs-msg]'].textContent,
+       'この解答用紙はもう提出済みです。「× 閉じる」で一覧に戻って開き直すと、結果が見られます');
+    setLists(FX.L1);
+    nG = listGetsMy();
+    clickIn(inner, { 'data-hs-act': 'back' }); await flush();
+    ok('… 閉じたら一覧を読み直す', overlays() === 0 && listGetsMy() === nG + 1);
   } catch (e) {
-    ok('例外なし', false, String((e && e.stack) || e));
+    ok('例外なし', false, String(e && e.message || e) + ' ' + String((e && e.stack) || ''));
   }
   __emit();
 })();
@@ -1064,7 +1242,7 @@ JS_CEO_CASES = r"""
     setVal(R3, '.hws-mode', 'choice', 'change');
     eq('表が無ければ隠したまま・answer_sheet は付けない', [el(R3, '.hws-box').hidden, ctl3.getAnswerSheet().value], [true, null]);
   } catch (e) {
-    ok('例外なし', false, String((e && e.stack) || e));
+    ok('例外なし', false, String(e && e.message || e) + ' ' + String((e && e.stack) || ''));
   }
   __emit();
 })();

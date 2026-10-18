@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse, RedirectResponse, StreamingResponse
 from pydantic import BaseModel, EmailStr, field_validator
-from typing import Optional, List
+from typing import Any, Optional, List
 from datetime import datetime, date, timezone, timedelta, time as dt_time
 import os
 import json
@@ -45208,7 +45208,10 @@ def _hw_grade_choice(key: list, answers: list):
 
 
 def _hw_validate_answers(raw, num_questions: int, num_choices: int) -> list:
-    """生徒の答え → [番号 | None (空欄)]。長さは問題数と同じ・番号は 1〜択数。"""
+    """生徒の答え → [番号 | None (空欄)]。長さは問題数と同じ・番号は 1〜択数。
+    🛡️ 番号は整数 (JSON の 3) か短い数字の文字列 ("3") だけ。true/false・小数 (2.0 も)・Infinity / -Infinity / NaN / 1e999
+    (JSON ではどれも float) は 422。以前は int(Infinity) の OverflowError が 500 になり、2.0 は 2 として通っていた (2026-10-18)。
+    画面 (hw-sheet.js) は整数か null しか送らない。"""
     if not isinstance(raw, list):
         raise ValueError("答え (answers) は配列で送ってください")
     if len(raw) != num_questions:
@@ -45218,13 +45221,11 @@ def _hw_validate_answers(raw, num_questions: int, num_choices: int) -> list:
         if a is None or a == "":
             out.append(None)
             continue
-        if isinstance(a, bool) or isinstance(a, (list, dict)):
+        if isinstance(a, bool) or not isinstance(a, (int, str)) or (isinstance(a, str) and len(a) > 8):
             raise ValueError(f"問{i} の答えが読めません")
         try:
             v = int(a)
-        except (TypeError, ValueError):
-            raise ValueError(f"問{i} の答えが読めません")
-        if isinstance(a, float) and a != v:
+        except (TypeError, ValueError, OverflowError):
             raise ValueError(f"問{i} の答えが読めません")
         if not (1 <= v <= num_choices):
             raise ValueError(f"問{i} の答えが範囲外です")
@@ -45690,7 +45691,7 @@ def open_my_homework_print(homework_id: int, request: Request, authorization: Op
 
 
 @app.post("/api/student/homework/{homework_id}/sheet")
-def submit_my_homework_sheet(homework_id: int, request: Request, payload: dict = Body(...),
+def submit_my_homework_sheet(homework_id: int, request: Request, payload: Any = Body(None),
                              authorization: Optional[str] = Header(None)):
     """📝 記号の解答用紙を提出する (2026-10-18 塾長「◎のとおりでお願いします…記号問題がいい」の第1段)。
 
@@ -45701,7 +45702,9 @@ def submit_my_homework_sheet(homework_id: int, request: Request, payload: dict =
     - 採点はサーバだけ (画面の点数は受け取らない)。同じトランザクションで宿題を completed にする (完了 = 提出)。
     - 弱点集計 (question_attempts) には書かない。events には点数だけを残す (答えは残さない)。
     - 塾長のなりすまし (_is_impersonation_auth) で出した提出は by_impersonation=1 で残す。
-    応答の answer_sheet は宿題一覧と同じ形 (点数・問ごとの ○×・正解の番号は期限の翌日から)。"""
+    応答の answer_sheet は宿題一覧と同じ形 (点数・問ごとの ○×・正解の番号は期限の翌日から)。
+    ★本文は Any で受けて中で確かめる: dict 型で受けると、本文が Infinity / [NaN] のとき FastAPI の 422 が入力を JSON に
+      書けずに 500 になる。dict でない本文・答えの Infinity / NaN / 1e999 / 小数 / true はどれも 422 (2026-10-18)。"""
     _check_rate_limit_caller(request, authorization, bucket="hw_sheet", limit=20, window=60)
     student = _get_current_student(authorization)
     if not student:
@@ -45715,7 +45718,8 @@ def submit_my_homework_sheet(homework_id: int, request: Request, payload: dict =
         raise HTTPException(status_code=404, detail="この宿題はあなたに出されていません")
     payload = payload if isinstance(payload, dict) else {}
     _note_raw = payload.get("student_note")
-    student_note = str(_note_raw).strip()[:1000] if _note_raw else None
+    # メモは文字だけ (NaN / Infinity などの数を "nan" の文字で残さない)
+    student_note = (_note_raw.strip()[:1000] or None) if isinstance(_note_raw, str) else None
     sid = int(student["id"])
     by_imp = 1 if _is_impersonation_auth(authorization) else 0
     conn = db()

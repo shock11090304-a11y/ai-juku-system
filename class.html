@@ -251,7 +251,7 @@
   <!-- 🆕 新しい宿題の数え方と「見た」の記録 (mypage.html と共通)。変えたら両方の ?v= を上げる -->
   <script src="hw-notice.js?v=20261016a-hw-notice"></script>
   <!-- 📝 記号の解答用紙 (マーク・2026-10-18。mypage.html と共通)。変えたら両方の ?v= を上げる -->
-  <script src="hw-sheet.js?v=20261018a-hw-sheet"></script>
+  <script src="hw-sheet.js?v=20261018b-hw-sheet"></script>
   <script>
   (function () {
     const BACKEND_URL = (window.location.hostname === 'localhost' && window.location.port === '8090')
@@ -271,7 +271,6 @@
     }
     function fmtKB(b) { if (!b) return ''; var kb = b / 1024; return kb >= 1024 ? (kb / 1024).toFixed(1) + ' MB' : Math.max(1, Math.round(kb)) + ' KB'; }
     function fmtDur(sec) { if (!sec) return ''; var m = Math.floor(sec / 60), s = sec % 60; return m + '分' + (s ? (' ' + s + '秒') : ''); }
-    function fmtDate(s) { if (!s) return ''; return String(s).slice(0, 16).replace('T', ' '); }
     function ytId(url) {
       if (!url) return null;
       try {
@@ -969,6 +968,8 @@
 
     async function loadHomework() {
       var body = document.getElementById('homeworkBody');
+      hwListShown = true;   // 宿題タブは一覧 (読み込み中を含む)。ドリル・解答用紙を開くと false
+      body.__hsCtl = null;  // 解答用紙の画面はもう出ていない (提出の返事が後から来ても一覧を描き替えない)
       body.innerHTML = '<div class="loading">読み込み中…</div>';
       var r = await Promise.all([
         _settle(api('/api/student/homework')),
@@ -1153,17 +1154,21 @@
     //   'unsupported' (この画面では答えられない答え方) / 'noscript' (hw-sheet.js が読めなかった)。
     //   ★answer_sheet_ready (サーバに解答用紙の表がある) のときだけ。静的が API より先に出た窓・表が無い DB では今までどおり
     var hwSheetReady = false, hwPrintOpen = false, hwItemsById = {};
+    var hwListShown = false;   // 宿題タブに一覧が出ている (loadHomework で true・ドリル / 解答用紙を開くと false)
     function hwSheetState(it) {
       if (!it || !it.answer_sheet || !hwSheetReady) return 'none';
       if (!window.AJHwSheet) return 'noscript';
       return window.AJHwSheet.state(it, true);
     }
     function hwOpenSheet(id) {
+      var body = document.getElementById('homeworkBody');
+      // ★二度押し (「✏️ 解答用紙に答える」を続けて 2 回) で開き直さない: 一覧が出ていないとき・解答用紙を開いているときは何もしない
+      if (!hwListShown || body.__hsCtl) return;
       var it = hwItemsById[String(id)];
       var st = hwSheetState(it);
       if (st !== 'open' && st !== 'submitted') { toast('解答用紙を開けませんでした。再読み込みしてね', true); return; }
-      var body = document.getElementById('homeworkBody');
       var wasOpen = st === 'open';
+      hwListShown = false;
       var pr = (hwPrintOpen && it.attachment_print && it.attachment_print.id != null);
       var ctl = null;
       ctl = window.AJHwSheet.mount(body, {
@@ -1171,8 +1176,15 @@
         confirm: function (m) { return window.confirm(m); },
         scrollTop: gdScrollTop,
         onOpenPrint: pr ? function (b) { openHomeworkPrint(b); } : null,
-        onSubmitted: function () {
+        onSubmitted: function (res, info) {
           hwLoaded = false;   // 一覧に戻ったら最新 (提出済み) で読み直す
+          if (info && info.left) {
+            // 返事を待つ間に「← 宿題一覧に戻る」で戻っていた: 一覧が出ていれば読み直す (バッジもサーバの数になる)。
+            //   ドリルや別の解答用紙を開いていたら触らない (解いている途中を消さない)。バッジは読み直しに任せる (二重に減らさない)
+            wasOpen = false;
+            if (hwListShown) loadHomework();
+            return;
+          }
           // 提出済みになったので、一覧に戻る前にタブのバッジを減らしておく (gdSubmit と同じ。'99+' は触らない)
           var badge = document.getElementById('hwBadge');
           var curTxt = String((badge && badge.textContent) || ''), cur = parseInt(curTxt, 10);
@@ -1404,6 +1416,7 @@
 
     async function gdOpen(drillId) {
       var body = document.getElementById('homeworkBody');
+      hwListShown = false;
       body.innerHTML = '<div class="loading">読み込み中…</div>';
       gdScrollTop();
       var data;
@@ -1624,7 +1637,8 @@
             + '</div>')
           : '';
         return '<div class="msg ' + (out ? 'out' : 'in') + (m.is_unread ? ' unread' : '') + '" data-id="' + m.id + '" data-unread="' + (m.is_unread ? 1 : 0) + '">'
-          + '<div class="msg-head"><span class="msg-from ' + (out ? 'out' : '') + '">' + esc(who) + '</span><span>' + esc(fmtDate(m.created_at)) + '</span></div>'
+          // ★送った日時は naive UTC (サーバの CURRENT_TIMESTAMP)。gdLocalDate で JST にする (以前は文字列を切っただけで 9 時間早く出ていた・2026-10-18)
+          + '<div class="msg-head"><span class="msg-from ' + (out ? 'out' : '') + '">' + esc(who) + '</span><span>' + esc(gdLocalDate(m.created_at, true)) + '</span></div>'
           + (m.subject ? ('<div class="msg-subj">' + esc(m.subject) + '</div>') : '')
           + '<div class="msg-body">' + esc(m.body || '') + '</div>' + att + '</div>';
       }).join('') : '<div class="empty">まだメッセージはありません。上から送ってみましょう。</div>';

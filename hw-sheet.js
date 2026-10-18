@@ -9,7 +9,12 @@
  * - 提出したらすぐ点数と問ごとの ○×。正解の記号はサーバが見せてよいと言ったとき (reveal: 期限の翌日 (JST) から・期限なしは提出直後) だけ。
  * - 答えの下書きは localStorage 'aj_hw_sheet_v1:<生徒ID>:<宿題ID>' (端末ごと・読み書きは全部 try/catch。使えない端末はページ内だけ)。
  *   提出できたら消す。問題数・択数・やり直しの回数が変わった下書きは使わない。
- * - 二度目の提出は 409 → 一覧を読み直して提出済みの結果を出す。422 は理由・503 / 未デプロイの 404 は「準備中」・通信失敗は下書きを残す。
+ * - 二度目の提出は 409 → 一覧を読み直して提出済みの結果を出す。読み直せない・まだ未提出に見えるときもボタンを「⏳ 採点中…」のまま
+ *   残さない (提出済みなら「✅ 提出済み」と一覧で開き直す案内・それ以外はサーバの理由を出してボタンを戻す)。
+ *   422 は理由・503 / 未デプロイの 404 は「準備中」・通信失敗は下書きを残す。
+ * - 返事を待つ間も「← 宿題一覧に戻る」で戻れる (通信が止まった端末で閉じ込めない)。返事は裏で受け取り、トーストと
+ *   opts.onSubmitted(res, {left: true}) で知らせる (一覧の読み直しは画面の側)。離れた後は画面を描き替えない。
+ * - マイページの重ね (openOverlay) は 1 枚だけ。開いている間にもう一度呼ばれたら (二度押し) 今の重ねを返す。
  * - 解答用紙の宿題に「✓完了」は出さない (完了 = 提出。サーバも /complete を 400 で止める)。
  * - 値は全部 escape して描く。AI は呼ばない。
  * ★ES5 で書く (古い iOS Safari で読み込みに失敗すると解答用紙が出ない)。
@@ -350,10 +355,20 @@
     var n = numQuestions(sheet), nc = numChoices(sheet);
     var answers = loadDraft(sid, hwId, sheet) || emptyAnswers(n);
     var busy = false, changed = false, view = '';
+    var left = false;   // 提出の返事を待つ間に「← 宿題一覧に戻る」で離れた (返事は裏で受け取る)
     var toast = typeof opts.toast === 'function' ? opts.toast : defaultToast;
     var ask = typeof opts.confirm === 'function' ? opts.confirm : function (m) { try { return root.confirm(m); } catch (e) { return true; } };
     var o = { backLabel: opts.backLabel, canPrint: typeof opts.onOpenPrint === 'function' };
+    var backText = opts.backLabel || '← 宿題一覧に戻る';
+    var SUBMIT_TEXT = '📤 提出する（1 回だけ）';
     injectCss();
+    // この画面がもう出ていない (戻った・同じ el に一覧や別の画面が描かれた) = 返事が来ても描き替えない
+    function gone() { return left || el.__hsCtl !== ctl; }
+    function setSubmitBtn(b, text, disabled) {
+      if (!b) return;
+      b.disabled = !!disabled;
+      b.textContent = text || SUBMIT_TEXT;
+    }
 
     function scrollTop() {
       try { if (typeof opts.scrollTop === 'function') { opts.scrollTop(); return; } } catch (e0) { /* noop */ }
@@ -408,19 +423,46 @@
       clearDraft(sid, hwId);
       renderResult(just);
     }
-    // 二度目の提出 (別の端末で先に出した・二度押し) = 失敗ではない。一覧を読み直して提出済みの結果を出す
-    function reloadSubmitted() {
+    // 409 = 二度目の提出 (別の端末で先に出した・二度押し) は失敗ではない。一覧を読み直して提出済みの結果を出す。
+    //   ★サーバの 409 は「もう提出済み」と「正解表が見つかりません」の 2 つ。どちらでもボタンを「⏳ 採点中…」のまま残さない:
+    //   - 一覧で提出済み → 結果の画面
+    //   - 一覧ではまだ未提出 (正解表が無い・その間に塾長がやり直しにした) → サーバの理由を出してボタンを戻す
+    //   - 一覧を読めない / 一覧に無い → 「もう提出済み」なら ✅ 提出済み (押せない) と一覧で開き直す案内、それ以外は理由とボタンを戻す
+    function after409(b, e) {
       changed = true;
+      var srv = (e && e.message) || '';
+      var dup = !srv || srv.indexOf('提出済み') >= 0;
+      if (dup) toast('この解答用紙はもう提出済みです');
+      else toast('❌ ' + srv, true);
+      function stillOpen() {
+        setMsg('❌ 提出できませんでした。' + (srv || errText(e)));
+        setSubmitBtn(b);
+      }
+      function unknown() {
+        if (gone()) return;
+        if (dup) {
+          setMsg('この解答用紙はもう提出済みです。「' + backText + '」で一覧に戻って開き直すと、結果が見られます');
+          setSubmitBtn(b, '✅ 提出済み', true);
+        } else {
+          stillOpen();
+        }
+      }
       return opts.api('/api/student/homework').then(function (d) {
         var items = (d && d.items) || [], it = null;
-        for (var k = 0; k < items.length; k++) if (String(items[k].id) === String(hwId)) it = items[k];
+        for (var k = 0; k < items.length; k++) if (items[k] && String(items[k].id) === String(hwId)) it = items[k];
         if (it && it.answer_sheet && it.answer_sheet.submitted === true) {
+          clearDraft(sid, hwId);
+          if (gone()) return;
           hw = it;
           showSubmitted({ answer_sheet: it.answer_sheet }, false);
           return;
         }
-        setMsg('提出済みです。一覧に戻って開き直してね');
-      }, function () { setMsg('提出済みです。一覧に戻って開き直してね'); });
+        if (it && it.answer_sheet && typeof it.answer_sheet === 'object') {
+          if (!gone()) stillOpen();
+          return;
+        }
+        unknown();
+      }, unknown);
     }
     function submit(b) {
       if (view !== 'form' || busy) return;
@@ -432,28 +474,39 @@
         return;
       }
       busy = true;
-      if (b) { b.disabled = true; b.textContent = '⏳ 採点中…'; }
+      setSubmitBtn(b, '⏳ 採点中…', true);
       setMsg('');
       var payload = cleanAnswers(answers, n, nc);
       return opts.api('/api/student/homework/' + encodeURIComponent(String(hwId)) + '/sheet',
         { method: 'POST', body: JSON.stringify({ answers: payload }) }).then(function (res) {
         busy = false;
-        showSubmitted(res, true);
-        var s = sheet;
+        var wasGone = gone();
+        if (wasGone) {
+          // 返事を待つ間に一覧へ戻った: 画面は描き替えず、下書きを消して結果をトーストで知らせる (一覧の読み直しは onSubmitted で画面の側)
+          hw.status = 'completed';
+          if (res && res.answer_sheet && typeof res.answer_sheet === 'object') { sheet = res.answer_sheet; hw.answer_sheet = sheet; }
+          changed = true;
+          clearDraft(sid, hwId);
+        } else {
+          showSubmitted(res, true);
+        }
+        var s = (res && res.answer_sheet && typeof res.answer_sheet === 'object') ? res.answer_sheet : sheet;
         toast((s.score_correct != null && s.score_total != null) ? ('提出しました！ ' + s.score_correct + ' / ' + s.score_total + ' 正解') : '提出しました！');
-        if (typeof opts.onSubmitted === 'function') { try { opts.onSubmitted(res); } catch (e3) { /* noop */ } }
+        if (typeof opts.onSubmitted === 'function') { try { opts.onSubmitted(res, { left: wasGone }); } catch (e3) { /* noop */ } }
       }, function (e) {
         busy = false;
-        if (e && e.status === 409) {
-          toast('この解答用紙はもう提出済みです');
-          return reloadSubmitted();
-        }
+        if (e && e.status === 409) return after409(b, e);
+        if (gone()) { toast('❌ 提出できませんでした。' + errText(e), true); return; }   // 下書きは残っている
         setMsg('❌ 提出できませんでした。' + errText(e));
-        if (b) { b.disabled = false; b.textContent = '📤 提出する（1 回だけ）'; }
+        setSubmitBtn(b);
       });
     }
     function back() {
-      if (busy) return;
+      if (busy && !left) {
+        // 返事を待つ間も戻れる (通信が止まった端末で閉じ込めない)。返事は裏で受け取ってトーストで知らせる
+        left = true;
+        toast('⏳ 提出を送っています。結果は宿題一覧に出ます');
+      }
       if (typeof opts.onBack === 'function') opts.onBack(changed);
     }
     function onClick(ev) {
@@ -496,9 +549,13 @@
   }
 
   // マイページ用: 画面いっぱいの重ね (閉じたら opts.onClose(changed))。塾生アプリは宿題タブの中に mount する
+  // ★重ねは 1 枚だけ: 開いている間にもう一度呼ばれたら (「✏️ 解答用紙に答える」の二度押し) 新しい重ねを作らずに今のを返す
+  var activeOverlay = null;
   function openOverlay(opts) {
     opts = opts || {};
     var doc = root.document;
+    if (activeOverlay && activeOverlay.overlay && activeOverlay.overlay.parentNode) return activeOverlay;
+    activeOverlay = null;
     injectCss(doc);
     var ov = doc.createElement('div');
     ov.className = 'hs-overlay';
@@ -516,12 +573,14 @@
     o.scrollTop = function () { try { ov.scrollTop = 0; } catch (e) { /* noop */ } };
     o.onBack = function (changed) {
       if (ctl) ctl.detach();
+      if (activeOverlay === ctl) activeOverlay = null;
       try { if (ov.parentNode) ov.parentNode.removeChild(ov); } catch (e) { /* noop */ }
       try { doc.body.style.overflow = prev; } catch (e2) { /* noop */ }
       if (typeof opts.onClose === 'function') opts.onClose(changed);
     };
     var ctl = mount(inner, o);
     ctl.overlay = ov;
+    activeOverlay = ctl;
     return ctl;
   }
 

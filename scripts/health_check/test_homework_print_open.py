@@ -19,7 +19,7 @@
   [7] class.html の inline script を偽の DOM・偽の API で実行 (TZ=America/Los_Angeles = 端末のタイムゾーンに依らない):
       「📄 プリントを開く」は print_open のときだけ・添付のある宿題だけ・プリント名は escape・押した瞬間に空のタブ・
       POST /print → /lesson-prints/….pdf へ (+ は -)・タブを開けなければ同じタブ・404/未デプロイ/通信失敗/変な場所はタブを閉じて知らせる・
-      「提出:」は JST (naive・マイクロ秒・Z・+00:00・+09:00)・期限切れは JST の今日で判定
+      「提出:」は JST (naive・マイクロ秒・Z・+00:00・+09:00)・期限切れは JST の今日で判定・メッセージの日時も JST
   [8] ソース検査: 旧 download ルートを class.html から呼ばない・toISOString の UTC の今日が残っていない・CI 登録
 
 ★JS エンジンが無ければ FAIL (飛ばさない)。CI (ubuntu) は node、塾長の Mac は osascript -l JavaScript。AJ_JS_ENGINE で選べる。
@@ -441,6 +441,30 @@ JS_PRINT_CASES = r"""
     ok('JST で昨日が期限 → 期限切れ (UTC の日付ではまだ当日)', cardOf('昨日が期限').indexOf('chip-over">期限切れ') >= 0, cardOf('昨日が期限'));
     ok('JST で今日が期限 → 未提出 (期限切れではない)', cardOf('今日が期限').indexOf('chip-open">未提出') >= 0, cardOf('今日が期限'));
     ok('期限なし → 未提出', cardOf('期限なし').indexOf('chip-open">未提出') >= 0, cardOf('期限なし'));
+
+    // (T3) メッセージの日時も JST (以前は fmtDate = 文字列を切っただけで 9 時間早く出ていた)
+    var MTS = [
+      ['naive マイクロ秒', '2026-10-15 23:30:00.123456', '2026-10-16 08:30'],
+      ['naive 秒まで', '2026-10-15 23:30:00', '2026-10-16 08:30'],
+      ['Z', '2026-10-15T23:30:00Z', '2026-10-16 08:30'],
+      ['+09:00 はそのまま', '2026-10-16T08:30:00+09:00', '2026-10-16 08:30'],
+      ['日付の変わり目 (UTC 15:00 = JST 翌日 00:00)', '2026-10-15 15:00:00', '2026-10-16 00:00'],
+      ['日時なし', null, '']
+    ];
+    var msgs = MTS.map(function (t, i) { return { id: 950 + i, direction: i % 2 ? 'out' : 'in', subject: 'メッセージ ' + i, body: '本文 ' + i,
+                                                  is_unread: false, created_at: t[1], attachment: null }; });
+    setApi({ '/api/messages/me': { status: 200, body: { ok: true, messages: msgs, unread_count: 0, dl_ttl_seconds: 1800 } } });
+    await bootPrintPage('');
+    tab('messages'); await flush();
+    var mb = ELS.messagesBody ? ELS.messagesBody.innerHTML : '';
+    eq('メッセージのタブ', visibleTab(), 'messages');
+    var mparts = String(mb).split('<div class="msg ').slice(1);
+    eq('メッセージは 6 件', mparts.length, MTS.length);
+    for (var mi = 0; mi < MTS.length; mi++) {
+      var mpart = mparts.filter(function (x) { return x.indexOf('data-id="' + (950 + mi) + '"') >= 0; })[0] || '';
+      ok('メッセージの日時: ' + MTS[mi][0] + ' → ' + (MTS[mi][2] || '(空)'), mpart.indexOf('</span><span>' + MTS[mi][2] + '</span></div>') >= 0, mpart.slice(0, 300));
+    }
+    ok('UTC のまま (2026-10-15 23:30) は出さない', mb.indexOf('2026-10-15 23:30') < 0, mb.slice(0, 600));
   } catch (e) {
     ok('例外なし', false, String((e && e.stack) || e));
   }
@@ -507,6 +531,8 @@ def check_class_html():
           "new Date().toISOString().slice(0, 10)" not in script and "var today = jstToday();" in script)
     check("class.html: 宿題カードの「提出:」は gdLocalDate (JST)", "esc(gdLocalDate(it.completed_at, true))" in script
           and "fmtDate(it.completed_at)" not in script)
+    check("class.html: メッセージの日時は gdLocalDate (JST)・UTC を切るだけの fmtDate は残っていない",
+          "esc(gdLocalDate(m.created_at, true))" in script and "fmtDate(" not in script)
     check("class.html: POST /api/student/homework/{id}/print", "'/api/student/homework/' + encodeURIComponent(id) + '/print', { method: 'POST'" in script)
     check("class.html: ボタンは print_open === true のときだけ", "d.print_open === true" in script)
     ci = read(CI_YML)

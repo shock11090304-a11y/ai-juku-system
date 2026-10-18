@@ -1006,6 +1006,8 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   - 生徒: 宿題一覧の各 item に `answer_sheet` {mode, available, num_questions, num_choices, label_style, labels, submitted, submitted_at (naive UTC),
     late, reset_count, answers, score_correct, score_total, results (問ごとの ○×), reveal, reveal_on, correct}。提出 `POST /api/student/homework/{id}/sheet`
     `{answers:[番号|null], student_note?}` (prefix は元から許可 = 許可集合は不変・AI なし)。本人の宿題でない / 解答用紙なし は 404・数や範囲は 422・
+    番号は整数か短い数字の文字だけ (true・小数 2.0・Infinity / NaN / 1e999 = JSON の float は 422。本文は `Any` で受けて中で確かめる =
+    `dict` 型だと本文が Infinity / [NaN] のとき FastAPI の 422 が入力を JSON に書けず 500)・メモは文字だけ・
     二度目は 409 (`submitted_at IS NULL` の UPDATE が 0 行・同時押しも)。採点はサーバだけ・同じトランザクションで宿題を completed。
     期限 (JST) を過ぎた提出は `late`。★正解の番号 (`correct`) は「提出済み かつ 期限の翌日 (JST) 以降」だけ (期限なしは提出直後)。
     提出前は期限が過ぎても出さない (期限後の提出を受け付けるので、見てから写せないように)。点数と ○× は正解表で毎回採点し直した値。
@@ -1026,7 +1028,11 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
     問ごとに記号のボタン (50px 角・もう一度押すと消せる)。下書きは localStorage `aj_hw_sheet_v1:<生徒ID>:<宿題ID>` (端末ごと・全部 try/catch・
     問題数 / 択数 / やり直しの回数が違う下書きは使わない・提出できたら消す)。空欄があれば問番号つきで確認・1 回だけ送る (送信中は止める)。
     提出したら点数と ○×・正解の記号はサーバの `reveal` のときだけ (期限前は「正解の記号は M/D（期限の翌日）から」)・提出時刻は JST。
-    409 は一覧を読み直して提出済みの結果を出す・422 は理由・503 / 未デプロイの 404 は「準備中」・通信失敗は下書きを残す。hw-sheet.js が読めない端末・
+    409 は一覧を読み直して提出済みの結果を出す (読めない / まだ未提出 / 正解表が無い 409 でもボタンを「⏳ 採点中…」のまま残さない)・
+    422 は理由・503 / 未デプロイの 404 は「準備中」・通信失敗は下書きを残す。返事を待つ間も「← 宿題一覧に戻る」で戻れる
+    (返事は裏で受け取り `onSubmitted(res, {left: true})` → 塾生アプリは一覧が出ているときだけ読み直す・マイページは refresh)。
+    二度押し: 塾生アプリは一覧が出ていないと開かない (`hwListShown`)・マイページの重ねは 1 枚だけ (`openOverlay` が今の重ねを返す)。
+    塾生アプリのメッセージの日時も `gdLocalDate` (JST)。hw-sheet.js が読めない端末・
     正解表が無い宿題は ✓完了 を出さずに案内だけ。hw-notice.js の数え方は変えない (解答用紙の宿題も status で数える = 提出で completed・やり直しで open)。
   - CEO (ceo.html inline の `window.CeoHwSheet`・ceo.js は触らない): 生徒詳細「📚 宿題」と 📤 一括割当に「✍️ 答え方」(完了ボタンだけ / 記号の解答用紙)・
     問題数・選択肢の数 (2〜8)・記号の種類 (①… / ア… / A… / a… / 正誤 = 2 択に固定)・正解 (記号のまま / 数字・全角・貼り付け可)。

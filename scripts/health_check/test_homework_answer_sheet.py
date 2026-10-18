@@ -18,6 +18,7 @@
   [5] 生徒の宿題一覧: answer_sheet (問題数・択数・記号) を付ける・提出前は正解を出さない (期限が過ぎても)・answer_sheet_ready
   [6] ✓完了 (/complete) は解答用紙の宿題では 400 (古い画面からも閉じない)・解答用紙なしの宿題は今までどおり
   [7] 提出: 他人 / 無い宿題 / 解答用紙なし → 404・数が違う / 範囲外 → 422・採点はサーバ (画面の点数は無視)・宿題が completed・
+      答えの Infinity / NaN / 1e999 / 2.0 / true / 巨大な数・dict でない本文 (Infinity / [NaN]) は 500 にせず 422・メモは文字だけ・
       二度目は 409・期限後は late・正解の番号は期限の翌日から (期限の日は出さない・期限なしはすぐ)・なりすましの提出は印つき・
       question_attempts は 1 行も増えない・events は点数だけ (答えは残さない)・未ログイン 401・AIなし枠でも通る
   [8] 塾長: 宿題 1 件の解答用紙 (答え・○×・正解・問ごとの正解率)・正解表の一覧 (?print_id=)・確認表 (保存しない)・
@@ -425,6 +426,26 @@ def main():
                        ("文字", [3, "ウ", 4, 2]), ("true", [3, True, 4, 2]), ("配列でない", "3142"), ("小数", [3, 1.5, 4, 2])):
         r = client.post(url_a1, json={"answers": ans}, headers=tok[sid_a])
         check(f"答えが {label} → 422", r.status_code == 422 and (r.json().get("detail") or ""), f"status={r.status_code} {r.text[:160]}")
+    # 🛡️ 数でない数 (JSON の Infinity / NaN / 1e999 は Python では float)・小数・巨大な数は 500 にせず 422 (2026-10-18)。
+    #   以前は int(Infinity) の OverflowError が 500、2.0 は 2 として通っていた。本文が dict でない Infinity / [NaN] も 422
+    #   (dict 型で受けると FastAPI の 422 が入力を JSON に書けずに 500 になる)。httpx の json= は NaN を書かないので生の本文で送る
+    raw_h = dict(tok[sid_a], **{"Content-Type": "application/json"})
+    mod._RATE_LIMIT_STORE.clear()   # 1 分 20 回の制限 (hw_sheet) で 429 にしない (見たいのは 422 の側)
+    for label, raw in (("Infinity", '{"answers":[3,Infinity,4,2]}'), ("-Infinity", '{"answers":[3,-Infinity,4,2]}'),
+                       ("1e999", '{"answers":[3,1e999,4,2]}'), ("NaN", '{"answers":[3,NaN,4,2]}'), ("2.0", '{"answers":[3,2.0,4,2]}'),
+                       ("1e300", '{"answers":[3,1e300,4,2]}'), ("false", '{"answers":[3,false,4,2]}'),
+                       ("巨大な整数", '{"answers":[3,' + "9" * 400 + ',4,2]}'), ("巨大な数字の文字", '{"answers":[3,"' + "9" * 400 + '",4,2]}'),
+                       ("answers が Infinity", '{"answers":Infinity}'), ("本文が Infinity", 'Infinity'), ("本文が [NaN]", '[NaN]'),
+                       ("本文が null", 'null'), ("本文が空", '')):
+        try:
+            r = client.post(url_a1, content=raw.encode(), headers=raw_h)
+            st, txt = r.status_code, r.text
+        except Exception as e:  # noqa: BLE001  (TestClient は 500 を例外で返す)
+            st, txt = 500, f"{type(e).__name__}: {e}"
+        check(f"答えが {label} → 422 (500 にしない)", st == 422, f"status={st} {txt[:160]}")
+    check("Infinity などの 422 のあとも未提出のまま・宿題も open", sheets_of(hw_a1)[0]["submitted_at"] is None
+          and q(mod, "SELECT status FROM homework_assignments WHERE id = ?", (hw_a1,))[0]["status"] == "open")
+    mod._RATE_LIMIT_STORE.clear()
     check("422 のあとも未提出のまま", sheets_of(hw_a1)[0]["submitted_at"] is None)
     r = client.post(url_a1, json={"answers": [3, 2, None, "2"], "score_correct": 4, "score": 100, "results": [True] * 4,
                                   "student_note": "マークしました"}, headers=tok[sid_a])
@@ -470,6 +491,14 @@ def main():
     ev = q(mod, "SELECT props FROM events WHERE name = 'homework_sheet_submitted'")
     evp = json.loads(ev[-1]["props"]) if ev else {}
     check("events は点数だけ (答えは残さない)", ev and evp.get("score_correct") == 2 and evp.get("score_total") == 4 and "answers" not in evp, evp)
+    # メモが数 (NaN) でも 500 にせず、"nan" の文字も残さない (メモは文字だけ)
+    r = assign({"student_id": sid_a, "title": "メモが NaN", "due_date": d_future, "answer_sheet": {"mode": "choice", "key_id": key1}})
+    hw_nan = r.json().get("homework_id")
+    r = client.post(f"/api/student/homework/{hw_nan}/sheet", content=b'{"answers":[3,1,4,2],"student_note":NaN}', headers=raw_h)
+    check("メモが NaN → 200・メモは空のまま (\"nan\" を残さない)", r.status_code == 200
+          and q(mod, "SELECT student_note FROM homework_assignments WHERE id = ?", (hw_nan,))[0]["student_note"] is None, r.text[:200])
+    ex(mod, "DELETE FROM homework_sheets WHERE homework_id = ?", (hw_nan,))
+    ex(mod, "DELETE FROM homework_assignments WHERE id = ?", (hw_nan,))
     r = client.get("/api/student/homework", headers=tok[sid_a])
     a1 = ({it["id"]: it for it in r.json().get("items", [])}.get(hw_a1) or {}).get("answer_sheet") or {}
     check("一覧でも提出後は点数と ○× (正解の番号はまだ)", a1.get("submitted") is True and a1.get("score_correct") == 2

@@ -4855,7 +4855,9 @@ async function initHomeworkSection() {
   }
 
   // 📝 記号の解答用紙 (2026-10-18): 「✏️ 解答用紙に答える」/「📝 結果を見る」→ 画面いっぱいの重ねで開く (hw-sheet.js)。
-  //   閉じたら (提出したら) 一覧を読み直す。開いた = 見た (🆕 の記録)
+  //   閉じたら (提出したら) 一覧を読み直す。開いた = 見た (🆕 の記録)。
+  //   ★重ねは 1 枚だけ (二度押しは hw-sheet.js の openOverlay が今の重ねを返す)。提出の返事を待つ間に「× 閉じる」で閉じても、
+  //     返事が来たら (onSubmitted の left) 一覧を読み直す
   list.addEventListener('click', (e) => {
     const sbtn = e.target.closest && e.target.closest('[data-hw-sheet]');
     if (!sbtn) return;
@@ -4871,6 +4873,7 @@ async function initHomeworkSection() {
       confirm: (m) => window.confirm(m),
       onOpenPrint: pr ? (b) => openPrint(b, b.getAttribute('data-print-id')) : null,
       onClose: (changed) => { if (changed) refresh(); },
+      onSubmitted: (res, info) => { if (info && info.left) refresh(); },
     });
   });
 
