@@ -1037,7 +1037,11 @@
         _wireReload(body);
         return;
       }
-      var today = new Date().toISOString().slice(0, 10);
+      // ★期限切れは JST の今日で判定する (サーバの summary.overdue・hw-notice.js と同じ)。以前は toISOString = UTC の日付で、
+      //   0:00〜9:00 の間は「昨日が期限」の宿題が期限切れにならなかった (2026-10-18)
+      var today = jstToday();
+      // 📄 添付プリントを開くボタンは、サーバに POST /api/student/homework/{id}/print があるとき (print_open) だけ出す
+      var canOpenPrint = !!(d && d.print_open === true);
       var hwHtml = items.map(function (it) {
         var done = it.status === 'completed';
         var overdue = !done && it.due_date && it.due_date < today;
@@ -1066,19 +1070,25 @@
         // 📝 [2026-09-24] ドリルのボタンは単元 (topic) のある宿題だけ。単元が無いと dojo-drill 側で開くドリルが決まらず、
         //   以前は自由演習メニューが出ていた (塾長方針「出した宿題のみ」に反する)。テキスト宿題は提出ボタンだけ。
         var hasDrill = !!it.topic;
+        // 📄 [2026-10-18] 塾長が添付した配布プリント (attachment_print = 公開中だけ) を開く。提出後も見直せるように残す
+        var pr = (canOpenPrint && it.attachment_print && it.attachment_print.id != null) ? it.attachment_print : null;
+        var printBtn = pr ? ('<button class="btn ' + ((hasDrill || done) ? 'btn-ghost' : 'btn-primary') + ' hw-print" data-id="'
+          + esc(String(it.id)) + '">📄 プリントを開く</button>') : '';
+        var printMeta = (pr && pr.title) ? ('<div class="card-meta">📎 プリント: ' + esc(pr.title) + '</div>') : '';
         if (!done) {
           // ★ このカードは「別ページで練習 → 自分で完了を押す」型。単元ドリル(その場で自動採点)と
           //   ボタンの色・形が似ているので、戻ってくることを一言添える。
-          actions += (hasDrill ? '<a class="btn btn-primary" href="' + esc(drillUrl) + '">📝 ドリルで解く</a>' : '')
-            + '<button class="btn btn-green hw-done" data-id="' + it.id + '">✓ 提出（完了）にする</button>'
-            + '<div class="muted" style="flex-basis:100%;margin-top:0.35rem;">' + (hasDrill ? '解き終わったら' : '終わったら') + '「✓ 提出（完了）にする」を押してね</div>';
-        } else if (hasDrill) {
-          actions += '<a class="btn btn-ghost" href="' + esc(drillUrl) + '">🔁 もう一度解く</a>';
+          actions += printBtn + (hasDrill ? '<a class="btn btn-primary" href="' + esc(drillUrl) + '">📝 ドリルで解く</a>' : '')
+            + '<button class="btn btn-green hw-done" data-id="' + esc(String(it.id)) + '">✓ 提出（完了）にする</button>'
+            + '<div class="muted" style="flex-basis:100%;margin-top:0.35rem;">' + (hasDrill ? '解き終わったら' : (pr ? 'プリントを解き終わったら' : '終わったら')) + '「✓ 提出（完了）にする」を押してね</div>';
+        } else {
+          actions += printBtn + (hasDrill ? '<a class="btn btn-ghost" href="' + esc(drillUrl) + '">🔁 もう一度解く</a>' : '');
         }
         actions += '</div>';
+        // ★提出の日時は naive UTC (サーバの CURRENT_TIMESTAMP)。gdLocalDate で JST にする (以前は文字列を切っただけで 9 時間早く出ていた)
         return '<div class="card">' + statusChip + subj + topicChip + '<div class="card-title">' + esc(it.title || '宿題') + '</div>'
-          + due + (it.description ? ('<div class="card-body">' + esc(it.description) + '</div>') : '')
-          + (done && it.completed_at ? ('<div class="muted" style="margin-top:0.4rem;">提出: ' + esc(fmtDate(it.completed_at)) + '</div>') : '')
+          + due + printMeta + (it.description ? ('<div class="card-body">' + esc(it.description) + '</div>') : '')
+          + (done && it.completed_at ? ('<div class="muted" style="margin-top:0.4rem;">提出: ' + esc(gdLocalDate(it.completed_at, true)) + '</div>') : '')
           + actions + '</div>';
       }).join('');
       // 提出済みドリルは溜まる一方 (mypage で解いたぶんも全部返ってくる) ので直近5件だけ出す。
@@ -1091,6 +1101,9 @@
       body.querySelectorAll('.hw-done').forEach(function (btn) {
         btn.addEventListener('click', function () { completeHomework(btn); });
       });
+      body.querySelectorAll('.hw-print').forEach(function (btn) {
+        btn.addEventListener('click', function () { openHomeworkPrint(btn); });
+      });
       body.querySelectorAll('.gd-open').forEach(function (btn) {
         btn.addEventListener('click', function () { gdOpen(btn.getAttribute('data-id')); });
       });
@@ -1100,6 +1113,44 @@
       root.querySelectorAll('.hw-reload').forEach(function (b) {
         b.addEventListener('click', function () { hwLoaded = false; loadHomework(); });
       });
+    }
+    // 📄 [2026-10-18] 宿題に添付した配布プリントを開く。POST /api/student/homework/{id}/print (塾生アプリのみ枠でも通る・
+    //   本人の宿題に添付したプリントだけ) で場所 (/lesson-prints/….pdf) を受け取り、そこへ移る。
+    //   ★iPhone の Safari は「通信を待った後の window.open」をポップアップとして止めるので、押した瞬間に空のタブを開いておき、
+    //     場所が分かったらそこへ移す (mypage.js の「PDFを開く」と同じ)。タブを開けなければ同じタブで開く。
+    function hwPrintPath(p) {
+      var f = String(p == null ? '' : p).replace(/\+/g, '-');   // mypage.js の「PDFを開く」と同じ置き換え・同じ検証
+      return (/^\/lesson-prints\/[^?#\s]+\.pdf$/i.test(f) && f.indexOf('..') < 0) ? f : '';
+    }
+    function hwPrintErr(e) {
+      var st = e && e.status;
+      if (st === 404 && e.message === 'Not Found') return '準備中です。少し待ってからもう一度押してね';   // 新しいサーバがまだ出ていない
+      if (st === 401) return 'ログインし直してからもう一度押してね';
+      if (!st) return '通信できませんでした。電波のよいところでもう一度押してね';
+      return (e && e.message) || 'プリントを開けませんでした';
+    }
+    async function openHomeworkPrint(btn) {
+      var id = btn.getAttribute('data-id');
+      if (!id || btn.disabled) return;
+      btn.disabled = true; var orig = btn.textContent; btn.textContent = '⏳ 準備中…';
+      var tab = null;
+      try { tab = window.open('', '_blank'); } catch (e0) { tab = null; }
+      if (tab) {
+        try { tab.opener = null; } catch (e3) {}   // 開いた先からこの画面を触らせない
+        try { tab.document.write('<p style="font-family:sans-serif;padding:1.5rem;">📄 プリントを準備中…</p>'); } catch (e1) {}
+      }
+      try {
+        var d = await api('/api/student/homework/' + encodeURIComponent(id) + '/print', { method: 'POST', body: '{}' });
+        var f = hwPrintPath(d && d.file_path);
+        if (!f) { var pe = new Error('プリントの場所を読めませんでした。塾長に知らせてね'); pe.status = 422; throw pe; }
+        var url = (location.origin || (location.protocol + '//' + location.host)) + f;
+        if (tab) tab.location.href = url; else location.assign(url);
+      } catch (e) {
+        if (tab) { try { tab.close(); } catch (e2) {} }
+        toast(hwPrintErr(e), true);
+      } finally {
+        setTimeout(function () { btn.textContent = orig; btn.disabled = false; }, 800);
+      }
     }
     async function completeHomework(btn) {
       var id = btn.getAttribute('data-id');
@@ -1152,16 +1203,25 @@
       var isEmoji = (cp >= 0x1F000) || (cp >= 0x2190 && cp <= 0x2BFF);
       return (isEmoji ? '' : '📝 ') + s;
     }
-    // 日時列は naive UTC 保存 (本番 Postgres は Etc/UTC)。'Z' を補って端末のタイムゾーン(=JST)で日付を出す。
+    // 日時列は naive UTC 保存 (本番 Postgres は Etc/UTC)。'Z' を補って **JST** (UTC+9・夏時間なし) の日付・時刻を出す。
     // これをやらないと朝5:30のルーティン配信が「前日 出題」と表示される。
+    // ★2026-10-18: 端末のタイムゾーンではなく JST に固定 (期限・期限切れの判定と同じ日付の基準)。マイクロ秒つき
+    //   ('2026-10-15 05:30:00.123456' = Postgres の str(datetime)) は Date が読めない端末があるのでミリ秒に切ってから読む
+    //   (読めないと文字列を切っただけの UTC が出て 9 時間ずれる)。オフセット付きはそのまま尊重する。
     function gdLocalDate(s, withTime) {
       if (!s) return '';
-      var t = String(s).replace(' ', 'T');
+      var t = String(s).replace(/^\s+|\s+$/g, '').replace(' ', 'T').replace(/(\.\d{3})\d+/, '$1');
       if (!/[Zz]$|[+-]\d{2}:?\d{2}$/.test(t)) t += 'Z';
-      var d = new Date(t);
-      if (isNaN(d.getTime())) return String(s).slice(0, 16);
-      var ymd = d.getFullYear() + '-' + _pad2(d.getMonth() + 1) + '-' + _pad2(d.getDate());
-      return withTime ? (ymd + ' ' + _pad2(d.getHours()) + ':' + _pad2(d.getMinutes())) : ymd;
+      var ms = Date.parse(t);
+      if (isNaN(ms)) return String(s).slice(0, 16);
+      var j = new Date(ms + 9 * 3600 * 1000);   // JST の壁時計を UTC の欄で読む
+      var ymd = j.getUTCFullYear() + '-' + _pad2(j.getUTCMonth() + 1) + '-' + _pad2(j.getUTCDate());
+      return withTime ? (ymd + ' ' + _pad2(j.getUTCHours()) + ':' + _pad2(j.getUTCMinutes())) : ymd;
+    }
+    // JST の今日 'YYYY-MM-DD' (宿題の期限切れの判定。サーバ _today_jst・hw-notice.js todayJst と同じ)
+    function jstToday(nowMs) {
+      var ms = (typeof nowMs === 'number' && !isNaN(nowMs)) ? nowMs : Date.now();
+      return new Date(ms + 9 * 3600 * 1000).toISOString().slice(0, 10);
     }
     // カードの 2 行目 (HTML・値は esc 済み)。未提出: 問題数・自動採点・出題日 / 完了: スコア・提出日時。
     // ★ドリルの種類ごとの文言 (〆のある宿題・習熟度テストなど) はここに足す (2026-10-15: カードの組み立てを 1 か所に)

@@ -507,6 +507,17 @@ jobs:
           node --version || echo "node が無い (テストが「JS の実行環境がある」で FAIL する)"
           python3 scripts/health_check/test_hw_notice_js.py
 
+      # 📄 宿題の添付プリントを塾生アプリから開く (2026-10-18 塾長「◎のとおりでお願いします…記号問題がいい」の第0段):
+      #   POST /api/student/homework/{id}/print は AIなし枠でも通る (許可集合は不変)・本人の宿題に添付した公開プリントだけ・
+      #   なりすましは DL 履歴を数えない・AI を呼ばない。class.html は print_open のときだけ「📄 プリントを開く」・押した瞬間に空のタブ・
+      #   「提出:」と期限切れは JST (TZ=America/Los_Angeles で node を回す = 端末のタイムゾーンに依らない)。JS エンジンが無ければ FAIL。
+      - name: 宿題の添付プリント (POST /print・class.html の JST) 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          node --version || echo "node が無い (テストが「JS の実行環境がある」で FAIL する)"
+          python3 scripts/health_check/test_homework_print_open.py
+
       # 📊 本文の表 (2026-10-17 塾長「アプリ側で表を直しておいて」): 取込仕様 §2 の「［表］」+「｜」区切りの行を、塾生アプリ (class.html)・
       #   マイページ (mypage.js)・CEO (ceo.html の 👀 問題を見る と 📊 分析) で <table> (横スクロール・折り返さない) にする規則を node で実際に
       #   動かして突き合わせる (エスケープが先・pre-wrap の中に改行を入れない・表の無い本文は 1 文字も変えない。JS エンジンが無ければ FAIL)。

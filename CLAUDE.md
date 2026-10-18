@@ -981,6 +981,14 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - 既知の割り切り: 宿題モードの URL (`?hw=&w_topic=`) を手で書き換えれば別単元も宿題として記録できる。塾長方針は「入口を作らない」
   であって攻撃対策ではないので、サーバは本人の宿題かどうかだけを見る (単元一致・status・期限は見ない = 提出済みの解き直しも記録)。
   宿題モードでも弱点クレジット (`drillOrigin`) と `weakness/refresh-self` は従来の経路に投げる (AIなしは 403 を黙って捨てる・AIあり は弱点に反映)。
+- 📄 **宿題の添付プリント** (2026-10-18 塾長「◎のとおりでお願いします…記号問題がいい」の第0段): 塾生アプリの宿題カードの
+  「📄 プリントを開く」は `POST /api/student/homework/{id}/print` (prefix `/api/student/homework/` は元から許可 = 許可集合は不変)。
+  本人の宿題に添付した**公開中**のプリントの `{file_path, title}` だけを返し (他人・添付なし・非公開・`/lesson-prints/` の形でない は 404)、
+  画面は `/lesson-prints/….pdf` (vercel.json が R2 へ送る) に移る。AIなし枠は旧 `POST /api/student/lesson-prints/{id}/download` が今も 403
+  (mypage は AIなし枠を class.html に送り返すので旧ルートのまま)。DL 履歴は生徒本人だけ数える (なりすましは数えない)。
+  ボタンは宿題一覧の `print_open: true` があるときだけ (静的が API より先に出た窓で、押しても開けないボタンを出さない)。
+  あわせて class.html の「提出:」と期限切れの判定を JST に (`gdLocalDate` は端末のタイムゾーンでなく JST 固定・`jstToday()`)。
+  回帰テスト: `scripts/health_check/test_homework_print_open.py` (CI `server-tests.yml`・class.html は TZ=America/Los_Angeles で実行)。
 - 宿題モード (`?hw=`) の dojo-drill はメニュー (自由演習) を一切出さない: 自動起動できない・やめて戻る (確認あり)・読込失敗は
   すべて案内カード + 「塾生アプリの宿題に戻る」。class.html の「📝 ドリルで解く」は **単元 (topic) のある宿題だけ**に出す
   (無い宿題は提出ボタンだけ)。★残る抜け道: 公開の道場トップ (nyushi-dojo.html) からブックマークで直接開けば問題は解ける

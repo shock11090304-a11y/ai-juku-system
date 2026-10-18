@@ -44949,6 +44949,9 @@ def get_my_homework(authorization: Optional[str] = Header(None), status_filter: 
                 "overdue": overdue_count,
                 "total": len(items),
             },
+            # 📄 POST /api/student/homework/{id}/print がある印 (2026-10-18)。塾生アプリはこれが true のときだけ
+            #   「📄 プリントを開く」を出す (静的が API より先に出たときに、押しても開けないボタンを見せない)
+            "print_open": True,
         }
     finally:
         conn.close()
@@ -44999,6 +45002,83 @@ def complete_my_homework(homework_id: int, payload: HomeworkCompleteRequest, aut
         return {"ok": True, "homework_id": homework_id, "status": "completed"}
     except HTTPException:
         raise
+    finally:
+        conn.close()
+
+
+def _safe_lesson_print_path(fp) -> Optional[str]:
+    """配布プリントの file_path が '/lesson-prints/<ファイル名>' の形か (違えば None)。
+    vercel.json が /lesson-prints/:filename を R2 の公開バケットへ送る。外部 URL・'..'・'//'・制御文字・空白・?# は通さない
+    (画面側も mypage.js と同じ正規表現でもう一度見る)。"""
+    if not isinstance(fp, str) or not fp.startswith("/lesson-prints/") or len(fp) <= len("/lesson-prints/"):
+        return None
+    if ".." in fp or "//" in fp or "\\" in fp or any(ord(ch) < 0x21 for ch in fp) or "?" in fp or "#" in fp:
+        return None
+    return fp
+
+
+@app.post("/api/student/homework/{homework_id}/print")
+def open_my_homework_print(homework_id: int, request: Request, authorization: Optional[str] = Header(None)):
+    """📄 宿題に添付した配布プリントを開く (2026-10-18 塾長「◎のとおりでお願いします…記号問題がいい」の第0段)。
+
+    背景: 塾生アプリ (class.html) の宿題カードには添付プリントを開く入口が無く、塾生アプリのみ枠 (AIなし) は
+      POST /api/student/lesson-prints/{id}/download が middleware の許可集合の外なので 403 になる。
+      → 許可集合 (_AI_DISABLED_ALLOWED_EXACT / _PREFIXES) は **1 バイトも変えない**。宿題 ID を路に持つこのルートを
+        元から許可されている prefix "/api/student/homework/" の下に足す (宿題の完了・宿題ドリルの結果保存と同じ扱い)。
+    返すもの: その宿題に添付されたプリント **だけ** の {file_path, title} (別のプリントは開けない)。画面は file_path
+      (/lesson-prints/… = vercel.json が R2 へ送る) に移る。本人の宿題でない / 添付が無い / 非公開は 404
+      (宿題一覧の attachment_print も公開中だけを返す)。AI 呼び出しは無い。
+    DL 履歴 (lesson_print_downloads・download_count) は生徒本人が開いたときだけ数える (塾長のなりすまし確認では数えない)。
+    POST なのは履歴を書くから (旧 download ルートと同じ)。"""
+    _check_rate_limit_caller(request, authorization, bucket="hw_print", limit=60, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+    if not _table_has_column("homework_assignments", "attachment_print_id"):
+        raise HTTPException(status_code=503, detail="準備中です。少し待ってからもう一度開いてください。")
+    try:
+        homework_id = int(homework_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=404, detail="この宿題はあなたに出されていません")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, attachment_print_id FROM homework_assignments WHERE id = ? AND student_id = ?",
+                  (homework_id, int(student["id"])))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="この宿題はあなたに出されていません")
+        pid = row["attachment_print_id"]
+        if not pid:
+            raise HTTPException(status_code=404, detail="この宿題にはプリントが付いていません")
+        c.execute("SELECT id, title, file_path, is_published FROM lesson_prints WHERE id = ?", (int(pid),))
+        p = c.fetchone()
+        if not p or not p["is_published"]:
+            raise HTTPException(status_code=404, detail="このプリントは今は開けません。塾長に知らせてください。")
+        fpath = _safe_lesson_print_path(p["file_path"])
+        if not fpath:
+            log.warning(f"[hw_print] homework={homework_id} print={p['id']} の file_path が /lesson-prints/ の形でない")
+            raise HTTPException(status_code=404, detail="このプリントは今は開けません。塾長に知らせてください。")
+        if not _is_impersonation_auth(authorization):
+            try:
+                import hashlib as _hl
+                ip = _client_ip(request) or ""
+                ip_hash = _hl.sha256(ip.encode("utf-8")).hexdigest()[:16] if ip else None
+                c.execute("INSERT INTO lesson_print_downloads (student_id, print_id, ip_hash) VALUES (?, ?, ?)",
+                          (int(student["id"]), int(p["id"]), ip_hash))
+                c.execute("UPDATE lesson_prints SET download_count = COALESCE(download_count, 0) + 1, "
+                          "updated_at = CURRENT_TIMESTAMP WHERE id = ?", (int(p["id"]),))
+                conn.commit()
+            except Exception as _e:
+                # 履歴が書けなくてもプリントは開かせる (記録は付随情報)
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
+                log.warning(f"[hw_print] DL 履歴の記録に失敗 (プリントは返す): {type(_e).__name__}: {_e}")
+        return {"ok": True, "homework_id": homework_id, "print_id": p["id"],
+                "title": _beautify_print_title(p["title"]), "file_path": fpath}
     finally:
         conn.close()
 
