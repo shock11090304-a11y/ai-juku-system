@@ -596,6 +596,19 @@ jobs:
           node --version || echo "node が無い (テストが「JS の実行環境がある」で FAIL する)"
           python3 scripts/health_check/test_class_homework_routine.py
 
+      # 🗓 今日の授業ブリーフ (2026-10-18 塾長「①の授業前ブリーフも作っておいて」): GET /api/admin/class-brief は管理者トークンだけ
+      #   (名前を返すので X-Cron-Secret は 401)・読むだけ (書く SQL 0 文・events も増えない・生徒を 10 倍にしても SELECT の数は同じ)。
+      #   その日 (JST) の曜日のクラスごとに 在籍の通塾生と未提出 (クラス自動宿題・3日ドリル・塾長のドリルと宿題・〆過ぎ・次が止まる・
+      #   ログイン切れの疑い)・今週 (月曜 0:00 JST から) 出した人・誤答の多い 3 問 (回答 2 件以上・習熟度テストは出さない)。
+      #   [8] CEO の「🗓 今日の授業ブリーフ」と 📺 問題だけ表示 (名前を出さない・正解は押すまで隠す) を node で実際に動かす
+      #   (ceo.html はこの workflow の paths に入っている。JS エンジンが無ければ FAIL)。
+      - name: 今日の授業ブリーフ (読むだけ・管理者だけ)・CEO の 🗓 カードと 📺 問題だけ表示 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          node --version || echo "node が無い (テストが「JS の実行環境がある」で FAIL する)"
+          python3 scripts/health_check/test_class_brief.py
+
       # 🔰 今日の1問・初回診断 (生徒が自分で始める): 学年で科目を分ける (中学生に高校の英文法を出さない・小学生モードは 409)・
       #   レビュー済みの出典だけ (未レビューの古い行は出さない・無ければ 503)。
       - name: 今日の1問・初回診断 (学年で科目を分ける・レビュー済みだけ) 回帰テスト

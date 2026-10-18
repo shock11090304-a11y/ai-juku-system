@@ -58559,6 +58559,450 @@ def admin_class_homework_routine_run(
 
 
 # ==========================================================================
+# 🗓 今日の授業ブリーフ (2026-10-18 塾長「①の授業前ブリーフも作っておいて」= 成績を上げる提案の ①「授業で宿題を回す」)
+#   授業の前に 1 分で見る CEO の画面のための**読むだけ**の管理 API (書かない・表を足さない・DDL なし・events にも残さない)。
+#   その日 (JST) の曜日の時間割クラスごとに:
+#     (a) 在籍の通塾生 (クラス自動宿題と同じ名簿の決め方) と、それぞれの未提出 (クラス自動宿題・3日ドリル・塾長が配ったドリル・
+#         塾長が出した宿題 (記号の解答用紙つきも)。生徒が自分で始めた今日の1問・初回診断は数えない = 生徒の画面の「新しい宿題」と同じ)
+#     (b) 今週 (その日の週の月曜 0:00 JST から) 何か出した生徒 (ほめる用・本数と一番よい点)
+#     (c) 直近 14 日にこのクラスの生徒に配ったドリルの、正解率の低い 3 問 (回答 2 つ以上・誤答 1 つ以上・習熟度テストは出さない)
+#   ★生徒の名前は管理者トークンの応答にだけ入る (X-Cron-Secret では読めない・ログにも events にも出さない)。
+# ==========================================================================
+_CLASS_BRIEF_STALE_LOGIN_DAYS = 30     # 最終ログインからこれより長い (か一度も無い) = ログイン切れの疑い (生徒のトークンは 30 日で切れる)
+_CLASS_BRIEF_WINDOW_DAYS = 14          # 誤答の多い 3 問を拾うドリルの期間 (配った日 = assigned_at・JST の日付)
+_CLASS_BRIEF_TOP_N = 3
+_CLASS_BRIEF_MIN_ANSWERS = 2           # 問題ごとの回答がこれ未満なら選ばない (1 人の誤答をクラスの誤答と読まない)
+_CLASS_BRIEF_ITEMS_CAP = 30            # 生徒 1 人に返す未提出の行の上限 (数は全部数える)
+_CLASS_BRIEF_SELF_ISSUED = ("today_question", "diagnostic")   # 生徒が自分で始めたもの = 未提出にも提出にも数えない
+_CLASS_BRIEF_NOT_SELF_SQL = ("COALESCE(d.created_by, 'admin') NOT IN ("
+                             + ", ".join(f"'{_x}'" for _x in _CLASS_BRIEF_SELF_ISSUED) + ")")   # 定数だけを埋める
+_CLASS_BRIEF_MISSION_CREATED_BY = "mission_2day_routine"   # デスクトップの予約タスク「2日に1回 弱点15問ミッション」(本番 DB に直接書く)
+_CLASS_BRIEF_DOW_JA = "日月火水木金土"   # 時間割の dow (0=日 … 6=土) と同じ並び
+_CLASS_BRIEF_DUE_RE = re.compile(r"〆\s*(\d{1,2})\s*/\s*(\d{1,2})")
+
+
+def _class_brief_now() -> datetime:
+    """今の時刻 (UTC aware)。既定の日付 (JST の今日) と「何日たったか」の基準。テストが差し替えて JST の 0:00 の境目を固定する。"""
+    return datetime.now(timezone.utc)
+
+
+def _class_brief_day_start_utc(d) -> str:
+    """JST の日付 d の 0:00 を naive UTC の 'YYYY-MM-DD HH:MM:SS' に (assigned_at / completed_at と同じ形 = SQL の ? にそのまま渡せる)。"""
+    return (datetime(d.year, d.month, d.day) - timedelta(hours=9)).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _class_brief_jst(raw):
+    """DB の時刻 (naive UTC / aware / 文字列) → JST の aware datetime。読めなければ None。"""
+    dt = _parse_db_dt(raw)
+    return dt.astimezone(_JST) if dt else None
+
+
+def _class_brief_drill_kind(created_by) -> str:
+    """grammar_drills.created_by → 未提出の種類 (class_hw / routine / mission / admin / other)。空は admin (列の既定値と同じ)。"""
+    cb = str(created_by or "").strip()
+    if not cb or cb == "admin":
+        return "admin"
+    if cb == _ROUTINE_CREATED_BY:
+        return "routine"
+    if cb.startswith(_CLASS_HW_CREATED_BY_PREFIX):
+        return "class_hw"
+    if cb == _CLASS_BRIEF_MISSION_CREATED_BY:
+        return "mission"
+    return "other"
+
+
+def _class_brief_title_due(title, assigned_day):
+    """題名の「〆M/D」(クラス自動宿題) → 期限の date。年は配った日から決める (12 月に配った「〆1/2」は翌年)。読めなければ None。"""
+    m = _CLASS_BRIEF_DUE_RE.search(str(title or ""))
+    if not m or assigned_day is None:
+        return None
+    mo, dd = int(m.group(1)), int(m.group(2))
+    for y in (assigned_day.year, assigned_day.year + 1):
+        try:
+            d = date(y, mo, dd)
+        except ValueError:
+            return None
+        if d >= assigned_day - timedelta(days=31):
+            return d
+    return None
+
+
+def _class_brief_date_or_none(raw):
+    s = str(raw or "")[:10]
+    try:
+        return datetime.strptime(s, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _class_brief_period(label) -> Optional[int]:
+    m = re.search(r"(\d)\s*限", str(label or ""))
+    return int(m.group(1)) if m else None
+
+
+def _class_brief_chunks(ids, n: int = 500):
+    ids = list(ids)
+    for i in range(0, len(ids), n):
+        yield ids[i:i + n]
+
+
+def _class_brief_is_ptest(subject, source) -> bool:
+    """習熟度テストの問題か (科目か出典の接頭辞)。誤答の多い 3 問には一切出さない (授業で一斉に解くテストなので画面共有で先に見せない)。"""
+    if _canon_grammar_subject(subject) == _PTEST_SUBJECT or str(subject or "").strip().lower() == _PTEST_SUBJECT:
+        return True
+    return str(source or "").strip().lower().startswith(_AUTO_DELIVERY_DENY_SOURCE_PREFIXES)
+
+
+def _class_brief_build(conn, *, brief_day, only_label=None, now=None) -> dict:
+    """🗓 授業ブリーフの中身 (読むだけ)。brief_day = JST の date・only_label = 時間割のクラス名 (曜日が違っても出す)。
+    名簿 = 在籍 (_enrolled_sql)・合成監視とテスト系の名前を除く・通塾生 (course=kokuritsu_nankan か plan=student_addon)・受講クラスに
+    そのクラス・受講開始月を過ぎている (クラス自動宿題の名簿と同じ決め方。AIあり / AIなしの両方を入れて ai_path で見分ける)。
+    SELECT は生徒・未提出・今週の提出・14 日の回答・問題・本文の題名を、生徒 id (500 件ずつの IN) で 1 回ずつ (生徒ごとに回さない)。"""
+    c = conn.cursor()
+    now = now or _class_brief_now()
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    today = now.astimezone(_JST).date()
+    as_of = max(today, brief_day)     # 〆過ぎ・何日たったかの基準 = 授業の日 (過去の日を開いたときは今日)
+    dow = brief_day.isoweekday() % 7
+    if only_label:
+        classes = [cl for cl in _TIMETABLE_CLASSES if cl["label"] == only_label]
+    else:
+        classes = [cl for cl in _TIMETABLE_CLASSES if cl["dow"] == dow]
+    week_start = brief_day - timedelta(days=brief_day.weekday())
+    week_lo, week_hi = _class_brief_day_start_utc(week_start), _class_brief_day_start_utc(week_start + timedelta(days=7))
+    win_lo = _class_brief_day_start_utc(brief_day - timedelta(days=_CLASS_BRIEF_WINDOW_DAYS))
+    month_of_day = f"{brief_day.year:04d}-{brief_day.month:02d}"
+    out = {
+        "date": brief_day.isoformat(), "dow": dow, "dow_ja": _CLASS_BRIEF_DOW_JA[dow], "today": today.isoformat(),
+        "as_of": as_of.isoformat(), "week_start": week_start.isoformat(), "window_days": _CLASS_BRIEF_WINDOW_DAYS,
+        "stale_login_days": _CLASS_BRIEF_STALE_LOGIN_DAYS, "min_answers": _CLASS_BRIEF_MIN_ANSWERS, "classes": [],
+    }
+    if not classes:
+        return out
+    labels = [cl["label"] for cl in classes]
+
+    # ── 名簿 (1 回の SELECT) ──
+    has_trial = _students_has_ai_trial_until()
+    has_sm = _table_has_column("students", "start_month")
+    has_ll = _table_has_column("students", "last_login_at")
+    cols = ("id, name, grade, class_labels, course, plan, ai_disabled" + (", ai_trial_until" if has_trial else "")
+            + (", start_month" if has_sm else "") + (", last_login_at" if has_ll else ""))
+    c.execute(f"SELECT {cols} FROM students WHERE {_enrolled_sql()} AND {_synth_exclude_sql()} "
+              "AND class_labels IS NOT NULL AND class_labels <> '' AND class_labels <> '[]' ORDER BY id LIMIT 5000")
+    stud, by_label, before_start = {}, {lb: [] for lb in labels}, {lb: 0 for lb in labels}
+    for st in c.fetchall() or []:
+        mine = [lb for lb in _parse_labels(st["class_labels"]) if lb in by_label]
+        if not mine:
+            continue
+        if not (st["course"] == _STUDY_LOG_TARGET_COURSE or str(st["plan"] or "").lower() in _TSUJUKU_ALLOWED_PLANS):
+            continue
+        if _is_blocked_test_name(st["name"]):
+            continue
+        if has_sm and _before_start_month(st["start_month"], month_of_day):
+            for lb in mine:
+                before_start[lb] += 1
+            continue
+        sid = int(st["id"])
+        tu = st["ai_trial_until"] if has_trial else None
+        path = _auto_delivery_ai_path(st["ai_disabled"], tu)
+        ll = _class_brief_jst(st["last_login_at"]) if has_ll else None
+        login_days = (today - ll.date()).days if ll else None   # JST の日付で数える (最終 9/10 → 10/19 は 39 日)
+        stud[sid] = {
+            "id": sid, "name": st["name"], "grade": st["grade"] or "", "band": _student_grade_band(st["grade"]),
+            "ai_path": path,
+            "ai_label": "AIなし" if path == "ai_nashi" else ("AI体験中" if (st["ai_disabled"] or 0) else "AIあり"),
+            "last_login_at": ll.astimezone(timezone.utc).isoformat() if ll else None,
+            "last_login_jst": f"{ll.month}/{ll.day}" if ll else None,
+            "login_days": login_days,
+            # 列が無い DB では判定しない (None)。一度も無い = 疑い
+            "login_stale": (None if not has_ll else (ll is None or login_days > _CLASS_BRIEF_STALE_LOGIN_DAYS)),
+            "open_count": 0, "overdue_count": 0, "blocking_count": 0, "oldest_days": None,
+            "open_items": [], "open_items_truncated": False,
+        }
+        for lb in mine:
+            by_label[lb].append(sid)
+    ids = sorted(stud)
+
+    # ── 未提出 (ドリル・宿題) ──
+    hw_st = _class_hw_settings()
+    chw_cut = _jst_day_start_utc_txt(now, int(hw_st["open_stale_days"])) if int(hw_st.get("open_stale_days") or 0) else None
+    rt_cut = _weakness_routine_cutoffs(now).get("open_stale")
+    items_by_sid = {sid: [] for sid in ids}
+
+    def _item(kind, title, subject, assigned_raw, due, *, blocking=False, drill_id=None, homework_id=None, answer_sheet=False):
+        aj = _class_brief_jst(assigned_raw)
+        aday = aj.date() if aj else None
+        if due is None and kind == "class_hw":
+            due = _class_brief_title_due(title, aday)
+        return {
+            "kind": kind, "title": title or "", "subject": subject or "",
+            "assigned_at": aj.astimezone(timezone.utc).isoformat() if aj else None,
+            "assigned_jst": f"{aj.month}/{aj.day}" if aj else None,
+            "due": due.isoformat() if due else None, "due_jst": f"{due.month}/{due.day}" if due else None,
+            "overdue": bool(due and due < as_of),
+            "days_open": max(0, (as_of - aday).days) if aday else None,
+            "blocking": bool(blocking), "drill_id": drill_id, "homework_id": homework_id, "answer_sheet": bool(answer_sheet),
+        }
+
+    for chunk in _class_brief_chunks(ids):
+        ph = ",".join(["?"] * len(chunk))
+        c.execute(
+            "SELECT a.student_id AS sid, a.assigned_at AS assigned_at, d.id AS drill_id, d.title AS title, d.subject AS subject, "
+            "d.created_by AS created_by FROM grammar_drill_assignments a JOIN grammar_drills d ON d.id = a.drill_id "
+            f"WHERE a.student_id IN ({ph}) AND COALESCE(a.status, 'open') <> 'completed' "
+            "AND " + _CLASS_BRIEF_NOT_SELF_SQL, tuple(chunk))
+        for r in c.fetchall() or []:
+            kind = _class_brief_drill_kind(r["created_by"])
+            ts = _ts_text(r["assigned_at"])
+            cut = chw_cut if kind == "class_hw" else (rt_cut if kind == "routine" else None)
+            # 未提出のままだと次の自動配信が止まる行 (積まない判定と同じ境目: 直近 N 日に配った分・配った日時が空の行も数える)
+            blocking = kind in ("class_hw", "routine") and (not cut or not ts or ts >= cut)
+            items_by_sid[int(r["sid"])].append(_item(kind, r["title"], _canon_grammar_subject(r["subject"]) or r["subject"],
+                                                     r["assigned_at"], None, blocking=blocking, drill_id=int(r["drill_id"])))
+    hw_rows = []
+    for chunk in _class_brief_chunks(ids):
+        ph = ",".join(["?"] * len(chunk))
+        c.execute("SELECT id, student_id, title, subject, due_date, created_at FROM homework_assignments "
+                  f"WHERE student_id IN ({ph}) AND COALESCE(status, 'open') <> 'completed'", tuple(chunk))
+        hw_rows.extend(c.fetchall() or [])
+
+    # ── 今週の提出 (ドリルと宿題) ──
+    done = {}
+    for chunk in _class_brief_chunks(ids):
+        ph = ",".join(["?"] * len(chunk))
+        c.execute(
+            "SELECT a.student_id AS sid, a.score_correct AS sc, a.score_total AS stt FROM grammar_drill_assignments a "
+            f"JOIN grammar_drills d ON d.id = a.drill_id WHERE a.student_id IN ({ph}) AND a.status = 'completed' "
+            "AND a.completed_at >= ? AND a.completed_at < ? AND " + _CLASS_BRIEF_NOT_SELF_SQL,
+            tuple(chunk) + (week_lo, week_hi))
+        for r in c.fetchall() or []:
+            e = done.setdefault(int(r["sid"]), {"drills": 0, "homework": 0, "scores": []})
+            e["drills"] += 1
+            e["scores"].append((r["sc"], r["stt"]))
+    hw_done = []
+    for chunk in _class_brief_chunks(ids):
+        ph = ",".join(["?"] * len(chunk))
+        c.execute(f"SELECT id, student_id FROM homework_assignments WHERE student_id IN ({ph}) AND status = 'completed' "
+                  "AND completed_at >= ? AND completed_at < ?", tuple(chunk) + (week_lo, week_hi))
+        hw_done.extend(c.fetchall() or [])
+    for r in hw_done:
+        done.setdefault(int(r["student_id"]), {"drills": 0, "homework": 0, "scores": []})["homework"] += 1
+
+    # ── 直近 14 日に配ったドリルの回答 (誤答の多い 3 問の材料) ──
+    asg = []
+    for chunk in _class_brief_chunks(ids):
+        ph = ",".join(["?"] * len(chunk))
+        c.execute(
+            "SELECT a.drill_id AS drill_id, a.student_id AS sid, a.status AS status, a.answers_json AS answers_json, "
+            "d.created_by AS created_by, d.subject AS subject, d.question_ids AS question_ids "
+            "FROM grammar_drill_assignments a JOIN grammar_drills d ON d.id = a.drill_id "
+            f"WHERE a.student_id IN ({ph}) AND a.assigned_at >= ? "
+            "AND " + _CLASS_BRIEF_NOT_SELF_SQL, tuple(chunk) + (win_lo,))
+        asg.extend(c.fetchall() or [])
+    drills = {}
+    for r in asg:
+        did = int(r["drill_id"])
+        dd = drills.get(did)
+        if dd is None:
+            try:
+                qids = [int(x) for x in json.loads(r["question_ids"] or "[]")]
+            except (TypeError, ValueError):
+                qids = []
+            o = _drill_auto_origin(r["created_by"])
+            dd = drills[did] = {"qids": qids, "class_label": o.get("class_label") if o.get("origin") == "class_hw" else None,
+                                "ptest": _class_brief_is_ptest(r["subject"], None), "members": set(), "answers": []}
+        dd["members"].add(int(r["sid"]))
+        if r["status"] == "completed":
+            try:
+                ans = json.loads(r["answers_json"] or "{}")
+            except (TypeError, ValueError):
+                ans = {}
+            if isinstance(ans, dict):
+                dd["answers"].append((int(r["sid"]), ans))
+    need_q = sorted({q for dd in drills.values() if not dd["ptest"] for q in dd["qids"]})
+    qinfo = {}
+    has_pass = _grammar_has_passages()
+    for chunk in _class_brief_chunks(need_q):
+        ph = ",".join(["?"] * len(chunk))
+        c.execute(f"SELECT id, subject, unit, stem, choices, answer, source{', passage_id' if has_pass else ''} "
+                  f"FROM grammar_questions WHERE id IN ({ph})", tuple(chunk))
+        for r in c.fetchall() or []:
+            if _class_brief_is_ptest(r["subject"], r["source"]):
+                continue
+            try:
+                ch = json.loads(r["choices"] or "[]")
+                ans_i = int(r["answer"])
+            except (TypeError, ValueError):
+                continue
+            if not isinstance(ch, list) or not (0 <= ans_i < len(ch)):
+                continue
+            qinfo[int(r["id"])] = {"subject": _canon_grammar_subject(r["subject"]) or (r["subject"] or ""), "unit": r["unit"] or "",
+                                   "stem": r["stem"] or "", "choices": [str(x) for x in ch], "answer": ans_i,
+                                   "passage_id": (int(r["passage_id"]) if has_pass and r["passage_id"] is not None else None)}
+    ptitles = {}
+    pids = sorted({v["passage_id"] for v in qinfo.values() if v["passage_id"] is not None})
+    for chunk in _class_brief_chunks(pids):
+        ph = ",".join(["?"] * len(chunk))
+        c.execute(f"SELECT id, title FROM grammar_passages WHERE id IN ({ph})", tuple(chunk))
+        for r in c.fetchall() or []:
+            ptitles[int(r["id"])] = r["title"] or ""
+
+    # 宿題の解答用紙 (記号) の印と今週の点数 (表が無い DB・読めないときは印なしで続ける。Postgres は失敗した 1 文で止まるので rollback)
+    sheets = {}
+    sheet_ids = [int(r["id"]) for r in hw_rows] + [int(r["id"]) for r in hw_done]
+    if sheet_ids and _hw_sheet_ready():
+        try:
+            sheets, _keys = _hw_load_sheets(c, sheet_ids)
+        except Exception as _se:
+            log.warning(f"[ClassBrief] 解答用紙を読めませんでした (印なしで続けます): {type(_se).__name__}")
+            sheets = {}
+            try:
+                conn.rollback()   # ここが最後の SELECT (この後は読まない)
+            except Exception:
+                pass
+    for r in hw_rows:
+        sid = int(r["student_id"])
+        items_by_sid[sid].append(_item("homework", r["title"], r["subject"], r["created_at"], _class_brief_date_or_none(r["due_date"]),
+                                       homework_id=int(r["id"]), answer_sheet=int(r["id"]) in sheets))
+    for r in hw_done:
+        sh = sheets.get(int(r["id"]))
+        if sh is not None and _hw_row_get(sh, "submitted_at") is not None:
+            done[int(r["student_id"])]["scores"].append((_hw_row_get(sh, "score_correct"), _hw_row_get(sh, "score_total")))
+
+    for sid, its in items_by_sid.items():
+        s = stud[sid]
+        its.sort(key=lambda x: (not x["overdue"], not x["blocking"], -(x["days_open"] if x["days_open"] is not None else -1)))
+        s["open_count"] = len(its)
+        s["overdue_count"] = sum(1 for x in its if x["overdue"])
+        s["blocking_count"] = sum(1 for x in its if x["blocking"])
+        ds = [x["days_open"] for x in its if x["days_open"] is not None]
+        s["oldest_days"] = max(ds) if ds else None
+        s["open_items"] = its[:_CLASS_BRIEF_ITEMS_CAP]
+        s["open_items_truncated"] = len(its) > _CLASS_BRIEF_ITEMS_CAP
+
+    def _praise(sid):
+        e = done.get(sid)
+        if not e or not (e["drills"] + e["homework"]):
+            return None
+        best, perfect = None, False
+        for sc, stt in e["scores"]:
+            try:
+                sc_i, st_i = int(sc or 0), int(stt or 0)
+            except (TypeError, ValueError):
+                continue
+            if st_i <= 0:
+                continue
+            if sc_i >= st_i:
+                perfect = True
+            if best is None or (sc_i / st_i, st_i) > (best[0] / best[1], best[1]):
+                best = (sc_i, st_i)
+        return {"id": sid, "name": stud[sid]["name"], "count": e["drills"] + e["homework"], "drills": e["drills"],
+                "homework": e["homework"], "perfect": perfect,
+                "best": ({"correct": best[0], "total": best[1], "pct": int(round(100 * best[0] / best[1]))} if best else None)}
+
+    for cl in classes:
+        lb = cl["label"]
+        mem = set(by_label.get(lb, []))
+        members = sorted((stud[s] for s in mem), key=lambda s: (-s["open_count"], str(s["name"] or ""), s["id"]))
+        praise = [p for p in (_praise(s) for s in mem) if p]
+        praise.sort(key=lambda p: (-p["count"], not p["perfect"], str(p["name"] or ""), p["id"]))
+        # 誤答の多い 3 問: このクラスのクラス自動宿題 (受け取った生徒が 1 人でも) + ほかのドリルはこのクラスの 2 人以上に配った分だけ。
+        #   数えるのはこのクラスの生徒の提出済みの答えだけ。並べ方 = 正解率の低い順 → このクラスのクラス自動宿題を先 → 回答の多い順 → 問題 id
+        stats = {}
+        for did, dd in drills.items():
+            if dd["ptest"]:
+                continue
+            own = dd["class_label"] == lb
+            if not (own and (dd["members"] & mem)) and len(dd["members"] & mem) < 2:
+                continue
+            for s_, ans in dd["answers"]:
+                if s_ not in mem:
+                    continue
+                for q in dd["qids"]:
+                    qi = qinfo.get(q)
+                    if qi is None:
+                        continue
+                    v = ans.get(str(q), ans.get(q))
+                    if isinstance(v, bool):
+                        continue
+                    try:
+                        ci = int(v)
+                    except (TypeError, ValueError):
+                        continue
+                    stq = stats.setdefault(q, {"n": 0, "correct": 0, "chosen": {}, "own": False})
+                    stq["n"] += 1
+                    stq["own"] = stq["own"] or own
+                    if ci == qi["answer"]:
+                        stq["correct"] += 1
+                    if 0 <= ci < len(qi["choices"]):
+                        stq["chosen"][ci] = stq["chosen"].get(ci, 0) + 1
+        cand = [(q, v) for q, v in stats.items() if v["n"] >= _CLASS_BRIEF_MIN_ANSWERS and v["correct"] < v["n"]]
+        cand.sort(key=lambda t: (t[1]["correct"] / t[1]["n"], not t[1]["own"], -t[1]["n"], t[0]))
+        top = []
+        for q, v in cand[:_CLASS_BRIEF_TOP_N]:
+            qi = qinfo[q]
+            wrong = sorted(((cnt, -i) for i, cnt in v["chosen"].items() if i != qi["answer"]), reverse=True)
+            top.append({
+                "question_id": q, "subject": qi["subject"], "subject_ja": _grammar_subject_label_ja(qi["subject"]), "unit": qi["unit"],
+                "stem": qi["stem"], "choices": qi["choices"], "answer": qi["answer"],
+                "passage_title": (ptitles.get(qi["passage_id"]) if qi["passage_id"] is not None else None),
+                "n": v["n"], "correct_n": v["correct"], "accuracy": round(v["correct"] / v["n"], 3),
+                "accuracy_pct": int(round(100 * v["correct"] / v["n"])),
+                "choice_counts": [int(v["chosen"].get(i, 0)) for i in range(len(qi["choices"]))],
+                "wrong_top": ({"index": -wrong[0][1], "count": wrong[0][0]} if wrong else None),
+                "from_class_hw": bool(v["own"]),
+            })
+        rm = _CLASS_HW_ROUTINE_MAP.get(lb) or {}
+        out["classes"].append({
+            "label": lb, "time": cl["time"], "dow": cl["dow"], "dow_ja": _CLASS_BRIEF_DOW_JA[cl["dow"]],
+            "period": _class_brief_period(lb), "meets_on_date": cl["dow"] == dow, "routine_kind": rm.get("kind") or "",
+            "members_n": len(members), "open_members_n": sum(1 for s in members if s["open_count"]),
+            "open_items_n": sum(s["open_count"] for s in members), "before_start_n": before_start.get(lb, 0),
+            "members": members, "submitted_this_week": praise, "top_missed": top,
+        })
+    return out
+
+
+@app.get("/api/admin/class-brief")
+def admin_class_brief(request: Request, authorization: Optional[str] = Header(None)):
+    """🗓 admin: 今日の授業ブリーフ (読むだけ・CEO「🗓 今日の授業ブリーフ」)。
+    query: date=YYYY-MM-DD (既定 = JST の今日) / class=<時間割のクラス名> (そのクラスだけ・全角や空白の違いは同じ名前・曜日が違っても出す)。
+    ★管理者トークンだけ (生徒の名前を返すので X-Cron-Secret では読めない)。書かない・events にも残さない。
+    応答 version=1 (CEO は無ければ「サーバ反映待ち」) / classes[]: label・time・在籍 members_n・未提出のいる人数 open_members_n・
+    members[] (id・name・学年の区分・AIあり/なし・最終ログイン (JST)・ログイン切れの疑い・未提出の行 = 種類・題名・配った日・〆・〆過ぎ・
+    何日たったか・次の自動配信を止めているか) / submitted_this_week[] (今週の月曜 0:00 JST から出した本数・一番よい点・満点) /
+    top_missed[] (正解率の低い 3 問: 問題文・選択肢・正解の番号 (0 始まり)・正解率・回答数・一番選ばれた誤答)。timetable = クラスの選択肢。"""
+    _verify_admin_required(authorization)
+    qp = request.query_params
+    raw_date = str(qp.get("date") or "").strip()
+    now = _class_brief_now()
+    if raw_date:
+        if not re.match(r"^\d{4}-\d{2}-\d{2}$", raw_date):
+            raise HTTPException(status_code=400, detail="date は YYYY-MM-DD で指定してください")
+        try:
+            brief_day = datetime.strptime(raw_date, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="date は YYYY-MM-DD で指定してください")
+    else:
+        brief_day = now.astimezone(_JST).date()
+    raw_label = str(qp.get("class") or qp.get("class_label") or "").strip()
+    only = None
+    if raw_label:
+        hits = [lb for lb in (cl["label"] for cl in _TIMETABLE_CLASSES) if _class_hw_label_key(lb) == _class_hw_label_key(raw_label)]
+        if len(hits) != 1:
+            raise HTTPException(status_code=400, detail="class が時間割のクラスと一致しません")
+        only = hits[0]
+    conn = db()
+    try:
+        body = _class_brief_build(conn, brief_day=brief_day, only_label=only, now=now)
+    finally:
+        conn.close()
+    return {"ok": True, "version": 1, **body, "class_filter": only,
+            "timetable": [{"label": cl["label"], "dow": cl["dow"], "time": cl["time"]} for cl in _TIMETABLE_CLASSES]}
+
+
+# ==========================================================================
 # Routes: Exam Results (外部模試結果 - 国公立難関大学コース限定)
 # 塾長指示 2026-05-06: 模試結果を AI カリキュラム/進捗診断に反映
 # ==========================================================================

@@ -495,6 +495,7 @@
         <div class="tb-group">
           <h3>👨‍🎓 生徒・学習</h3>
           <div class="tb-buttons">
+            <button type="button" class="tb-btn hub-btn" data-hub-target="classBriefSection" data-hub-label="🗓 今日の授業ブリーフ (未提出・今週出した人・誤答の多い3問)" title="授業の前に 1 分: クラスごとの未提出・今週出した人・誤答の多い 3 問 (📺 で問題だけを画面共有)"><span class="tb-icon">🗓</span><span class="tb-label">今日の授業</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="rosterSection" data-hub-label="📋 生徒ロスター (課金状況)"><span class="tb-icon">📋</span><span class="tb-label">生徒ロスター</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="weaknessHeatmapSection" data-hub-label="🎯 全生徒弱点ヒートマップ"><span class="tb-icon">🎯</span><span class="tb-label">弱点ヒートマップ</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="homeworkStatusSection" data-hub-label="📚 宿題 実施状況"><span class="tb-icon">📚</span><span class="tb-label">宿題状況</span></button>
@@ -543,6 +544,34 @@
           </div>
         </div>
       </div>
+    </section>
+
+    <!-- 🗓 今日の授業ブリーフ (2026-10-18 塾長「①の授業前ブリーフも作っておいて」= 成績を上げる提案 ①「授業で宿題を回す」)。
+         授業の前に 1 分で見る画面: クラスごとの未提出・今週出した人 (ほめる用)・誤答の多い 3 問 (📺 で Zoom の画面共有用に問題だけ大きく出す)。
+         読むだけ = GET /api/admin/class-brief (管理者トークン・書かない)。開いたときだけ読む (ページを開いただけではサーバに聞かない)。
+         置き場所: ハブの「👨‍🎓 生徒・学習」の先頭のボタン (CEO を開いて最初に目に入る) + 📝 科目別 単元ドリルの 🏫 クラス自動宿題カードのボタン。
+         名前・題名・問題文はすべて esc()。📺 の画面には生徒の名前を出さず、正解は「正解を見せる」まで出さない。inline だけ = ceo.js は触らない -->
+    <section id="classBriefSection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.32); border-radius: 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem;flex-wrap:wrap;gap:0.5rem;">
+        <h2 style="font-size:1.15rem;color:#7dd3fc;margin:0;">🗓 今日の授業ブリーフ <span style="font-size:0.72rem;color:#94a3b8;font-weight:400;">(授業の前に 1 分: 未提出・今週出した人・誤答の多い 3 問)</span></h2>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;margin-bottom:0.5rem;font-size:0.8rem;">
+        <button id="cbTodayBtn" type="button" onclick="cbSetDay(0)" style="background:rgba(56,189,248,0.16);color:#bae6fd;border:1px solid rgba(56,189,248,0.5);padding:0.35rem 0.85rem;border-radius:8px;font-size:0.8rem;font-weight:800;cursor:pointer;">今日</button>
+        <button id="cbTomorrowBtn" type="button" onclick="cbSetDay(1)" style="background:rgba(148,163,184,0.12);color:#cbd5e1;border:1px solid #475569;padding:0.35rem 0.85rem;border-radius:8px;font-size:0.8rem;font-weight:700;cursor:pointer;">明日</button>
+        <input id="cbDate" type="date" onchange="cbLoad()" title="日付を選ぶと、その曜日のクラスを出します" style="background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:6px;padding:0.25rem 0.45rem;font-size:0.8rem;">
+        <select id="cbClass" onchange="cbLoad()" title="クラスでしぼります" style="background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:6px;padding:0.25rem 0.4rem;font-size:0.8rem;max-width:16rem;">
+          <option value="">その日のクラスすべて</option>
+        </select>
+        <button id="cbReloadBtn" type="button" onclick="cbLoad()" title="読み直します (読むだけ・生徒には何も届きません)" style="background:rgba(148,163,184,0.12);color:#cbd5e1;border:1px solid #475569;padding:0.35rem 0.75rem;border-radius:8px;font-size:0.8rem;font-weight:700;cursor:pointer;">🔄 更新</button>
+        <span id="cbMsg" style="font-size:0.76rem;"></span>
+      </div>
+      <div style="font-size:0.74rem;color:#a1a1aa;line-height:1.65;margin-bottom:0.55rem;">
+        未提出 = クラス自動宿題・3日ドリル・塾長が配ったドリルと宿題（生徒が自分で始めた今日の1問は数えません）。<b style="color:#fcd34d;">⛔ 次が止まる</b> = 出さないと次の自動の宿題が届かない分。
+        <b style="color:#fca5a5;">🔑 ログイン切れの疑い</b> = 最終ログインから 30 日を過ぎた（か一度も無い）生徒。今週出した人は月曜 0:00 から。誤答の多い 3 問は直近 14 日にこのクラスの生徒に配ったドリルから（回答 2 件以上・習熟度テストは出しません）。
+        「📺 問題だけ表示」は Zoom の画面共有用です（生徒の名前は出ません・正解は「正解を見せる」まで隠します・← → で移動・Esc で閉じる）。
+      </div>
+      <div id="cbResult"><div style="color:#71717a;font-size:0.8rem;">「今日」か「明日」を押すと読み込みます。</div></div>
+      <div id="cbShare" role="dialog" aria-modal="true" aria-label="問題だけ表示" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:100000;background:#0b1120;color:#f8fafc;overflow:auto;"></div>
     </section>
 
     <!-- 🎯 全生徒弱点ヒートマップ (2026-05-13 Task 3) - 教材作成優先度の意思決定支援 -->
@@ -820,6 +849,7 @@
         </div>
         <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
           <button id="chwDryBtn" type="button" onclick="chwDryRun()" title="今もう一度回したら、どのクラスの誰に何を配るかを、本番と同じ選び方で計算して出します。配信はせず、生徒には何も届きません" style="background:rgba(16,185,129,0.16);color:#a7f3d0;border:1px solid rgba(16,185,129,0.5);padding:0.4rem 0.9rem;border-radius:8px;font-size:0.8rem;font-weight:800;cursor:pointer;">🔍 次の宿題を確認（配信しない）</button>
+          <button id="chwBriefBtn" type="button" onclick="cbOpenFromCard()" title="授業の前に 1 分: クラスごとの未提出・今週出した人・誤答の多い 3 問 (📺 で問題だけを画面共有)。読むだけです" style="background:rgba(56,189,248,0.14);color:#bae6fd;border:1px solid rgba(56,189,248,0.5);padding:0.4rem 0.9rem;border-radius:8px;font-size:0.8rem;font-weight:800;cursor:pointer;">🗓 今日の授業ブリーフ</button>
           <button id="chwResultBtn" type="button" onclick="chwShowResults()" title="下の配信済みドリル一覧を「🏫 クラス自動宿題」に切り替えます (誰が解いたか・問題別の正解率)" style="background:rgba(148,163,184,0.12);color:#cbd5e1;border:1px solid #475569;padding:0.4rem 0.9rem;border-radius:8px;font-size:0.8rem;font-weight:700;cursor:pointer;">📋 クラス自動宿題の結果</button>
           <span id="chwMsg" style="font-size:0.76rem;"></span>
         </div>
@@ -15300,6 +15330,280 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       var cv = el('spCovBtn'); if (cv) cv.addEventListener('click', sapuriCoverageShow);
       var hb = document.querySelector('#ceoHubMenu [data-hub-target="sapuriSection"]'); if (hb) hb.addEventListener('click', sapuriSwitchLoad);
       if (window.AdminAuth && AdminAuth.getToken && AdminAuth.getToken()) setTimeout(sapuriSwitchLoad, 500);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind); else bind();
+  })();
+  </script>
+  <script>
+  // 🗓 今日の授業ブリーフ (2026-10-18 塾長「①の授業前ブリーフも作っておいて」)。サーバ = GET /api/admin/class-brief (読むだけ・管理者トークン)。
+  //   開いたときだけ読む (ハブのボタン・🏫 カードのボタン・今日/明日/日付/クラス/🔄)。ページを開いただけではサーバに聞かない。
+  //   応答に version が無い / 404・405 = 古いサーバ →「サーバ反映待ち」・503 →「一時的に応答できません」(どちらも前の表は消す = 別の日の表と読み違えない)。
+  //   名前・題名・問題文・クラス名は必ず _cbE (escape)。onclick には生徒 id とクラス・問題の番号 (数値) だけを入れる (引用符で壊れない)。
+  //   📺 問題だけ表示 (_cbShareHtml) は top_missed の問題文・選択肢とクラス名だけを読む (生徒の名前を一切読まない)。
+  //   正解・クラスの正解率・一番多かった誤答は「正解を見せる」の後だけ。← → で移動 (移ると正解はまた隠す)・Esc / ✕ で閉じる。
+  (function () {
+    var CB_URL = '/api/admin/class-brief';
+    var KIND_JA = { class_hw: '🏫 クラス自動宿題', routine: '🎯 3日ドリル', mission: '🧩 15問ミッション', admin: '📝 塾長のドリル', homework: '📚 宿題', other: '📝 ドリル' };
+    var BAND_JA = { kosei: '高校', chugaku: '中学', shougaku: '小学' };
+    var NUM = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧'];
+    var _cbLast = null, _cbSeq = 0, _cbShare = null;
+    function _cbE(v) {
+      return String(v == null ? '' : v).replace(/[&<>"']/g, function (ch) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+      });
+    }
+    function _cbN(v) { var n = Number(v); return isFinite(n) ? n : 0; }
+    function _cbPill(txt, col, bg, title) {
+      return '<span' + (title ? ' title="' + _cbE(title) + '"' : '') + ' style="display:inline-block;font-size:0.72rem;padding:0.06rem 0.5rem;border-radius:10px;background:'
+        + bg + ';color:' + col + ';border:1px solid ' + col + '55;margin:0.1rem 0.25rem 0.1rem 0;white-space:nowrap;">' + _cbE(txt) + '</span>';
+    }
+    function _cbName(id, name) {   // 押すと生徒詳細。id は数値にしてから onclick に入れる
+      var n = _cbN(id);
+      return '<a href="#" onclick="event.preventDefault();window.showStudentDetail&&window.showStudentDetail(' + n + ')" title="クリックで生徒詳細" '
+        + 'style="color:#e5e7eb;font-weight:700;text-decoration:underline dotted;">' + _cbE(name || ('ID' + n)) + '</a>';
+    }
+    function _cbChoiceLabel(i) { return NUM[i] || (String(i + 1) + '.'); }
+    function _cbJstDay(offset) {   // JST の今日 + offset 日 = 'YYYY-MM-DD' (端末のタイムゾーンに関係なく JST)
+      return new Date(Date.now() + 9 * 3600 * 1000 + (Number(offset) || 0) * 86400000).toISOString().slice(0, 10);
+    }
+    function _cbDow(ymd) {   // 'YYYY-MM-DD' → 0=日 … 6=土 (UTC で読む = 端末のタイムゾーンでずれない)
+      var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
+      return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay() : -1;
+    }
+    function _cbMemberRow(s) {
+      var items = Array.isArray(s.open_items) ? s.open_items : [];
+      var nashi = s.ai_path === 'ai_nashi';
+      var h = '<div style="padding:0.3rem 0;border-bottom:1px solid rgba(51,65,85,0.5);">' + _cbName(s.id, s.name) + ' ';
+      h += _cbPill(s.ai_label || (nashi ? 'AIなし' : 'AIあり'), nashi ? '#5eead4' : '#c4b5fd', 'rgba(148,163,184,0.08)');
+      if (BAND_JA[s.band]) h += _cbPill(BAND_JA[s.band], '#cbd5e1', 'rgba(148,163,184,0.06)');
+      h += _cbPill('未提出 ' + _cbN(s.open_count) + ' 本', '#fecaca', 'rgba(248,113,113,0.10)');
+      if (_cbN(s.overdue_count)) h += _cbPill('〆過ぎ ' + _cbN(s.overdue_count), '#fca5a5', 'rgba(248,113,113,0.18)', '期限 (〆) を過ぎた未提出');
+      if (_cbN(s.blocking_count)) h += _cbPill('⛔ 次が止まる', '#fcd34d', 'rgba(251,191,36,0.12)', '出さないと次の自動の宿題が届きません');
+      if (s.oldest_days != null) h += _cbPill(_cbN(s.oldest_days) + '日', '#cbd5e1', 'rgba(148,163,184,0.08)', 'いちばん古い未提出を配ってからの日数');
+      if (s.login_stale) {
+        h += _cbPill('🔑 ログイン切れの疑い（' + (s.last_login_jst ? '最終 ' + s.last_login_jst : 'ログインなし') + '）', '#fca5a5', 'rgba(248,113,113,0.10)',
+          '最終ログインから 30 日を過ぎています。授業でログインし直してもらってください');
+      }
+      if (items.length) {
+        h += '<details style="margin-top:0.15rem;"><summary style="cursor:pointer;font-size:0.72rem;color:#94a3b8;">中身を見る</summary>'
+          + '<div style="font-size:0.74rem;color:#cbd5e1;line-height:1.7;margin:0.2rem 0 0.1rem 0.4rem;">';
+        h += items.map(function (it) {
+          var bits = [];
+          if (it.assigned_jst) bits.push('配った ' + it.assigned_jst);
+          if (it.due_jst) bits.push('〆 ' + it.due_jst);
+          if (it.days_open != null) bits.push(_cbN(it.days_open) + '日');
+          return '<div>' + _cbE(KIND_JA[it.kind] || it.kind || '') + ' · ' + _cbE(it.title || '(題名なし)')
+            + ' <span style="color:#71717a;">' + _cbE(bits.join(' · ')) + '</span>'
+            + (it.overdue ? ' <b style="color:#fca5a5;">〆過ぎ</b>' : '')
+            + (it.blocking ? ' <span title="出さないと次の自動の宿題が届きません" style="color:#fcd34d;">⛔</span>' : '')
+            + (it.answer_sheet ? ' <span style="color:#a5b4fc;">✍️ 解答用紙</span>' : '') + '</div>';
+        }).join('');
+        if (s.open_items_truncated) h += '<div style="color:#71717a;">…ほかにもあります（生徒詳細で全部見られます）</div>';
+        h += '</div></details>';
+      }
+      return h + '</div>';
+    }
+    function _cbPraise(p) {
+      var b = p.best ? (' ' + _cbN(p.best.correct) + '/' + _cbN(p.best.total)) : '';
+      return '<span style="display:inline-block;margin:0.15rem 0.3rem 0.15rem 0;padding:0.12rem 0.55rem;border-radius:12px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.4);font-size:0.76rem;">'
+        + _cbName(p.id, p.name) + ' <span title="今週出した本数と一番よい点" style="color:#86efac;">✓' + _cbN(p.count) + _cbE(b) + '</span>'
+        + (p.perfect ? ' <span title="満点あり">💯</span>' : '') + '</span>';
+    }
+    function _cbQuestion(q, i) {   // CEO の画面 (塾長だけが見る): 正解 ◯・一番多かった誤答 ✗・選んだ数
+      var ch = Array.isArray(q.choices) ? q.choices : [];
+      var cc = Array.isArray(q.choice_counts) ? q.choice_counts : [];
+      var wt = (q.wrong_top && q.wrong_top.index != null) ? _cbN(q.wrong_top.index) : -1;
+      var h = '<div style="padding:0.35rem 0;border-bottom:1px solid rgba(51,65,85,0.5);">';
+      h += '<div style="font-size:0.74rem;color:#94a3b8;">問' + (i + 1) + ' · 正解率 <b style="color:#fca5a5;">' + _cbN(q.accuracy_pct) + '%</b>（'
+        + _cbN(q.correct_n) + '/' + _cbN(q.n) + '）· ' + _cbE(q.subject_ja || '') + (q.unit ? ' ' + _cbE(q.unit) : '') + '</div>';
+      if (q.passage_title) h += '<div style="font-size:0.72rem;color:#a5b4fc;">📖 本文: ' + _cbE(q.passage_title) + '</div>';
+      h += '<div style="font-size:0.82rem;color:#e5e7eb;white-space:pre-wrap;margin:0.15rem 0;">' + _cbE(q.stem) + '</div>';
+      h += ch.map(function (c, k) {
+        var ok = k === _cbN(q.answer), wr = k === wt;
+        return '<div style="font-size:0.78rem;' + (ok ? 'color:#86efac;font-weight:700;' : (wr ? 'color:#fca5a5;' : 'color:#cbd5e1;')) + '">'
+          + (ok ? '◯ ' : (wr ? '✗ ' : '　 ')) + _cbE(_cbChoiceLabel(k)) + ' ' + _cbE(c) + ' <span style="color:#71717a;">(' + _cbN(cc[k]) + ')</span>'
+          + (wr ? ' <span style="font-size:0.7rem;">← いちばん多かった誤答 ' + _cbN(q.wrong_top.count) + '件</span>' : '') + '</div>';
+      }).join('');
+      return h + '</div>';
+    }
+    function _cbClassCard(cl, ci) {
+      var mem = Array.isArray(cl.members) ? cl.members : [];
+      var open = mem.filter(function (s) { return _cbN(s.open_count) > 0; });
+      var pr = Array.isArray(cl.submitted_this_week) ? cl.submitted_this_week : [];
+      var top = Array.isArray(cl.top_missed) ? cl.top_missed : [];
+      var om = _cbN(cl.open_members_n);
+      var h = '<div class="cb-class" style="margin:0 0 0.8rem;padding:0.7rem 0.85rem;background:rgba(15,23,42,0.55);border:1px solid rgba(56,189,248,0.28);border-radius:10px;">';
+      h += '<div style="display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;margin-bottom:0.4rem;">'
+        + '<b style="color:#e0f2fe;font-size:0.95rem;">' + _cbE(cl.label) + '</b>'
+        + '<span style="color:#94a3b8;font-size:0.76rem;">' + _cbE(cl.time || '') + (cl.meets_on_date === false ? '（' + _cbE(cl.dow_ja || '') + '曜のクラス）' : '') + '</span>'
+        + _cbPill('在籍 ' + _cbN(cl.members_n), '#bae6fd', 'rgba(56,189,248,0.10)')
+        + _cbPill('未提出 ' + om + '名', om ? '#fca5a5' : '#86efac', om ? 'rgba(248,113,113,0.12)' : 'rgba(52,211,153,0.10)')
+        + (top.length ? '<button type="button" onclick="cbShareOpen(' + _cbN(ci) + ')" title="Zoom の画面共有用に、誤答の多い問題だけを大きく出します (名前は出ません・正解は押すまで隠します)" '
+          + 'style="margin-left:auto;background:rgba(56,189,248,0.18);color:#e0f2fe;border:1px solid rgba(56,189,248,0.55);border-radius:8px;padding:0.3rem 0.8rem;font-size:0.8rem;font-weight:800;cursor:pointer;">📺 問題だけ表示</button>' : '')
+        + '</div>';
+      if (!mem.length) {
+        h += '<div style="color:#71717a;font-size:0.78rem;margin-bottom:0.3rem;">このクラスの在籍生がいません（受講クラスは生徒詳細の「在籍クラス」か、🏫 通塾クラスの「クラス別 受講生 一括登録」で設定します）'
+          + (_cbN(cl.before_start_n) ? '・受講開始前 ' + _cbN(cl.before_start_n) + '名' : '') + '</div>';
+      }
+      h += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:0.7rem;">';
+      h += '<div><div style="font-size:0.8rem;color:#fca5a5;font-weight:800;margin-bottom:0.2rem;">📮 未提出 ' + open.length + '名</div>'
+        + (open.length ? open.map(_cbMemberRow).join('') : (mem.length ? '<div style="color:#86efac;font-size:0.78rem;">全員出しています 🎉</div>' : ''))
+        + (open.length && open.length < mem.length ? '<div style="color:#71717a;font-size:0.72rem;margin-top:0.2rem;">未提出なし ' + (mem.length - open.length) + '名</div>' : '')
+        + '</div>';
+      h += '<div><div style="font-size:0.8rem;color:#86efac;font-weight:800;margin-bottom:0.2rem;">👏 今週出した人 ' + pr.length + '名</div>'
+        + (pr.length ? pr.map(_cbPraise).join('') : '<div style="color:#71717a;font-size:0.78rem;">今週（月曜 0:00 から）はまだいません</div>') + '</div>';
+      h += '<div><div style="font-size:0.8rem;color:#fcd34d;font-weight:800;margin-bottom:0.2rem;">❌ 誤答の多い 3 問</div>'
+        + (top.length ? top.map(_cbQuestion).join('') : '<div style="color:#71717a;font-size:0.78rem;">直近 14 日の回答がまだ足りません（回答 2 件以上で誤答のある問題から選びます）</div>') + '</div>';
+      return h + '</div></div>';
+    }
+    function _cbRender(d) {
+      if (!d || !d.version) {
+        return '<div style="color:#fbbf24;font-size:0.82rem;">⚠️ サーバ反映待ちです（今日の授業ブリーフがまだ本番に出ていません）。数分後に 🔄 を押してください。</div>';
+      }
+      var cls = Array.isArray(d.classes) ? d.classes : [];
+      var h = '<div style="font-size:0.82rem;color:#cbd5e1;margin-bottom:0.45rem;font-weight:700;">' + _cbE(d.date || '') + '（' + _cbE(d.dow_ja || '') + '）'
+        + (d.date && d.date === d.today ? ' = 今日' : '') + '</div>';
+      if (!cls.length) return h + '<div style="color:#94a3b8;font-size:0.82rem;">この日は時間割の授業がありません。</div>';
+      return h + cls.map(_cbClassCard).join('');
+    }
+    function _cbFillClasses(d) {   // クラスの選択肢 = その日の曜日のクラス (サーバの時間割から・ここに表を写さない)
+      var sel = document.getElementById('cbClass');
+      if (!sel || !d || !Array.isArray(d.timetable)) return;
+      var cur = String(sel.value || ''), dow = _cbN(d.dow);
+      var opts = d.timetable.filter(function (c) { return _cbN(c.dow) === dow; });
+      sel.innerHTML = '<option value="">その日のクラスすべて</option>' + opts.map(function (c) {
+        return '<option value="' + _cbE(c.label) + '"' + (c.label === cur ? ' selected' : '') + '>' + _cbE(c.label) + '</option>';
+      }).join('');
+      sel.value = opts.some(function (c) { return c.label === cur; }) ? cur : '';
+    }
+    function _cbFail(status, d) {
+      if (status === 404 || status === 405) return '⚠️ サーバ反映待ちです（今日の授業ブリーフがまだ本番に出ていません）。数分後に 🔄 を押してください。';
+      if (status === 503) return '⚠️ サーバが一時的に応答できません（503）。少し待ってから 🔄 を押してください。';
+      if (status === 401) return 'ログインが切れました。ログインし直してから 🔄 を押してください。';
+      return '読み込めませんでした（' + status + (d && d.detail ? '・' + String(d.detail) : '') + '）。';
+    }
+    async function cbLoad() {
+      var di = document.getElementById('cbDate'), sel = document.getElementById('cbClass');
+      var msg = document.getElementById('cbMsg'), out = document.getElementById('cbResult');
+      var day = (di && /^\d{4}-\d{2}-\d{2}$/.test(String(di.value || ''))) ? String(di.value) : _cbJstDay(0);
+      if (di && di.value !== day) di.value = day;
+      var cls = sel ? String(sel.value || '') : '';
+      if (cls && _cbLast && Array.isArray(_cbLast.timetable)) {   // 選んだクラスがその日の曜日に無ければ「すべて」に戻す
+        var hit = _cbLast.timetable.filter(function (c) { return c.label === cls; })[0];
+        if (!hit || _cbN(hit.dow) !== _cbDow(day)) { cls = ''; if (sel) sel.value = ''; }
+      }
+      var seq = ++_cbSeq;
+      if (msg) msg.innerHTML = '<span style="color:#94a3b8;">⏳ 読み込み中…</span>';
+      if (!window.AdminAuth || typeof window.AdminAuth.fetch !== 'function') {
+        if (msg) msg.innerHTML = '<span style="color:#fca5a5;">ログインしてから開いてください</span>';
+        return;
+      }
+      try {
+        var res = await window.AdminAuth.fetch(CB_URL + '?date=' + encodeURIComponent(day) + (cls ? '&class=' + encodeURIComponent(cls) : ''));
+        var d = null;
+        try { d = await res.json(); } catch (_) { d = null; }
+        if (seq !== _cbSeq) return;   // 後から押した分の応答だけを描く (遅れて届いた前の応答で上書きしない)
+        if (!res.ok) {
+          _cbLast = null;
+          if (out) out.innerHTML = '<div style="color:' + (res.status === 404 || res.status === 405 || res.status === 503 ? '#fbbf24' : '#fca5a5') + ';font-size:0.82rem;">' + _cbE(_cbFail(res.status, d)) + '</div>';
+          if (msg) msg.innerHTML = '';
+          return;
+        }
+        _cbLast = (d && d.version) ? d : null;
+        if (out) out.innerHTML = _cbRender(d);
+        if (_cbLast) _cbFillClasses(_cbLast);
+        if (msg) msg.innerHTML = _cbLast ? '<span style="color:#86efac;">✅ 読み込みました（読むだけ・生徒には何も届きません）</span>' : '';
+      } catch (e) {
+        if (seq !== _cbSeq) return;
+        if (msg) msg.innerHTML = '<span style="color:#fca5a5;">通信エラー: ' + _cbE(e && e.message ? e.message : e) + '</span>';
+      }
+    }
+    function cbSetDay(offset) {
+      var di = document.getElementById('cbDate');
+      if (di) di.value = _cbJstDay(offset);
+      return cbLoad();
+    }
+    // 📺 問題だけ表示 (Zoom の画面共有用)。引数はクラスの番号だけ。開いた時点のクラスの問題を写して持つ (読み直しても入れ替わらない)
+    function _cbShareHtml(cl, qi, reveal) {
+      var top = (cl && Array.isArray(cl.top_missed)) ? cl.top_missed : [];
+      var q = top[qi];
+      if (!q) return '';
+      var ch = Array.isArray(q.choices) ? q.choices : [];
+      var wt = (reveal && q.wrong_top && q.wrong_top.index != null) ? _cbN(q.wrong_top.index) : -1;
+      var btn = 'background:rgba(148,163,184,0.16);color:#f8fafc;border:1px solid #64748b;border-radius:10px;padding:0.6rem 1.3rem;font-size:1.2rem;font-weight:800;cursor:pointer;';
+      var h = '<div style="max-width:1100px;margin:0 auto;padding:1.5rem 2rem 2rem;">';
+      h += '<div style="display:flex;align-items:center;gap:1rem;font-size:1.1rem;color:#94a3b8;margin-bottom:1.2rem;flex-wrap:wrap;">'
+        + '<span>' + _cbE(cl.label || '') + ' · 問 ' + (qi + 1) + ' / ' + top.length + '</span>'
+        + '<button type="button" onclick="cbShareClose()" title="閉じる (Esc)" style="margin-left:auto;' + btn + '">✕ 閉じる</button></div>';
+      if (q.passage_title) h += '<div style="font-size:1.2rem;color:#a5b4fc;margin-bottom:0.6rem;">📖 ' + _cbE(q.passage_title) + '</div>';
+      h += '<div style="font-size:2rem;line-height:1.6;white-space:pre-wrap;margin-bottom:1.4rem;">' + _cbE(q.stem) + '</div>';
+      h += ch.map(function (c, k) {
+        var ok = !!reveal && k === _cbN(q.answer), wr = k === wt;
+        return '<div style="font-size:1.8rem;line-height:1.5;padding:0.45rem 0.9rem;margin:0.35rem 0;border-radius:12px;border:2px solid '
+          + (ok ? '#22c55e;background:rgba(34,197,94,0.18);' : (wr ? '#f87171;background:rgba(248,113,113,0.12);' : '#334155;')) + '">'
+          + (ok ? '◯ ' : '') + _cbE(_cbChoiceLabel(k)) + ' ' + _cbE(c)
+          + (wr ? ' <span style="font-size:1.1rem;color:#fca5a5;">← いちばん多かった答え</span>' : '') + '</div>';
+      }).join('');
+      h += '<div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;margin-top:1.4rem;">'
+        + '<button type="button" onclick="cbShareNav(-1)"' + (qi > 0 ? '' : ' disabled') + ' style="' + btn + '">← 前</button>'
+        + (reveal ? '<span style="font-size:1.3rem;color:#86efac;font-weight:800;">正解 ' + _cbE(_cbChoiceLabel(_cbN(q.answer))) + '（クラスの正解率 ' + _cbN(q.accuracy_pct) + '%）</span>'
+                  : '<button type="button" onclick="cbShareReveal()" style="' + btn + 'background:rgba(34,197,94,0.22);border-color:#22c55e;">正解を見せる</button>')
+        + '<button type="button" onclick="cbShareNav(1)"' + (qi < top.length - 1 ? '' : ' disabled') + ' style="' + btn + '">次 →</button>'
+        + '<span style="margin-left:auto;font-size:0.9rem;color:#64748b;">← → で移動 · Esc で閉じる</span></div>';
+      return h + '</div>';
+    }
+    function _cbShareDraw() {
+      var box = document.getElementById('cbShare');
+      if (!box) return;
+      var html = _cbShare ? _cbShareHtml(_cbShare.cl, _cbShare.qi, _cbShare.reveal) : '';
+      if (!html) { _cbShare = null; box.innerHTML = ''; box.style.display = 'none'; return; }
+      box.innerHTML = html;
+      box.style.display = 'block';
+    }
+    function cbShareOpen(ci) {
+      var cl = (_cbLast && Array.isArray(_cbLast.classes)) ? _cbLast.classes[Number(ci)] : null;
+      if (!cl || !Array.isArray(cl.top_missed) || !cl.top_missed.length) return;
+      _cbShare = { cl: { label: cl.label, top_missed: cl.top_missed }, qi: 0, reveal: false };   // 名前の入った members は持たない
+      _cbShareDraw();
+    }
+    function cbShareNav(step) {
+      if (!_cbShare) return;
+      var qi = _cbShare.qi + (Number(step) > 0 ? 1 : -1);
+      if (qi < 0 || qi >= _cbShare.cl.top_missed.length) return;
+      _cbShare.qi = qi;
+      _cbShare.reveal = false;   // 次の問題の正解は隠す
+      _cbShareDraw();
+    }
+    function cbShareReveal() { if (_cbShare) { _cbShare.reveal = true; _cbShareDraw(); } }
+    function cbShareClose() { _cbShare = null; _cbShareDraw(); }
+    function _cbKey(e) {
+      if (!_cbShare || !e) return;
+      var k = e.key;
+      if (k === 'Escape' || k === 'Esc') { if (e.preventDefault) e.preventDefault(); cbShareClose(); }
+      else if (k === 'ArrowRight') { if (e.preventDefault) e.preventDefault(); cbShareNav(1); }
+      else if (k === 'ArrowLeft') { if (e.preventDefault) e.preventDefault(); cbShareNav(-1); }
+    }
+    function cbOpenFromCard() {   // 🏫 クラス自動宿題カードのボタン: ブリーフの画面に移って読み込む
+      if (typeof window.ceoHubShow === 'function') window.ceoHubShow('classBriefSection');
+      return cbLoad();
+    }
+    window.cbLoad = cbLoad;
+    window.cbSetDay = cbSetDay;
+    window.cbShareOpen = cbShareOpen;
+    window.cbShareNav = cbShareNav;
+    window.cbShareReveal = cbShareReveal;
+    window.cbShareClose = cbShareClose;
+    window.cbOpenFromCard = cbOpenFromCard;
+    // 検査用 (test_class_brief.py が JS エンジンで描画を確かめる。画面の動作には使わない)
+    window._cbTest = { render: _cbRender, shareHtml: _cbShareHtml, jstDay: _cbJstDay, dow: _cbDow, key: _cbKey,
+      state: function () { return _cbShare; } };
+    function bind() {
+      // 📺 の重ねは body の直下へ (ハブで別のセクションを開くと親が display:none になり、position:fixed でも見えなくなるため)
+      var sh = document.getElementById('cbShare');
+      if (sh && document.body && sh.parentNode !== document.body && typeof document.body.appendChild === 'function') document.body.appendChild(sh);
+      document.addEventListener('keydown', _cbKey);
+      var hb = document.querySelector ? document.querySelector('#ceoHubMenu [data-hub-target="classBriefSection"]') : null;
+      if (hb) hb.addEventListener('click', function () { cbLoad(); });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind); else bind();
   })();
