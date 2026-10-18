@@ -250,6 +250,8 @@
   <script src="auth-guard.js?v=20260625-juku-app"></script>
   <!-- 🆕 新しい宿題の数え方と「見た」の記録 (mypage.html と共通)。変えたら両方の ?v= を上げる -->
   <script src="hw-notice.js?v=20261016a-hw-notice"></script>
+  <!-- 📝 記号の解答用紙 (マーク・2026-10-18。mypage.html と共通)。変えたら両方の ?v= を上げる -->
+  <script src="hw-sheet.js?v=20261018a-hw-sheet"></script>
   <script>
   (function () {
     const BACKEND_URL = (window.location.hostname === 'localhost' && window.location.port === '8090')
@@ -1042,11 +1044,23 @@
       var today = jstToday();
       // 📄 添付プリントを開くボタンは、サーバに POST /api/student/homework/{id}/print があるとき (print_open) だけ出す
       var canOpenPrint = !!(d && d.print_open === true);
+      // 📝 記号の解答用紙 (2026-10-18) は、サーバに解答用紙の表があるとき (answer_sheet_ready) だけ。一覧を控えて「答える」で開く
+      hwSheetReady = !!(d && d.answer_sheet_ready === true);
+      hwPrintOpen = canOpenPrint;
+      hwItemsById = {};
+      items.forEach(function (it) { if (it && it.id != null) hwItemsById[String(it.id)] = it; });
       var hwHtml = items.map(function (it) {
+        var sheetSt = hwSheetState(it);
+        // 解答用紙の宿題も「提出 = completed」(やり直しで open に戻る)。数え方は hw-notice.js・サーバの summary と同じ
         var done = it.status === 'completed';
         var overdue = !done && it.due_date && it.due_date < today;
         var statusChip = done ? '<span class="chip chip-done">完了</span>'
           : (overdue ? '<span class="chip chip-over">期限切れ</span>' : '<span class="chip chip-open">未提出</span>');
+        if (sheetSt === 'submitted') {
+          var sc = window.AJHwSheet.scoreText(it.answer_sheet);
+          if (sc) statusChip += ' <span class="chip chip-topic">' + esc(sc) + '</span>';
+          if (it.answer_sheet.late) statusChip += ' <span class="chip chip-over">期限後</span>';
+        }
         if (!done && hwIsNew(hwNewHw, it.id)) statusChip += ' <span class="chip chip-new">🆕 新着</span>';
         // 科目 'chugaku' は中学(高校受験)ドリルへの内部キー。生の chugaku を生徒に見せない。
         // 単元チップが「中学英語 …」等で始まるときは科目チップが重複するだけなので出さない。
@@ -1075,7 +1089,24 @@
         var printBtn = pr ? ('<button class="btn ' + ((hasDrill || done) ? 'btn-ghost' : 'btn-primary') + ' hw-print" data-id="'
           + esc(String(it.id)) + '">📄 プリントを開く</button>') : '';
         var printMeta = (pr && pr.title) ? ('<div class="card-meta">📎 プリント: ' + esc(pr.title) + '</div>') : '';
-        if (!done) {
+        if (sheetSt !== 'none') {
+          // 📝 [2026-10-18] 記号の解答用紙の宿題: ✓完了 は出さない (完了 = 提出・サーバも /complete を 400 で止める)
+          if (sheetSt === 'open') {
+            if (pr) printBtn = printBtn.replace('btn-primary', 'btn-ghost');
+            actions += printBtn + (hasDrill ? '<a class="btn btn-ghost" href="' + esc(drillUrl) + '">📝 ドリルで解く</a>' : '')
+              + '<button class="btn btn-primary hw-sheet" data-id="' + esc(String(it.id)) + '">' + esc(window.AJHwSheet.answerButtonLabel(it.answer_sheet)) + '</button>'
+              + '<div class="muted" style="flex-basis:100%;margin-top:0.35rem;">' + (pr ? 'プリントを解いたら' : '解いたら')
+              + '、解答用紙に答えの記号を入れて提出してね（提出は 1 回だけ）</div>';
+          } else if (sheetSt === 'submitted') {
+            actions += printBtn + '<button class="btn btn-ghost hw-sheet" data-id="' + esc(String(it.id)) + '">📝 結果を見る</button>';
+          } else if (sheetSt === 'unavailable') {
+            actions += printBtn + '<div class="muted" style="flex-basis:100%;margin-top:0.35rem;">📝 解答用紙を準備中です。塾長に知らせてね</div>';
+          } else {
+            // 'unsupported' (この画面では答えられない答え方) / 'noscript' (hw-sheet.js が読めなかった)
+            actions += printBtn + '<button class="btn btn-ghost hw-reload">🔄 再読み込み</button>'
+              + '<div class="muted" style="flex-basis:100%;margin-top:0.35rem;">📝 この宿題の解答用紙を開けませんでした。再読み込みしてね</div>';
+          }
+        } else if (!done) {
           // ★ このカードは「別ページで練習 → 自分で完了を押す」型。単元ドリル(その場で自動採点)と
           //   ボタンの色・形が似ているので、戻ってくることを一言添える。
           actions += printBtn + (hasDrill ? '<a class="btn btn-primary" href="' + esc(drillUrl) + '">📝 ドリルで解く</a>' : '')
@@ -1104,6 +1135,9 @@
       body.querySelectorAll('.hw-print').forEach(function (btn) {
         btn.addEventListener('click', function () { openHomeworkPrint(btn); });
       });
+      body.querySelectorAll('.hw-sheet').forEach(function (btn) {
+        btn.addEventListener('click', function () { hwOpenSheet(btn.getAttribute('data-id')); });
+      });
       body.querySelectorAll('.gd-open').forEach(function (btn) {
         btn.addEventListener('click', function () { gdOpen(btn.getAttribute('data-id')); });
       });
@@ -1112,6 +1146,40 @@
     function _wireReload(root) {
       root.querySelectorAll('.hw-reload').forEach(function (b) {
         b.addEventListener('click', function () { hwLoaded = false; loadHomework(); });
+      });
+    }
+    // 📝 [2026-10-18 塾長「◎のとおりでお願いします…記号問題がいい」] 記号の解答用紙。描き方・下書き・提出は hw-sheet.js (mypage と共通)。
+    //   'none' = 解答用紙なし (今までどおり ✓完了) / 'open' / 'submitted' / 'unavailable' (正解表が無い) /
+    //   'unsupported' (この画面では答えられない答え方) / 'noscript' (hw-sheet.js が読めなかった)。
+    //   ★answer_sheet_ready (サーバに解答用紙の表がある) のときだけ。静的が API より先に出た窓・表が無い DB では今までどおり
+    var hwSheetReady = false, hwPrintOpen = false, hwItemsById = {};
+    function hwSheetState(it) {
+      if (!it || !it.answer_sheet || !hwSheetReady) return 'none';
+      if (!window.AJHwSheet) return 'noscript';
+      return window.AJHwSheet.state(it, true);
+    }
+    function hwOpenSheet(id) {
+      var it = hwItemsById[String(id)];
+      var st = hwSheetState(it);
+      if (st !== 'open' && st !== 'submitted') { toast('解答用紙を開けませんでした。再読み込みしてね', true); return; }
+      var body = document.getElementById('homeworkBody');
+      var wasOpen = st === 'open';
+      var pr = (hwPrintOpen && it.attachment_print && it.attachment_print.id != null);
+      var ctl = null;
+      ctl = window.AJHwSheet.mount(body, {
+        hw: it, sid: hwSid(), api: api, toast: toast,
+        confirm: function (m) { return window.confirm(m); },
+        scrollTop: gdScrollTop,
+        onOpenPrint: pr ? function (b) { openHomeworkPrint(b); } : null,
+        onSubmitted: function () {
+          hwLoaded = false;   // 一覧に戻ったら最新 (提出済み) で読み直す
+          // 提出済みになったので、一覧に戻る前にタブのバッジを減らしておく (gdSubmit と同じ。'99+' は触らない)
+          var badge = document.getElementById('hwBadge');
+          var curTxt = String((badge && badge.textContent) || ''), cur = parseInt(curTxt, 10);
+          if (wasOpen && curTxt.indexOf('+') < 0 && cur > 0) updateBadge('hwBadge', cur - 1);
+          wasOpen = false;
+        },
+        onBack: function () { if (ctl) ctl.detach(); hwLoaded = false; gdScrollTop(); loadHomework(); }
       });
     }
     // 📄 [2026-10-18] 宿題に添付した配布プリントを開く。POST /api/student/homework/{id}/print (塾生アプリのみ枠でも通る・

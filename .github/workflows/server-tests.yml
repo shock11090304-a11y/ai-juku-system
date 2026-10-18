@@ -60,6 +60,8 @@ on:
       - 'hw-notice.js'
       - 'class.html'
       - 'mypage.js'
+      # 📝 記号の解答用紙の画面 (test_homework_sheet_front.py) は hw-sheet.js・class.html・mypage.js・ceo.html の CeoHwSheet を JS で動かす
+      - 'hw-sheet.js'
       # 📊 本文の表 (test_passage_table_render.py) はマイページの「今日の復習」(learning-brain.js) もまるごと JS で動かす
       #   (learning-brain.js だけ直した push でも走らせる = ?v= 検査 js_cache_bust.py も回る)
       - 'learning-brain.js'
@@ -528,6 +530,18 @@ jobs:
         run: |
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_homework_answer_sheet.py
+
+      # 📝 記号の解答用紙の画面 (同じ塾長決定の第1段・画面): 塾生アプリ (class.html)・マイページ (mypage.js)・共通部品 hw-sheet.js・
+      #   CEO の CeoHwSheet (「✍️ 答え方」・確認表・前の正解表の使い回し・宿題履歴の 📝 8/10・📊 問ごとの正解率・✏️ 正解を直す・↩️ やり直し) を
+      #   本物のサーバ (一時 SQLite) の応答で node に動かす (TZ=America/Los_Angeles)。解答用紙の宿題に ✓完了 を出さない・1 回だけ送る・
+      #   送る本文はサーバが受け付けた本文と同じ・期限前は正解を出さない・409 は提出済みの結果・下書き (localStorage・try/catch)。
+      #   CEO が作った answer_sheet は本物の割当 API に、正解表 → 入力欄の文字はサーバの読み方に戻して確かめる。JS エンジンが無ければ FAIL。
+      - name: 記号の解答用紙の画面 (hw-sheet.js・class.html・mypage.js・CEO) 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          node --version || echo "node が無い (テストが「JS の実行環境がある」で FAIL する)"
+          python3 scripts/health_check/test_homework_sheet_front.py
 
       # 📊 本文の表 (2026-10-17 塾長「アプリ側で表を直しておいて」): 取込仕様 §2 の「［表］」+「｜」区切りの行を、塾生アプリ (class.html)・
       #   マイページ (mypage.js)・CEO (ceo.html の 👀 問題を見る と 📊 分析) で <table> (横スクロール・折り返さない) にする規則を node で実際に

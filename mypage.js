@@ -4529,8 +4529,27 @@ function _hwSid() {
 function _hwIsNew(map, id) { return !!map && id != null && Object.prototype.hasOwnProperty.call(map, String(id)); }
 const _HW_NEW_BADGE = '<span style="font-size:0.72rem; padding:2px 7px; background:rgba(236,72,153,0.22); color:#fbcfe8; border:1px solid rgba(236,72,153,0.55); border-radius:8px; font-weight:bold;">🆕 新着</span>';
 
+// 📝 記号の解答用紙 (2026-10-18 塾長「◎のとおりでお願いします…記号問題がいい」)。描き方・下書き・提出は hw-sheet.js (class.html と共通)。
+//   宿題一覧の answer_sheet_ready が true のときだけ使う (静的が API より先に出た窓・表が無い DB では今までどおり)。
+//   解答用紙の宿題には「✅ 完了する」を出さない (完了 = 提出・サーバも /complete を 400 で止める)。
+//   ★AJHwSheet は必ず _hwSheetLib() 経由で使う (hw-sheet.js が読めない端末では null)
+let _hwSheetReady = false;
+function _hwSheetLib() { return (typeof window !== 'undefined' && window.AJHwSheet) ? window.AJHwSheet : null; }
+function _hwSheetState(item) {
+  if (!item || !item.answer_sheet || !_hwSheetReady) return 'none';
+  const L = _hwSheetLib();
+  return L ? L.state(item, true) : 'noscript';
+}
+// サーバの日時 (naive UTC) → JST 'YYYY-MM-DD HH:MM' (以前は文字列を切っただけで 9 時間早く出ていた)
+function _hwJst(ts) {
+  const L = _hwSheetLib();
+  if (L) return L.fmtJst(ts);
+  return String(ts == null ? '' : ts).slice(0, 16).replace('T', ' ');
+}
+
 function _renderHomeworkItem(item) {
-  const isOpen = item.status === 'open';
+  const sheetSt = _hwSheetState(item);
+  const isOpen = item.status === 'open';   // 解答用紙の宿題も同じ (提出で completed・やり直しで open に戻る = hw-notice.js と同じ数え方)
   const newBadge = (isOpen && _hwIsNew(_hwNewIds.h, item.id)) ? _HW_NEW_BADGE : '';
   const dueBadge = _hwDueDateBadge(item.due_date, item.status);
   // 科目 'chugaku' は中学(高校受験)ドリルへの内部キー。生の chugaku を生徒に見せない
@@ -4543,9 +4562,13 @@ function _renderHomeworkItem(item) {
   const desc = item.description
     ? `<div style="color:#cbd5e1; font-size:0.86rem; line-height:1.6; margin-top:6px; white-space:pre-wrap;">${_hwEscape(item.description)}</div>`
     : '';
+  // 📝 解答用紙を提出済みなら点数 (📝 8/10) と「期限後」も出す
+  const _sheetScore = (sheetSt === 'submitted' && _hwSheetLib()) ? _hwSheetLib().scoreText(item.answer_sheet) : '';
+  const _sheetLate = (sheetSt === 'submitted' && item.answer_sheet.late)
+    ? ` <span style="font-size:0.72rem; padding:1px 7px; background:rgba(251,191,36,0.18); color:#fde68a; border-radius:8px;">期限後</span>` : '';
   const completedBlock = (!isOpen && item.completed_at)
     ? `<div style="margin-top:8px; padding:8px 11px; background:rgba(52,211,153,0.08); border-left:3px solid #34d399; border-radius:6px; font-size:0.78rem; color:#6ee7b7;">
-         ✅ 完了 (${_hwEscape(String(item.completed_at).slice(0,16).replace('T',' '))})
+         ✅ ${sheetSt === 'submitted' ? '提出' : '完了'} (${_hwEscape(_hwJst(item.completed_at))})${_sheetScore ? ' ' + _hwEscape(_sheetScore) : ''}${_sheetLate}
          ${item.student_note ? `<div style="color:#cbd5e1; margin-top:4px; white-space:pre-wrap;">${_hwEscape(item.student_note)}</div>` : ''}
        </div>`
     : '';
@@ -4553,9 +4576,19 @@ function _renderHomeworkItem(item) {
   const printBtn = (item.attachment_print && item.attachment_print.id)
     ? `<button type="button" data-hw-print="${_hwEscape(item.attachment_print.id)}" style="margin-top:10px; margin-right:8px; padding:8px 14px; background:rgba(59,130,246,0.18); color:#93c5fd; border:1px solid rgba(59,130,246,0.4); border-radius:8px; font-weight:bold; font-size:0.84rem; cursor:pointer;">📄 PDFを開く${item.attachment_print.title ? '（' + _hwEscape(item.attachment_print.title) + '）' : ''}</button>`
     : '';
-  const completeBtn = isOpen
+  let completeBtn = (isOpen && sheetSt === 'none')
     ? `<button type="button" data-hw-complete="${_hwEscape(item.id)}" style="margin-top:10px; padding:8px 16px; background:linear-gradient(135deg,#34d399,#10b981); color:#fff; border:0; border-radius:8px; font-weight:bold; font-size:0.86rem; cursor:pointer;">✅ 完了する</button>`
     : '';
+  if (sheetSt === 'open') {
+    completeBtn = `<button type="button" data-hw-sheet="${_hwEscape(item.id)}" style="margin-top:10px; min-height:44px; padding:8px 16px; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; border:0; border-radius:8px; font-weight:bold; font-size:0.9rem; cursor:pointer;">${_hwEscape(_hwSheetLib().answerButtonLabel(item.answer_sheet))}</button>`
+      + `<div style="margin-top:6px; font-size:0.76rem; color:#a1a1aa;">プリントを解いたら、解答用紙に答えの記号を入れて提出してね（提出は 1 回だけ）</div>`;
+  } else if (sheetSt === 'submitted') {
+    completeBtn = `<button type="button" data-hw-sheet="${_hwEscape(item.id)}" style="margin-top:10px; min-height:44px; padding:8px 16px; background:rgba(255,255,255,0.05); color:#c7d2fe; border:1px solid rgba(129,140,248,0.4); border-radius:8px; font-weight:bold; font-size:0.86rem; cursor:pointer;">📝 結果を見る</button>`;
+  } else if (sheetSt === 'unavailable') {
+    completeBtn = `<div style="margin-top:8px; font-size:0.78rem; color:#fde68a;">📝 解答用紙を準備中です。塾長に知らせてね</div>`;
+  } else if (sheetSt !== 'none') {
+    completeBtn = `<div style="margin-top:8px; font-size:0.78rem; color:#fde68a;">📝 この宿題の解答用紙を開けませんでした。ページを再読み込みしてね</div>`;
+  }
   return `<div class="hw-item" data-hw-id="${_hwEscape(item.id)}" style="padding:14px 16px; background:${isOpen ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.02)'}; border:1px solid ${isOpen ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.06)'}; border-radius:10px; margin-bottom:10px;">
     <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
       ${newBadge}${subjectBadge}${dueBadge}
@@ -4649,6 +4682,7 @@ async function initHomeworkSection() {
     try {
       const data = await slApiFetch('/api/student/homework?limit=100');
       const items = (data && data.items) || [];
+      _hwSheetReady = !!(data && data.answer_sheet_ready === true);   // 📝 記号の解答用紙 (2026-10-18)
       hwItems = items;
       openHw = items.filter(it => it.status === 'open');
       doneHw = items.filter(it => it.status === 'completed');
@@ -4786,11 +4820,14 @@ async function initHomeworkSection() {
   window._hwRefreshDrills = refresh;
 
   // 📄 添付プリント「PDFを開く」(event delegation)。download endpoint で file_path を取得 → 検証 → 新タブ表示。
-  list.addEventListener('click', async (e) => {
+  list.addEventListener('click', (e) => {
     const pbtn = e.target.closest && e.target.closest('[data-hw-print]');
     if (!pbtn) return;
-    const pid = pbtn.getAttribute('data-hw-print');
-    if (!pid) return;
+    openPrint(pbtn, pbtn.getAttribute('data-hw-print'));
+  });
+  // 📄 解答用紙の画面の「プリントを開く」(2026-10-18) も同じ処理 (pid = 配布プリントの id)
+  async function openPrint(pbtn, pid) {
+    if (!pid || pbtn.disabled) return;
     pbtn.disabled = true; const _orig = pbtn.textContent; pbtn.textContent = '⏳ 準備中…';
     // 📎 [file-open-link 2026-09-04] iPhone の Safari は「通信を待った後の window.open」をポップアップとして
     //   止める (クリック直後の同期呼び出しだけ許可)。先に空のタブを開いておき、URL が取れたらそこに遷移させる。
@@ -4815,6 +4852,26 @@ async function initHomeworkSection() {
     } finally {
       setTimeout(() => { pbtn.textContent = _orig; pbtn.disabled = false; }, 800);
     }
+  }
+
+  // 📝 記号の解答用紙 (2026-10-18): 「✏️ 解答用紙に答える」/「📝 結果を見る」→ 画面いっぱいの重ねで開く (hw-sheet.js)。
+  //   閉じたら (提出したら) 一覧を読み直す。開いた = 見た (🆕 の記録)
+  list.addEventListener('click', (e) => {
+    const sbtn = e.target.closest && e.target.closest('[data-hw-sheet]');
+    if (!sbtn) return;
+    const hwId = sbtn.getAttribute('data-hw-sheet');
+    const item = (hwItems || []).find(it => String(it.id) === String(hwId));
+    const L = _hwSheetLib();
+    const st = _hwSheetState(item);
+    if (!L || (st !== 'open' && st !== 'submitted')) { alert('解答用紙を開けませんでした。ページを再読み込みしてください。'); return; }
+    markSeenNow();
+    const pr = item.attachment_print && item.attachment_print.id != null;
+    L.openOverlay({
+      hw: item, sid: _hwSid(), api: slApiFetch,
+      confirm: (m) => window.confirm(m),
+      onOpenPrint: pr ? (b) => openPrint(b, b.getAttribute('data-print-id')) : null,
+      onClose: (changed) => { if (changed) refresh(); },
+    });
   });
 
   // 完了ボタン (event delegation)

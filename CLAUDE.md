@@ -1018,7 +1018,26 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
     前の答えと点数は events `homework_sheet_reset`)。生徒詳細の宿題一覧 (`/api/admin/homework/list`) と overview にも点数。
   - cascade: `homework_sheets` は 5 リスト + `admin_homework_delete` (同じトランザクション)・孤児掃除は「宿題の行が無い解答用紙」も消す。
     5 リストの loop は `_HW_SHEET_TABLES` を表が無ければ飛ばす (Postgres は失敗した 1 文でトランザクションごと止まるため)。
-  - 回帰テスト: `scripts/health_check/test_homework_answer_sheet.py` (CI `server-tests.yml`)。画面 (class.html / mypage / CEO) は別の段。
+  - 回帰テスト: `scripts/health_check/test_homework_answer_sheet.py` (CI `server-tests.yml`)。
+  - 画面 (同じ塾長決定の第1段・画面): 生徒の解答用紙は **`hw-sheet.js`** (root・ES5・`AJHwSheet`) の 1 か所で、塾生アプリ (class.html: 宿題タブの中に描く) と
+    マイページ (mypage.js: 画面いっぱいの重ね `openOverlay`) が同じものを使う。★変えたら class.html と mypage.html の `hw-sheet.js?v=` を**両方**上げる。
+    宿題一覧の `answer_sheet_ready === true` のときだけ使う (静的が API より先に出た窓・表が無い DB では今までどおり ✓完了)。
+    解答用紙の宿題のカードは「✏️ 解答用紙に答える（全N問）」(✓完了 / ✅ 完了する は出さない = 完了は提出)・提出済みは 📝 8/10・「期限後」・「📝 結果を見る」。
+    問ごとに記号のボタン (50px 角・もう一度押すと消せる)。下書きは localStorage `aj_hw_sheet_v1:<生徒ID>:<宿題ID>` (端末ごと・全部 try/catch・
+    問題数 / 択数 / やり直しの回数が違う下書きは使わない・提出できたら消す)。空欄があれば問番号つきで確認・1 回だけ送る (送信中は止める)。
+    提出したら点数と ○×・正解の記号はサーバの `reveal` のときだけ (期限前は「正解の記号は M/D（期限の翌日）から」)・提出時刻は JST。
+    409 は一覧を読み直して提出済みの結果を出す・422 は理由・503 / 未デプロイの 404 は「準備中」・通信失敗は下書きを残す。hw-sheet.js が読めない端末・
+    正解表が無い宿題は ✓完了 を出さずに案内だけ。hw-notice.js の数え方は変えない (解答用紙の宿題も status で数える = 提出で completed・やり直しで open)。
+  - CEO (ceo.html inline の `window.CeoHwSheet`・ceo.js は触らない): 生徒詳細「📚 宿題」と 📤 一括割当に「✍️ 答え方」(完了ボタンだけ / 記号の解答用紙)・
+    問題数・選択肢の数 (2〜8)・記号の種類 (①… / ア… / A… / a… / 正誤 = 2 択に固定)・正解 (記号のまま / 数字・全角・貼り付け可)。
+    ★確認表 (問1 ウ …) は**サーバの読み方** `POST /api/admin/homework/answer-keys/check` に聞く (画面で読まない = 読み方は 1 か所)。確認中・数違い・読めない記号は割当を止める。
+    `GET /api/admin/homework/answer-keys?limit=1` が通らない (表が無い・未デプロイ) と「✍️ 答え方」自体を出さない。payload の `answer_sheet` は
+    記号の解答用紙のときだけ足す (無いときは今までと 1 バイトも同じ payload)。プリントを選ぶと `?print_id=` の先頭 (新しい順) の正解表を入れる
+    (★打った正解は勝手に置き換えず「入れる」ボタン・「完了ボタンだけ」のときは案内だけ)。宿題履歴に 📝 8/10・提出時刻 (JST = `fmtDate`)・期限後・
+    なりすましの提出・「📊 問ごとの結果」(`GET answer-keys/{key_id}`: 問ごとの正解率・選ばれた記号の数・その表を使う生徒)・「✏️ 正解を直す」
+    (確認表 → confirm「提出済み N 人をまとめて採点し直します」→ PUT)・「↩️ やり直し」(confirm → `POST …/sheet/reset`)。実施状況のチップに ✍️4/5。
+  - 画面の回帰テスト: `scripts/health_check/test_homework_sheet_front.py` (CI `server-tests.yml`・node / osascript / jsc。本物のサーバの応答で動かし、
+    画面が送る本文・CEO が作る `answer_sheet`・正解表 → 入力欄の文字をサーバに戻して確かめる)。
 - 宿題モード (`?hw=`) の dojo-drill はメニュー (自由演習) を一切出さない: 自動起動できない・やめて戻る (確認あり)・読込失敗は
   すべて案内カード + 「塾生アプリの宿題に戻る」。class.html の「📝 ドリルで解く」は **単元 (topic) のある宿題だけ**に出す
   (無い宿題は提出ボタンだけ)。★残る抜け道: 公開の道場トップ (nyushi-dojo.html) からブックマークで直接開けば問題は解ける
