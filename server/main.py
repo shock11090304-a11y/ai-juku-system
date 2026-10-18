@@ -1617,6 +1617,47 @@ def init_db():
     );
     CREATE INDEX IF NOT EXISTS idx_homework_student_status ON homework_assignments(student_id, status, due_date);
     CREATE INDEX IF NOT EXISTS idx_homework_due ON homework_assignments(due_date, status);
+    -- 📝 記号の解答用紙 (マーク) (2026-10-18 塾長「◎のとおりでお願いします…記号問題がいい」の第1段)
+    -- 正解表: 生徒に紐づけない。1 つを全員の解答用紙が参照し、直したら全員まとめて採点し直す。
+    -- key_json は 1 始まりの配列 (要素 = 正解の番号 / 番号の配列 (どれでも正解) / 0 (全員正解))。
+    -- print_id = 同じプリントを次に出すときに引く鍵 (lesson_prints.id・任意)。label_style = 紙の記号 (circled/katakana/upper/lower/seigo)。
+    CREATE TABLE IF NOT EXISTS homework_answer_keys (
+        id {pk},
+        print_id INTEGER,
+        title TEXT,
+        num_questions INTEGER NOT NULL,
+        num_choices INTEGER NOT NULL DEFAULT 4,
+        label_style TEXT NOT NULL DEFAULT 'circled',
+        key_json TEXT NOT NULL,
+        reveal_policy TEXT NOT NULL DEFAULT 'after_due',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_hw_answer_keys_print ON homework_answer_keys(print_id);
+    -- 解答用紙: 宿題 1 行に 1 行 (割当と同じトランザクションで作る)。提出は 1 回 (submitted_at IS NULL の行だけ書く)・
+    -- 塾長の「やり直し」で answers/submitted_at を空に戻す。弱点集計 (question_attempts) には書かない。
+    -- review_* は第2段 (写真の提出) 用に先に置く列 (今は使わない・後から ALTER しないため)。
+    CREATE TABLE IF NOT EXISTS homework_sheets (
+        id {pk},
+        homework_id INTEGER NOT NULL UNIQUE,
+        student_id INTEGER NOT NULL,
+        mode TEXT NOT NULL DEFAULT 'choice',
+        key_id INTEGER,
+        answers_json TEXT,
+        score_correct INTEGER,
+        score_total INTEGER,
+        submitted_at TIMESTAMP,
+        late INTEGER DEFAULT 0,
+        by_impersonation INTEGER DEFAULT 0,
+        reset_count INTEGER DEFAULT 0,
+        review_status TEXT DEFAULT 'none',
+        review_note TEXT,
+        reviewed_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_hw_sheets_student ON homework_sheets(student_id);
+    CREATE INDEX IF NOT EXISTS idx_hw_sheets_key ON homework_sheets(key_id);
     -- 📝 単元別ドリル (英文法・塾長指示 2026-06-05)
     -- 既存 exam_questions の英文法を 1 問 1 行に分解し単元タグを付与した専用プール。
     -- choices は JSON 文字列、answer は 0 始まり正解 index。level: basic/standard/advanced。
@@ -26053,10 +26094,14 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
             ("ai_tutor_solve_log", "student_id"),
             ("line_link_tokens", "student_id"),
             ("sapuri_lesson_progress", "student_id"),   # 📺 スタサプの見た回 (2026-10-10)
+            ("homework_sheets", "student_id"),   # 📝 記号の解答用紙 (2026-10-18)
             ("student_json_state", "student_id"),
             ("anthropic_usage_log", "student_id"),   # 削除ではなく参照解除だが、影響行数としてプレビューに出す
         ]
         for tbl, col in related_tables:
+            if tbl in _HW_SHEET_TABLES and not _hw_sheet_ready():
+                related_counts[tbl] = 0   # 表がまだ無い (Postgres は失敗した 1 文でトランザクションごと止まるので、投げずに飛ばす)
+                continue
             try:
                 c.execute(f"SELECT COUNT(*) AS n FROM {tbl} WHERE {col}=?", (student_id,))
                 row = c.fetchone()
@@ -26146,6 +26191,7 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
             ("ai_tutor_solve_log", "DELETE FROM ai_tutor_solve_log WHERE student_id=?"),
             ("line_link_tokens", "DELETE FROM line_link_tokens WHERE student_id=?"),
             ("sapuri_lesson_progress", "DELETE FROM sapuri_lesson_progress WHERE student_id=?"),
+            ("homework_sheets", "DELETE FROM homework_sheets WHERE student_id=?"),   # 📝 記号の解答用紙 (2026-10-18)
             # ★AI利用コストの記録は「塾の会計データ」であって生徒のデータではない。消すと CEO ダッシュの
             #   費用合計 (SUM(cost_usd)) が過去にさかのぼって下がって見える。参照だけ外して行は残す。
             #   ★残しても個人情報上の問題は無い: このテーブルはトークン数/コスト/モデル名/種別だけで、
@@ -26154,6 +26200,8 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
         ]
         deleted_counts = {}
         for tbl, sql in delete_tables:
+            if tbl in _HW_SHEET_TABLES and not _hw_sheet_ready():
+                continue   # 表がまだ無い (投げると Postgres のトランザクションが止まり、後の削除が全部空振りする)
             try:
                 c.execute(sql, (student_id,))
                 deleted_counts[tbl] = related_counts.get(tbl, 0)
@@ -30229,7 +30277,7 @@ _ORPHAN_SWEEP_TABLES = (
     "class_attend", "class_attendance", "ai_tutor_solve_log", "line_link_tokens",
     "study_logs", "study_plans", "exam_results", "curricula", "notifications", "usage_monthly",
     "mock_exam_sessions", "ai_tutor_messages", "homework_assignments", "student_json_state",
-    "sapuri_lesson_progress",
+    "sapuri_lesson_progress", "homework_sheets",
 )
 
 
@@ -30261,6 +30309,8 @@ def _sweep_student_orphans(conn, c, dry_run: bool) -> dict:
                 f"処理は続行し実害なし): {type(e).__name__}: {str(e)[:120]}"
             )
     for t in _ORPHAN_SWEEP_TABLES:
+        if t in _HW_SHEET_TABLES and not _hw_sheet_ready():
+            continue   # 📝 表がまだ無い (2026-10-18)
         _one(t,
              f"SELECT COUNT(*) FROM {t} WHERE student_id IS NOT NULL AND student_id NOT IN (SELECT id FROM students)",
              f"DELETE FROM {t} WHERE student_id IS NOT NULL AND student_id NOT IN (SELECT id FROM students)")
@@ -30269,6 +30319,11 @@ def _sweep_student_orphans(conn, c, dry_run: bool) -> dict:
     _one("anthropic_usage_log(参照解除)",
          "SELECT COUNT(*) FROM anthropic_usage_log WHERE student_id IS NOT NULL AND student_id NOT IN (SELECT id FROM students)",
          "UPDATE anthropic_usage_log SET student_id=NULL WHERE student_id IS NOT NULL AND student_id NOT IN (SELECT id FROM students)")
+    # 📝 宿題の行が無くなった解答用紙 (宿題は admin_homework_delete が同じトランザクションで消すが、DB を直に触ったときの残り)
+    if _hw_sheet_ready():
+        _one("homework_sheets(宿題なし)",
+             "SELECT COUNT(*) FROM homework_sheets WHERE homework_id NOT IN (SELECT id FROM homework_assignments)",
+             "DELETE FROM homework_sheets WHERE homework_id NOT IN (SELECT id FROM homework_assignments)")
     return out
 
 
@@ -30293,6 +30348,8 @@ _MERGE_STUDENT_TABLES = (
     ("student_json_state", ("kind",)), ("anthropic_usage_log", None), ("course_applications", None),
     # 📺 見た回: 同じ講は残す側が勝つ汎用処理の前に、admin_student_merge の中で残す側の watched_at を早い方へそろえる。
     ("sapuri_lesson_progress", ("lesson_key",)),
+    # 📝 記号の解答用紙 (2026-10-18): 宿題 1 行に 1 行 (homework_id が UNIQUE) なので生徒どうしで衝突しない = 全部付け替え
+    ("homework_sheets", None),
 )
 # keep 側が空なら drop 側の値で埋める列 (メール系は下で個別に扱う)
 _MERGE_FILL_FIELDS = ("grade", "goal", "plan", "course", "stripe_customer_id", "stripe_subscription_id", "line_user_id",
@@ -30347,6 +30404,8 @@ def admin_student_merge(student_id: int, payload: StudentMergeRequest, authoriza
 
         # 1) student_id を持つ表
         for tbl, ukey in _MERGE_STUDENT_TABLES:
+            if tbl in _HW_SHEET_TABLES and not _hw_sheet_ready():
+                continue   # 📝 表がまだ無い (投げると統合全体が 500 になる)
             c.execute(f"SELECT COUNT(*) AS n FROM {tbl} WHERE student_id = ?", (drop_id,))
             n = _merge_n(c.fetchone())
             if not n:
@@ -30569,9 +30628,12 @@ def admin_students_purge_stale(payload: dict = None, authorization: Optional[str
                 ("ai_tutor_solve_log", f"DELETE FROM ai_tutor_solve_log WHERE student_id IN ({placeholders})"),
                 ("line_link_tokens", f"DELETE FROM line_link_tokens WHERE student_id IN ({placeholders})"),
                 ("sapuri_lesson_progress", f"DELETE FROM sapuri_lesson_progress WHERE student_id IN ({placeholders})"),
+                ("homework_sheets", f"DELETE FROM homework_sheets WHERE student_id IN ({placeholders})"),   # 📝 記号の解答用紙 (2026-10-18)
                 ("anthropic_usage_log", f"UPDATE anthropic_usage_log SET student_id=NULL WHERE student_id IN ({placeholders})"),
             ]
             for tbl, sql in cascade_tables:
+                if tbl in _HW_SHEET_TABLES and not _hw_sheet_ready():
+                    continue   # 表がまだ無い
                 try: c.execute(sql, tup)
                 except Exception as e: log.warning(f"[PurgeStale] {tbl}: {e}")
             # messages 双方向
@@ -44826,6 +44888,8 @@ class HomeworkAssignRequest(BaseModel):
     subject: Optional[str] = None
     due_date: Optional[str] = None  # YYYY-MM-DD
     attachment_print_id: Optional[int] = None  # 📚 添付する配布プリント (lesson_prints.id・任意)
+    # 📝 記号の解答用紙 (任意・2026-10-18): {mode:'choice', key_id} か {mode:'choice', key:{num_questions, num_choices, label_style, key}, print_id?}
+    answer_sheet: Optional[dict] = None
 
 
 class HomeworkCompleteRequest(BaseModel):
@@ -44870,6 +44934,538 @@ def _attach_homework_prints(conn, items: list) -> None:
     for it in items:
         pid = pid_by_hw.get(it["id"])
         it["attachment_print"] = prints.get(pid) if pid else None
+
+
+# ============================================================
+# 📝 記号の解答用紙 (マーク) — 2026-10-18 塾長「◎のとおりでお願いします。ただし、記述式は採点が難しいのでしばらくは記号問題がいい」の第1段
+#   塾長が CEO の個別割当 (生徒詳細 📚 宿題) と 📤 一括割当で「記号の解答用紙」付きの宿題を出す → 生徒は塾生アプリ / マイページで
+#   マークして 1 回だけ提出 (POST /api/student/homework/{id}/sheet) → サーバが正解表と照合して採点する (画面の点数は信じない)。
+#   - 正解表 (homework_answer_keys) は生徒に紐づけない。1 つを全員の解答用紙 (homework_sheets) が参照し、直したら全員を採点し直す。
+#     同じプリントを次に出すときは print_id で正解表を引いて使い回す (同じ中身なら同じ行・違えば新しい行)。
+#   - 提出したらすぐ点数と問ごとの ○× を見せる。正解の番号は「期限の翌日 (JST) から」・期限なしは提出したらすぐ。
+#     ★提出前は期限が過ぎても正解を見せない (期限後の提出も受け付けるので、見てから写して出せないように)。
+#   - 提出は 1 回 (submitted_at IS NULL の行だけを書く UPDATE・0 行なら 409)。塾長の「やり直し」で空に戻す。期限後の提出は late=1。
+#   - 弱点集計 (question_attempts) には書かない (点数は「自習の記録」・解答解説 PDF は今も公開)。AI は呼ばない
+#     (生徒のルートは AIなし枠でも通る /api/student/homework/ の下にあるので、ここに AI を置くと AIなし枠に開いてしまう)。
+#   - 表は init_db の CREATE TABLE IF NOT EXISTS だけ (既存の表に ALTER しない)。使う前に _hw_sheet_ready() を見て、
+#     無ければ 503「準備中」・一覧には付けない (画面はこの機能を隠す)。
+# ============================================================
+_HW_SHEET_LABELS = {
+    "circled": "①②③④⑤⑥⑦⑧",
+    "katakana": "アイウエオカキク",
+    "upper": "ABCDEFGH",
+    "lower": "abcdefgh",
+    "seigo": "正誤",
+}
+_HW_SHEET_DEFAULT_STYLE = "circled"
+_HW_SHEET_MAX_QUESTIONS = 100
+_HW_SHEET_TABLES = ("homework_sheets",)   # student_id を持つ新しい表 (cascade の 5 リストで「表がまだ無ければ飛ばす」に使う)
+_HW_CIRCLED_ALL = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳"
+_HW_KEY_SEPARATORS = frozenset(" \t\r\n,、。.・/|-_:;ー")
+_HW_SEIGO_ALIASES = {"正": 1, "○": 1, "〇": 1, "◯": 1, "誤": 2, "×": 2, "✕": 2, "✗": 2}
+_HW_REVEAL_POLICIES = ("after_due", "immediate")
+
+
+def _hw_sheet_ready() -> bool:
+    """📝 解答用紙の 2 表があるか (init_db のまとめ実行がロック待ちで巻き戻ると表ごと無い)。成功は焼き付け (_table_has_column)。"""
+    return _table_has_column("homework_sheets", "mode") and _table_has_column("homework_answer_keys", "key_json")
+
+
+def _hw_sheet_labels(style, num_choices) -> list:
+    """紙の記号の並び (例 katakana・4 択 → ['ア','イ','ウ','エ'])。"""
+    s = _HW_SHEET_LABELS.get(style) or _HW_SHEET_LABELS[_HW_SHEET_DEFAULT_STYLE]
+    try:
+        n = int(num_choices)
+    except (TypeError, ValueError):
+        n = 0
+    return list(s[:max(0, n)])
+
+
+def _hw_label_of(v, style) -> str:
+    """1 始まりの番号 → 紙の記号 (0 = 全員正解・範囲外は数字のまま)。"""
+    if isinstance(v, list):
+        return "/".join(_hw_label_of(x, style) for x in v)
+    try:
+        v = int(v)
+    except (TypeError, ValueError):
+        return "?"
+    if v == 0:
+        return "全員正解"
+    full = _HW_CIRCLED_ALL if style == "circled" else _HW_SHEET_LABELS.get(style, "")
+    return full[v - 1] if 1 <= v <= len(full) else str(v)
+
+
+def _hw_label_map(style) -> dict:
+    """記号の文字 → 1 始まりの番号 (A/a はどちらでも・正誤は ○× でも)。丸数字 (circled) は別の経路で読む。"""
+    m = {}
+    if style == "seigo":
+        m.update(_HW_SEIGO_ALIASES)
+    elif style in ("upper", "lower"):
+        for i, ch in enumerate("ABCDEFGH", 1):
+            m[ch] = i
+            m[ch.lower()] = i
+    elif style == "katakana":
+        for i, ch in enumerate(_HW_SHEET_LABELS["katakana"], 1):
+            m[ch] = i
+    return m
+
+
+def _hw_key_norm(s: str) -> str:
+    """全角→半角・半角カナ→全角 (NFKC)・ひらがな→カタカナ。丸数字は NFKC に通さない (① が 1 になって問番号と混ざるため)。"""
+    out = []
+    for ch in s:
+        if ch in _HW_CIRCLED_ALL:
+            out.append(ch)
+            continue
+        for x in unicodedata.normalize("NFKC", ch):
+            o = ord(x)
+            if 0x3041 <= o <= 0x3096:   # ひらがな (あいうえ でも打てる)
+                x = chr(o + 0x60)
+            out.append(x)
+    return "".join(out)
+
+
+def _hw_parse_key_text(text: str, style: str) -> list:
+    """塾長が打った正解の文字列 → 要素のリスト (番号 / [番号…] = どれでも正解 / 0 = 全員正解)。読めなければ ValueError (日本語)。
+    打ち方: 「3142」「ウアエイ」「CADB」「正誤正正」・全角/半角/ひらがな・空白やカンマや改行で区切っても可・「問1③ 問2①」のような問番号つきも可。
+      丸数字があれば丸数字だけを、記号 (ア/A/a/正誤) があれば記号だけを読む (数字は問番号とみなす)。どちらも無ければ数字 1 文字が 1 問。
+      [13] = 1 と 3 のどちらでも正解・* = 全員正解 (問題に不備があったとき)。"""
+    s = _hw_key_norm(str(text))
+    s = re.sub(r"(?:問|[Qq])\s*\d+\s*[.:)、,]?", " ", s)   # 問1 / Q1 / 問1.
+    s = re.sub(r"\(\s*\d+\s*\)", " ", s)                    # (1)
+    s = re.sub(r"\d+\s*\)", " ", s)                          # 1)
+    lmap = _hw_label_map(style)
+    if any(ch in _HW_CIRCLED_ALL for ch in s):
+        mode = "circled"
+    elif lmap and any(ch in lmap for ch in s):
+        mode = "letters"
+    else:
+        mode = "digits"
+    entries, group = [], None
+    for ch in s:
+        if ch in _HW_KEY_SEPARATORS:
+            continue
+        if ch == "[":
+            if group is not None:
+                raise ValueError("[ の中に [ があります")
+            group = []
+            continue
+        if ch == "]":
+            if group is None:
+                raise ValueError("] に対応する [ がありません")
+            if not group:
+                raise ValueError("[ ] の中が空です")
+            uniq = sorted(set(group))
+            entries.append(uniq[0] if len(uniq) == 1 else uniq)
+            group = None
+            continue
+        if ch == "*":
+            if group is not None:
+                raise ValueError("全員正解の * は [ ] の外に書きます")
+            entries.append(0)
+            continue
+        v = None
+        if mode == "circled":
+            if ch in _HW_CIRCLED_ALL:
+                v = _HW_CIRCLED_ALL.index(ch) + 1
+            elif ch in "0123456789":
+                continue   # 問番号の数字は読まない (丸数字だけを読む)
+        elif mode == "letters":
+            if ch in lmap:
+                v = lmap[ch]
+            elif ch in "0123456789":
+                continue   # 記号で打っているときの数字は問番号
+        else:
+            if ch in "123456789":
+                v = int(ch)
+            elif ch == "0":
+                raise ValueError("0 は番号に使えません (全員正解にする問は * と打ちます)")
+        if v is None:
+            raise ValueError(f"読めない文字があります: 「{ch}」")
+        if group is not None:
+            group.append(v)
+        else:
+            entries.append(v)
+    if group is not None:
+        raise ValueError("[ が閉じていません")
+    return entries
+
+
+def _hw_key_element(el, style: str, qno: int):
+    """配列で送られた正解の 1 要素 → 番号 / [番号…] / 0。"""
+    if el is None or isinstance(el, bool):
+        raise ValueError(f"問{qno} の正解がありません")
+    if isinstance(el, int):
+        return el
+    if isinstance(el, str):
+        got = _hw_parse_key_text(el, style)
+        if len(got) != 1:
+            raise ValueError(f"問{qno} の正解「{el}」が読めません (1 問に 1 つ・どれでも正解は [ ] でくくる)")
+        return got[0]
+    if isinstance(el, (list, tuple)):
+        vals = []
+        for x in el:
+            if isinstance(x, bool) or x is None:
+                raise ValueError(f"問{qno} の正解が読めません")
+            if isinstance(x, int):
+                vals.append(x)
+            elif isinstance(x, str):
+                got = _hw_parse_key_text(x, style)
+                if len(got) != 1 or isinstance(got[0], list):
+                    raise ValueError(f"問{qno} の正解「{x}」が読めません")
+                vals.append(got[0])
+            else:
+                raise ValueError(f"問{qno} の正解が読めません")
+        if not vals or 0 in vals:
+            raise ValueError(f"問{qno} の正解が読めません (どれでも正解の中に 0 / * は書けません)")
+        uniq = sorted(set(vals))
+        return uniq[0] if len(uniq) == 1 else uniq
+    raise ValueError(f"問{qno} の正解が読めません")
+
+
+def _hw_sheet_params(num_questions, num_choices, label_style):
+    """問題数 (1〜100)・択数 (2〜8・正誤は 2)・記号 (circled/katakana/upper/lower/seigo) を確かめる。"""
+    if isinstance(num_questions, bool):
+        raise ValueError("問題数は 1〜100 の整数で指定してください")
+    try:
+        nq = int(num_questions)
+    except (TypeError, ValueError):
+        raise ValueError("問題数は 1〜100 の整数で指定してください")
+    if not (1 <= nq <= _HW_SHEET_MAX_QUESTIONS):
+        raise ValueError(f"問題数は 1〜{_HW_SHEET_MAX_QUESTIONS} 問です")
+    style = str(label_style or _HW_SHEET_DEFAULT_STYLE).strip().lower()
+    if style not in _HW_SHEET_LABELS:
+        raise ValueError("記号の種類は ①②… / アイウ… / ABC… / abc… / 正誤 から選んでください")
+    if num_choices is None or num_choices == "":
+        nc = 2 if style == "seigo" else 4
+    else:
+        if isinstance(num_choices, bool):
+            raise ValueError("択数は 2〜8 の整数で指定してください")
+        try:
+            nc = int(num_choices)
+        except (TypeError, ValueError):
+            raise ValueError("択数は 2〜8 の整数で指定してください")
+    if not (2 <= nc <= 8):
+        raise ValueError("択数は 2〜8 です")
+    if style == "seigo" and nc != 2:
+        raise ValueError("正誤は 2 択です")
+    return nq, nc, style
+
+
+def _hw_validate_key(raw, num_questions: int, num_choices: int, style: str) -> list:
+    """正解 (文字列 / 配列) → 1 始まりの要素のリスト。数が問題数と違う・択数の範囲外は ValueError (日本語)。"""
+    if isinstance(raw, str):
+        entries = _hw_parse_key_text(raw, style)
+    elif isinstance(raw, (list, tuple)):
+        entries = [_hw_key_element(el, style, i) for i, el in enumerate(raw, 1)]
+    else:
+        raise ValueError("正解を入れてください")
+    if not entries:
+        raise ValueError("正解を入れてください")
+    if len(entries) != num_questions:
+        raise ValueError(f"正解が {len(entries)} 個あります (問題数は {num_questions} 問)。数を合わせてください")
+    for i, e in enumerate(entries, 1):
+        if isinstance(e, list):
+            vals = e
+        elif e == 0:
+            continue   # 全員正解
+        else:
+            vals = [e]
+        for v in vals:
+            if not (1 <= int(v) <= num_choices):
+                raise ValueError(f"問{i} の正解「{_hw_label_of(v, style)}」は {num_choices} 択の範囲外です")
+    return entries
+
+
+def _hw_key_display(entries: list, style: str) -> list:
+    """確認表 (問1 ウ / 問2 ア …)。"""
+    return [{"no": i, "label": _hw_label_of(e, style)} for i, e in enumerate(entries, 1)]
+
+
+def _hw_json_list(s) -> list:
+    if not s:
+        return []
+    try:
+        v = json.loads(s) if isinstance(s, str) else s
+    except Exception:
+        return []
+    return v if isinstance(v, list) else []
+
+
+def _hw_grade_choice(key: list, answers: list):
+    """採点 (サーバだけ)。→ (正解数, 問題数, 問ごとの ○× [bool])。0 = 全員正解 (空欄でも ○)・配列 = どれでも正解。"""
+    results = []
+    for i, k in enumerate(key):
+        a = answers[i] if i < len(answers) else None
+        if isinstance(k, list):
+            ok = a is not None and a in k
+        elif k == 0:
+            ok = True
+        else:
+            ok = a is not None and a == k
+        results.append(bool(ok))
+    return sum(1 for r in results if r), len(key), results
+
+
+def _hw_validate_answers(raw, num_questions: int, num_choices: int) -> list:
+    """生徒の答え → [番号 | None (空欄)]。長さは問題数と同じ・番号は 1〜択数。"""
+    if not isinstance(raw, list):
+        raise ValueError("答え (answers) は配列で送ってください")
+    if len(raw) != num_questions:
+        raise ValueError(f"答えの数が {len(raw)} 個です (問題数は {num_questions} 問)。画面を開き直してからもう一度提出してください")
+    out = []
+    for i, a in enumerate(raw, 1):
+        if a is None or a == "":
+            out.append(None)
+            continue
+        if isinstance(a, bool) or isinstance(a, (list, dict)):
+            raise ValueError(f"問{i} の答えが読めません")
+        try:
+            v = int(a)
+        except (TypeError, ValueError):
+            raise ValueError(f"問{i} の答えが読めません")
+        if isinstance(a, float) and a != v:
+            raise ValueError(f"問{i} の答えが読めません")
+        if not (1 <= v <= num_choices):
+            raise ValueError(f"問{i} の答えが範囲外です")
+        out.append(v)
+    return out
+
+
+def _hw_sheet_reveal_on(due_date):
+    """正解の番号を見せ始める日 = 期限の翌日 (JST)。期限なしは None (= 提出したらすぐ)。"""
+    if not due_date:
+        return None
+    try:
+        d = date.fromisoformat(str(due_date)[:10])
+    except ValueError:
+        return None
+    return d + timedelta(days=1)
+
+
+def _hw_sheet_can_reveal(due_date, policy) -> bool:
+    if (policy or "after_due") == "immediate":
+        return True
+    ro = _hw_sheet_reveal_on(due_date)
+    return ro is None or _today_jst() >= ro
+
+
+def _hw_is_late(due_date) -> bool:
+    """期限 (JST) を過ぎてからの提出か (期限の日のうちは期限内)。"""
+    if not due_date:
+        return False
+    try:
+        return _today_jst() > date.fromisoformat(str(due_date)[:10])
+    except ValueError:
+        return False
+
+
+def _hw_row_get(r, k, default=None):
+    try:
+        v = r[k]
+    except (KeyError, IndexError, TypeError):
+        return default
+    return default if v is None else v
+
+
+def _hw_key_info(k) -> dict:
+    """正解表の行 → 画面用 (key は塾長だけに渡す)。"""
+    style = _hw_row_get(k, "label_style", _HW_SHEET_DEFAULT_STYLE)
+    nc = int(_hw_row_get(k, "num_choices", 4))
+    entries = _hw_json_list(_hw_row_get(k, "key_json"))
+    return {
+        "id": k["id"], "print_id": _hw_row_get(k, "print_id"), "title": _hw_row_get(k, "title"),
+        "num_questions": int(_hw_row_get(k, "num_questions", len(entries))), "num_choices": nc,
+        "label_style": style, "labels": _hw_sheet_labels(style, nc),
+        "reveal_policy": _hw_row_get(k, "reveal_policy", "after_due"),
+        "key": entries, "key_display": _hw_key_display(entries, style),
+        "created_at": str(k["created_at"]) if _hw_row_get(k, "created_at") else None,
+        "updated_at": str(k["updated_at"]) if _hw_row_get(k, "updated_at") else None,
+    }
+
+
+def _hw_sheet_view(sh, k, due_date, *, admin: bool = False) -> dict:
+    """解答用紙の行 (+ 正解表の行) → 一覧・提出の応答に付ける形。
+    生徒向け (admin=False): 正解の番号は「提出済み かつ 期限の翌日 (JST) 以降 (期限なしは提出直後から)」のときだけ。
+    点数と ○× は正解表で毎回採点し直した値 (保存した点数ではなく正解表が正典)。"""
+    submitted = _hw_row_get(sh, "submitted_at") is not None
+    style = _hw_row_get(k, "label_style", _HW_SHEET_DEFAULT_STYLE) if k else _HW_SHEET_DEFAULT_STYLE
+    nc = int(_hw_row_get(k, "num_choices", 4)) if k else None
+    key = _hw_json_list(_hw_row_get(k, "key_json")) if k else []
+    reveal_on = _hw_sheet_reveal_on(due_date)
+    view = {
+        "mode": _hw_row_get(sh, "mode", "choice"),
+        "available": bool(k) and bool(key),
+        "num_questions": (int(_hw_row_get(k, "num_questions", len(key))) if k else None),
+        "num_choices": nc,
+        "label_style": style,
+        "labels": _hw_sheet_labels(style, nc) if nc else [],
+        "submitted": submitted,
+        "submitted_at": str(sh["submitted_at"]) if submitted else None,
+        "late": bool(int(_hw_row_get(sh, "late", 0) or 0)) if submitted else False,
+        "reset_count": int(_hw_row_get(sh, "reset_count", 0) or 0),
+        "answers": None, "score_correct": None, "score_total": None, "results": None,
+        "reveal": False,
+        "reveal_on": reveal_on.isoformat() if reveal_on else None,
+        "correct": None,
+    }
+    if submitted and key:
+        answers = _hw_json_list(_hw_row_get(sh, "answers_json"))
+        sc, st, res = _hw_grade_choice(key, answers)
+        view.update({"answers": answers, "score_correct": sc, "score_total": st, "results": res})
+        if _hw_sheet_can_reveal(due_date, _hw_row_get(k, "reveal_policy", "after_due")):
+            view["reveal"] = True
+            view["correct"] = key
+    if admin:
+        view["key_id"] = _hw_row_get(sh, "key_id")
+        view["by_impersonation"] = bool(int(_hw_row_get(sh, "by_impersonation", 0) or 0)) if submitted else False
+        view["correct"] = key if key else None
+        view["key_display"] = _hw_key_display(key, style) if key else []
+        view["print_id"] = _hw_row_get(k, "print_id") if k else None
+    return view
+
+
+def _hw_load_sheets(c, hw_ids: list):
+    """宿題 ID → 解答用紙の行・正解表の行 (500 件ずつの IN)。表が無ければ呼ばないこと (_hw_sheet_ready)。"""
+    sheets, keys = {}, {}
+    ids = [int(x) for x in hw_ids if x is not None]
+    for i in range(0, len(ids), 500):
+        chunk = ids[i:i + 500]
+        ph = ",".join(["?"] * len(chunk))
+        c.execute("SELECT homework_id, student_id, mode, key_id, answers_json, score_correct, score_total, submitted_at, "
+                  f"late, by_impersonation, reset_count FROM homework_sheets WHERE homework_id IN ({ph})", tuple(chunk))
+        for r in c.fetchall():
+            sheets[int(r["homework_id"])] = r
+    kids = sorted({int(r["key_id"]) for r in sheets.values() if _hw_row_get(r, "key_id") is not None})
+    for i in range(0, len(kids), 500):
+        chunk = kids[i:i + 500]
+        ph = ",".join(["?"] * len(chunk))
+        c.execute("SELECT id, print_id, title, num_questions, num_choices, label_style, key_json, reveal_policy, created_at, updated_at "
+                  f"FROM homework_answer_keys WHERE id IN ({ph})", tuple(chunk))
+        for r in c.fetchall():
+            keys[int(r["id"])] = r
+    return sheets, keys
+
+
+def _attach_homework_answer_sheets(conn, items: list, *, admin: bool = False) -> None:
+    """📝 宿題 items に answer_sheet (記号の解答用紙) を付ける。本 SELECT は変えず別クエリで解決 (_attach_homework_prints と同じ作法)。
+    表が無い DB・読み取りの失敗は全件 None (画面は解答用紙を出さない)。生徒向けは正解の番号を見せてよいときだけ入れる。"""
+    for it in items:
+        it["answer_sheet"] = None
+    hw_ids = [it["id"] for it in items if it.get("id") is not None]
+    if not hw_ids or not _hw_sheet_ready():
+        return
+    try:
+        sheets, keys = _hw_load_sheets(conn.cursor(), hw_ids)
+    except Exception as e:
+        log.warning(f"[hw_sheet] 一覧に解答用紙を付けられませんでした (付けずに返す): {type(e).__name__}: {e}")
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        return
+    for it in items:
+        sh = sheets.get(int(it["id"]))
+        if sh is None:
+            continue
+        k = keys.get(int(sh["key_id"])) if _hw_row_get(sh, "key_id") is not None else None
+        it["answer_sheet"] = _hw_sheet_view(sh, k, it.get("due_date"), admin=admin)
+
+
+def _hw_parse_answer_sheet(raw) -> Optional[dict]:
+    """assign / assign-bulk の answer_sheet を 1 回だけ確かめる。None (または mode 'none') = 解答用紙なし = 今までと同じ経路。
+    {mode:'choice', key_id} か {mode:'choice', key:{num_questions, num_choices, label_style, key}, print_id?, reveal?}。
+    ★写真の提出 (第2段) は保留なので mode は 'choice' だけ。"""
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise HTTPException(status_code=422, detail="answer_sheet の形が違います")
+    mode = str(raw.get("mode") or "choice").strip().lower()
+    if mode in ("none", "off"):
+        return None
+    if mode != "choice":
+        raise HTTPException(status_code=422, detail="答え方は記号の解答用紙 (choice) だけです (写真の提出はまだ使えません)")
+
+    def _opt_int(v, label):
+        if v is None or v == "":
+            return None
+        if isinstance(v, bool):
+            raise HTTPException(status_code=422, detail=f"{label} が不正です")
+        try:
+            return int(v)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=422, detail=f"{label} が不正です")
+
+    print_id = _opt_int(raw.get("print_id"), "answer_sheet.print_id")
+    key_id = _opt_int(raw.get("key_id"), "answer_sheet.key_id")
+    reveal = str(raw.get("reveal") or raw.get("reveal_policy") or "after_due").strip().lower()
+    if reveal not in _HW_REVEAL_POLICIES:
+        raise HTTPException(status_code=422, detail="正解を見せる時期は after_due (期限の翌日から) か immediate (提出したらすぐ) です")
+    out = {"mode": "choice", "key_id": key_id, "print_id": print_id, "reveal_policy": reveal,
+           "num_questions": None, "num_choices": None, "label_style": None, "key": None}
+    if key_id is not None:
+        return out
+    key = raw.get("key")
+    if not isinstance(key, dict):
+        raise HTTPException(status_code=422, detail="解答用紙の正解 (key) か、使い回す正解表 (key_id) が必要です")
+    try:
+        nq, nc, style = _hw_sheet_params(key.get("num_questions"), key.get("num_choices"), key.get("label_style"))
+        entries = _hw_validate_key(key.get("key", key.get("answers")), nq, nc, style)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    out.update({"num_questions": nq, "num_choices": nc, "label_style": style, "key": entries})
+    return out
+
+
+def _hw_check_sheet_print(c, sheet: dict, attachment_print_id) -> Optional[int]:
+    """正解表を引く鍵のプリント: 添付プリントがあればそれ・無ければ answer_sheet.print_id (実在だけ確かめる)。食い違いは 422。"""
+    pid = sheet.get("print_id")
+    if attachment_print_id is not None:
+        if pid is not None and int(pid) != int(attachment_print_id):
+            raise HTTPException(status_code=422, detail="添付プリントと解答用紙のプリントが違います")
+        return int(attachment_print_id)
+    if pid is None:
+        return None
+    c.execute("SELECT id FROM lesson_prints WHERE id = ?", (int(pid),))
+    if not c.fetchone():
+        raise HTTPException(status_code=404, detail="解答用紙のプリントが見つかりません")
+    return int(pid)
+
+
+def _hw_resolve_answer_key(c, sheet: dict, print_id, title: str) -> dict:
+    """正解表の id を決める (呼び出し側のトランザクションの中で)。key_id 指定 → その表 / 同じプリントに同じ中身の表 → 使い回す /
+    それ以外 → 新しい行 (INSERT … RETURNING id)。★既存の表を割当の操作で書き換えることはしない (直すのは PUT の明示操作だけ)。"""
+    if sheet.get("key_id") is not None:
+        c.execute("SELECT id, print_id, title, num_questions, num_choices, label_style, key_json, reveal_policy, created_at, updated_at "
+                  "FROM homework_answer_keys WHERE id = ?", (int(sheet["key_id"]),))
+        r = c.fetchone()
+        if not r:
+            raise HTTPException(status_code=404, detail="使い回す正解表が見つかりません")
+        info = _hw_key_info(r)
+        info["reused"] = True
+        return info
+    entries = sheet["key"]
+    if print_id is not None:
+        c.execute("SELECT id, print_id, title, num_questions, num_choices, label_style, key_json, reveal_policy, created_at, updated_at "
+                  "FROM homework_answer_keys WHERE print_id = ? ORDER BY id DESC", (int(print_id),))
+        for r in c.fetchall():
+            if (int(r["num_questions"]) == sheet["num_questions"] and int(r["num_choices"]) == sheet["num_choices"]
+                    and (r["label_style"] or "") == sheet["label_style"]
+                    and (r["reveal_policy"] or "after_due") == sheet["reveal_policy"]
+                    and _hw_json_list(r["key_json"]) == entries):
+                info = _hw_key_info(r)
+                info["reused"] = True
+                return info
+    c.execute("INSERT INTO homework_answer_keys (print_id, title, num_questions, num_choices, label_style, key_json, reveal_policy) "
+              "VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id",
+              (print_id, (title or "")[:200] or None, sheet["num_questions"], sheet["num_choices"], sheet["label_style"],
+               json.dumps(entries), sheet["reveal_policy"]))
+    row = c.fetchone()
+    kid = (row["id"] if hasattr(row, "keys") else row[0]) if row else None
+    if not kid:
+        raise HTTPException(status_code=500, detail="正解表を保存できませんでした")
+    return {"id": int(kid), "print_id": print_id, "num_questions": sheet["num_questions"], "num_choices": sheet["num_choices"],
+            "label_style": sheet["label_style"], "reused": False}
 
 
 @app.get("/api/student/homework")
@@ -44931,6 +45527,7 @@ def get_my_homework(authorization: Optional[str] = Header(None), status_filter: 
                 "created_by": r["created_by"],
             })
         _attach_homework_prints(conn, items)  # 📚 添付プリント情報を付与
+        _attach_homework_answer_sheets(conn, items)  # 📝 記号の解答用紙 (正解の番号は見せてよいときだけ・2026-10-18)
         # 簡易集計
         open_count = sum(1 for it in items if it["status"] == "open")
         completed_count = sum(1 for it in items if it["status"] == "completed")
@@ -44952,6 +45549,8 @@ def get_my_homework(authorization: Optional[str] = Header(None), status_filter: 
             # 📄 POST /api/student/homework/{id}/print がある印 (2026-10-18)。塾生アプリはこれが true のときだけ
             #   「📄 プリントを開く」を出す (静的が API より先に出たときに、押しても開けないボタンを見せない)
             "print_open": True,
+            # 📝 記号の解答用紙の表がある印 (2026-10-18)。false のあいだ画面は解答用紙を出さない (items の answer_sheet も全部 None)
+            "answer_sheet_ready": _hw_sheet_ready(),
         }
     finally:
         conn.close()
@@ -44981,6 +45580,13 @@ def complete_my_homework(homework_id: int, payload: HomeworkCompleteRequest, aut
             raise HTTPException(status_code=403, detail="他の生徒の宿題は操作できません")
         if row["status"] == "completed":
             return {"ok": True, "already_completed": True, "homework_id": homework_id}
+        # 📝 記号の解答用紙つきの宿題は「提出」が完了 (✓完了 では閉じない・古い画面に残った ✓完了 もここで止める・2026-10-18)
+        if _hw_sheet_ready():
+            c.execute("SELECT submitted_at FROM homework_sheets WHERE homework_id = ? AND student_id = ?",
+                      (homework_id, student["id"]))
+            _sh = c.fetchone()
+            if _sh is not None and _sh["submitted_at"] is None:
+                raise HTTPException(status_code=400, detail="この宿題は解答用紙で提出します。宿題のカードの「解答用紙」からマークして提出してください")
         c.execute(
             "UPDATE homework_assignments SET status = 'completed', completed_at = CURRENT_TIMESTAMP, "
             "       student_note = COALESCE(?, student_note) "
@@ -45079,6 +45685,101 @@ def open_my_homework_print(homework_id: int, request: Request, authorization: Op
                 log.warning(f"[hw_print] DL 履歴の記録に失敗 (プリントは返す): {type(_e).__name__}: {_e}")
         return {"ok": True, "homework_id": homework_id, "print_id": p["id"],
                 "title": _beautify_print_title(p["title"]), "file_path": fpath}
+    finally:
+        conn.close()
+
+
+@app.post("/api/student/homework/{homework_id}/sheet")
+def submit_my_homework_sheet(homework_id: int, request: Request, payload: dict = Body(...),
+                             authorization: Optional[str] = Header(None)):
+    """📝 記号の解答用紙を提出する (2026-10-18 塾長「◎のとおりでお願いします…記号問題がいい」の第1段)。
+
+    payload: {answers: [番号 (1 始まり) | null (空欄)] (長さ = 問題数), student_note?}
+    - 元から許可されている prefix "/api/student/homework/" の下 = AIなし枠の許可集合は変えない。AI は呼ばない。
+    - 本人の宿題でなければ 404・解答用紙が無い宿題も 404。提出は 1 回: submitted_at IS NULL の行だけを書く UPDATE が 0 行なら 409
+      (塾長の「やり直し」で開き直す)。期限 (JST) を過ぎた提出も受け付けて late=1 (「期限後」)。
+    - 採点はサーバだけ (画面の点数は受け取らない)。同じトランザクションで宿題を completed にする (完了 = 提出)。
+    - 弱点集計 (question_attempts) には書かない。events には点数だけを残す (答えは残さない)。
+    - 塾長のなりすまし (_is_impersonation_auth) で出した提出は by_impersonation=1 で残す。
+    応答の answer_sheet は宿題一覧と同じ形 (点数・問ごとの ○×・正解の番号は期限の翌日から)。"""
+    _check_rate_limit_caller(request, authorization, bucket="hw_sheet", limit=20, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+    if not _hw_sheet_ready():
+        raise HTTPException(status_code=503, detail="解答用紙は準備中です。少し待ってからもう一度提出してください。")
+    try:
+        homework_id = int(homework_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=404, detail="この宿題はあなたに出されていません")
+    payload = payload if isinstance(payload, dict) else {}
+    _note_raw = payload.get("student_note")
+    student_note = str(_note_raw).strip()[:1000] if _note_raw else None
+    sid = int(student["id"])
+    by_imp = 1 if _is_impersonation_auth(authorization) else 0
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, due_date, status FROM homework_assignments WHERE id = ? AND student_id = ?", (homework_id, sid))
+        hw = c.fetchone()
+        if not hw:
+            raise HTTPException(status_code=404, detail="この宿題はあなたに出されていません")
+        c.execute("SELECT homework_id, student_id, mode, key_id, answers_json, score_correct, score_total, submitted_at, "
+                  "late, by_impersonation, reset_count FROM homework_sheets WHERE homework_id = ? AND student_id = ?",
+                  (homework_id, sid))
+        sh = c.fetchone()
+        if not sh:
+            raise HTTPException(status_code=404, detail="この宿題には解答用紙がありません")
+        if sh["submitted_at"] is not None:
+            raise HTTPException(status_code=409, detail="この解答用紙はもう提出済みです (やり直しは塾長に頼んでください)")
+        k = None
+        if sh["key_id"] is not None:
+            c.execute("SELECT id, print_id, title, num_questions, num_choices, label_style, key_json, reveal_policy, created_at, updated_at "
+                      "FROM homework_answer_keys WHERE id = ?", (int(sh["key_id"]),))
+            k = c.fetchone()
+        key = _hw_json_list(k["key_json"]) if k else []
+        if not key:
+            raise HTTPException(status_code=409, detail="この解答用紙の正解表が見つかりません。塾長に知らせてください。")
+        try:
+            answers = _hw_validate_answers(payload.get("answers"), len(key), int(k["num_choices"]))
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        sc, st, _res = _hw_grade_choice(key, answers)
+        due = str(hw["due_date"]) if hw["due_date"] else None
+        late = 1 if _hw_is_late(due) else 0
+        c.execute("UPDATE homework_sheets SET answers_json = ?, score_correct = ?, score_total = ?, submitted_at = CURRENT_TIMESTAMP, "
+                  "late = ?, by_impersonation = ?, updated_at = CURRENT_TIMESTAMP "
+                  "WHERE homework_id = ? AND student_id = ? AND submitted_at IS NULL",
+                  (json.dumps(answers), sc, st, late, by_imp, homework_id, sid))
+        # 🛡️ 二重提出の競合: 先に別の提出が確定していたら 0 行 (単元ドリルの提出と同じ守り)
+        if c.rowcount == 0:
+            conn.rollback()
+            raise HTTPException(status_code=409, detail="この解答用紙はもう提出済みです (やり直しは塾長に頼んでください)")
+        c.execute("UPDATE homework_assignments SET status = 'completed', completed_at = CURRENT_TIMESTAMP, "
+                  "student_note = COALESCE(?, student_note) WHERE id = ? AND student_id = ?",
+                  (student_note, homework_id, sid))
+        conn.commit()
+        try:
+            c.execute("INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                      ("homework_sheet_submitted", json.dumps({
+                          "homework_id": homework_id, "student_id": sid, "key_id": int(sh["key_id"]),
+                          "score_correct": sc, "score_total": st, "late": bool(late), "by_impersonation": bool(by_imp),
+                      }, ensure_ascii=False), f"student_{sid}"))
+            conn.commit()
+        except Exception:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        c.execute("SELECT homework_id, student_id, mode, key_id, answers_json, score_correct, score_total, submitted_at, "
+                  "late, by_impersonation, reset_count FROM homework_sheets WHERE homework_id = ? AND student_id = ?",
+                  (homework_id, sid))
+        sh2 = c.fetchone()
+        return {"ok": True, "homework_id": homework_id, "status": "completed",
+                "answer_sheet": _hw_sheet_view(sh2, k, due)}
+    except HTTPException:
+        raise
     finally:
         conn.close()
 
@@ -45234,7 +45935,11 @@ def admin_homework_assign(
     x_cron_secret: Optional[str] = Header(None),
 ):
     """🧑‍🏫 admin が個別生徒に宿題を割当て。
-    payload: { student_id, title (必須・1-200c), description?, subject?, due_date? (YYYY-MM-DD) }
+    payload: { student_id, title (必須・1-200c), description?, subject?, due_date? (YYYY-MM-DD), attachment_print_id?, answer_sheet? }
+    answer_sheet (任意・2026-10-18 記号の解答用紙): {mode:'choice', key_id} か {mode:'choice', key:{num_questions, num_choices (2〜8),
+      label_style (circled/katakana/upper/lower/seigo), key (「3142」「ウアエイ」… か 1 始まりの配列)}, print_id?}。
+      あるときだけ宿題の行を INSERT … RETURNING id で作り、正解表 (使い回し or 新規) と解答用紙の行を **同じトランザクション** で作る。
+      無いときは今までと同じ経路 (1 バイトも変えない)。
     認証: admin Bearer または X-Cron-Secret"""
     authed = False
     if authorization and authorization.startswith("Bearer "):
@@ -45267,6 +45972,10 @@ def admin_homework_assign(
             attachment_print_id = int(payload.attachment_print_id)
         except (TypeError, ValueError):
             raise HTTPException(status_code=422, detail="attachment_print_id が不正です")
+    # 📝 記号の解答用紙 (任意): 中身はここで 1 回だけ確かめる (DB に触る前)
+    sheet = _hw_parse_answer_sheet(payload.answer_sheet)
+    if sheet is not None and not _hw_sheet_ready():
+        raise HTTPException(status_code=503, detail="記号の解答用紙は準備中です。少し待ってからもう一度出してください。")
 
     conn = db()
     try:
@@ -45278,6 +45987,7 @@ def admin_homework_assign(
                 raise HTTPException(status_code=404, detail="添付プリントが見つかりません")
             if not (_pr["is_published"] if hasattr(_pr, "keys") else _pr[1]):
                 raise HTTPException(status_code=400, detail="そのプリントは非公開のため添付できません")
+        sheet_print_id = _hw_check_sheet_print(c, sheet, attachment_print_id) if sheet is not None else None
         # 生徒存在 + 学習管理対象コース確認
         c.execute("SELECT id, name, course, plan, status FROM students WHERE id = ?", (payload.student_id,))
         st = c.fetchone()
@@ -45295,39 +46005,61 @@ def admin_homework_assign(
                 raise HTTPException(status_code=400, detail=f"この生徒 ({st['name']}) は学習管理機能の対象外コース/プランです (course={st['course']} / plan={st['plan']})")
             raise
 
-        c.execute(
-            "INSERT INTO homework_assignments (student_id, title, description, subject, due_date, attachment_print_id, status, created_by) "
-            "VALUES (?, ?, ?, ?, ?, ?, 'open', 'admin')",
-            (payload.student_id, title, description, subject, due_date, attachment_print_id),
-        )
-        conn.commit()
-        # PostgreSQL の場合 lastrowid 不可 → RETURNING 必要だが既存 INSERT パターン踏襲
-        try:
-            hw_id = c.lastrowid
-        except Exception:
-            hw_id = None
-        if not hw_id:
-            # fallback: SELECT で取得
+        key_info = None
+        if sheet is None:
             c.execute(
-                "SELECT id FROM homework_assignments WHERE student_id = ? AND title = ? "
-                "ORDER BY id DESC LIMIT 1",
-                (payload.student_id, title),
+                "INSERT INTO homework_assignments (student_id, title, description, subject, due_date, attachment_print_id, status, created_by) "
+                "VALUES (?, ?, ?, ?, ?, ?, 'open', 'admin')",
+                (payload.student_id, title, description, subject, due_date, attachment_print_id),
             )
-            r = c.fetchone()
-            hw_id = r["id"] if r else None
+            conn.commit()
+            # PostgreSQL の場合 lastrowid 不可 → RETURNING 必要だが既存 INSERT パターン踏襲
+            try:
+                hw_id = c.lastrowid
+            except Exception:
+                hw_id = None
+            if not hw_id:
+                # fallback: SELECT で取得
+                c.execute(
+                    "SELECT id FROM homework_assignments WHERE student_id = ? AND title = ? "
+                    "ORDER BY id DESC LIMIT 1",
+                    (payload.student_id, title),
+                )
+                r = c.fetchone()
+                hw_id = r["id"] if r else None
+        else:
+            # 📝 解答用紙つき: 宿題の行 → 正解表 (使い回し or 新規) → 解答用紙の行 を 1 トランザクションで (commit は最後の 1 回)。
+            #   題名で引き直す fallback は使わない (同じ題名の宿題が並ぶと別の行に解答用紙が付く)。
+            c.execute(
+                "INSERT INTO homework_assignments (student_id, title, description, subject, due_date, attachment_print_id, status, created_by) "
+                "VALUES (?, ?, ?, ?, ?, ?, 'open', 'admin') RETURNING id",
+                (payload.student_id, title, description, subject, due_date, attachment_print_id),
+            )
+            _hr = c.fetchone()
+            hw_id = (_hr["id"] if hasattr(_hr, "keys") else _hr[0]) if _hr else None
+            if not hw_id:
+                conn.rollback()
+                raise HTTPException(status_code=500, detail="宿題を保存できませんでした")
+            key_info = _hw_resolve_answer_key(c, sheet, sheet_print_id, title)
+            c.execute("INSERT INTO homework_sheets (homework_id, student_id, mode, key_id) VALUES (?, ?, 'choice', ?)",
+                      (int(hw_id), int(payload.student_id), int(key_info["id"])))
+            conn.commit()
         # 監査 events
         try:
+            _ev = {
+                "homework_id": hw_id, "student_id": payload.student_id,
+                "title": title, "due_date": due_date, "subject": subject,
+            }
+            if key_info is not None:
+                _ev["answer_key_id"] = key_info["id"]
             c.execute(
                 "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
-                ("homework_assigned", json.dumps({
-                    "homework_id": hw_id, "student_id": payload.student_id,
-                    "title": title, "due_date": due_date, "subject": subject,
-                }, ensure_ascii=False), "admin"),
+                ("homework_assigned", json.dumps(_ev, ensure_ascii=False), "admin"),
             )
             conn.commit()
         except Exception:
             pass
-        return {
+        out = {
             "ok": True,
             "homework_id": hw_id,
             "student_id": payload.student_id,
@@ -45336,6 +46068,12 @@ def admin_homework_assign(
             "due_date": due_date,
             "message": f"✅ {st['name']} さんに宿題「{title}」を割当てました",
         }
+        if key_info is not None:
+            out["answer_sheet"] = {"key_id": key_info["id"], "reused_key": bool(key_info.get("reused")),
+                                   "num_questions": key_info["num_questions"], "num_choices": key_info["num_choices"],
+                                   "label_style": key_info["label_style"], "print_id": key_info.get("print_id")}
+            out["message"] += f" (📝 記号の解答用紙つき・{key_info['num_questions']} 問)"
+        return out
     except HTTPException:
         raise
     finally:
@@ -45349,8 +46087,10 @@ def admin_homework_assign_bulk(
     x_cron_secret: Optional[str] = Header(None),
 ):
     """🧑‍🏫 admin が複数生徒へ同じ宿題を一括割当 (英文法ドリル配信と同じ操作感)。
-    payload: { student_ids:[int] (必須・非空), title (必須・1-200c), description?, subject?, due_date? (YYYY-MM-DD), attachment_print_id? }
+    payload: { student_ids:[int] (必須・非空), title (必須・1-200c), description?, subject?, due_date? (YYYY-MM-DD), attachment_print_id?, answer_sheet? }
     各生徒に homework_assignments を1件ずつ作成。対象外コース/不在生徒はスキップして結果に含める。
+    answer_sheet (任意・2026-10-18 記号の解答用紙) は個別割当と同じ形。正解表は全員で 1 つ (最初に割当てた生徒のところで決める)・
+      各生徒の宿題の行は INSERT … RETURNING id・解答用紙の行もこのトランザクションで作る。無いときの経路は今までと同じ。
     認証: admin Bearer または X-Cron-Secret。内容検証は1回だけ・添付/プリント実在も1回。"""
     authed = False
     if authorization and authorization.startswith("Bearer "):
@@ -45401,9 +46141,14 @@ def admin_homework_assign_bulk(
             attachment_print_id = int(payload.get("attachment_print_id"))
         except (TypeError, ValueError):
             raise HTTPException(status_code=422, detail="attachment_print_id が不正です")
+    # 📝 記号の解答用紙 (任意): 中身は 1 回だけ確かめる (DB に触る前)
+    sheet = _hw_parse_answer_sheet(payload.get("answer_sheet"))
+    if sheet is not None and not _hw_sheet_ready():
+        raise HTTPException(status_code=503, detail="記号の解答用紙は準備中です。少し待ってからもう一度出してください。")
 
     assigned = []
     skipped = []
+    key_info = None
     conn = db()
     try:
         c = conn.cursor()
@@ -45415,6 +46160,7 @@ def admin_homework_assign_bulk(
                 raise HTTPException(status_code=404, detail="添付プリントが見つかりません")
             if not (_pr["is_published"] if hasattr(_pr, "keys") else _pr[1]):
                 raise HTTPException(status_code=400, detail="そのプリントは非公開のため添付できません")
+        sheet_print_id = _hw_check_sheet_print(c, sheet, attachment_print_id) if sheet is not None else None
         # 生徒を一括取得 (1クエリ)
         ph = ",".join(["?"] * len(ids))
         c.execute(f"SELECT id, name, course, plan, status FROM students WHERE id IN ({ph})", tuple(ids))
@@ -45438,23 +46184,44 @@ def admin_homework_assign_bulk(
                     skipped.append({"id": sid, "name": st["name"], "reason": "学習管理対象外コース/プラン"})
                     continue
                 raise
+            if sheet is None:
+                c.execute(
+                    "INSERT INTO homework_assignments (student_id, title, description, subject, due_date, attachment_print_id, status, created_by) "
+                    "VALUES (?, ?, ?, ?, ?, ?, 'open', 'admin')",
+                    (sid, title, description, subject, due_date, attachment_print_id),
+                )
+                assigned.append({"id": sid, "name": st["name"]})
+                continue
+            # 📝 解答用紙つき: 宿題の行 (RETURNING id) → 解答用紙の行。正解表は最初の 1 人のところで決めて全員で共有。
             c.execute(
                 "INSERT INTO homework_assignments (student_id, title, description, subject, due_date, attachment_print_id, status, created_by) "
-                "VALUES (?, ?, ?, ?, ?, ?, 'open', 'admin')",
+                "VALUES (?, ?, ?, ?, ?, ?, 'open', 'admin') RETURNING id",
                 (sid, title, description, subject, due_date, attachment_print_id),
             )
-            assigned.append({"id": sid, "name": st["name"]})
+            _hr = c.fetchone()
+            _hw_id = (_hr["id"] if hasattr(_hr, "keys") else _hr[0]) if _hr else None
+            if not _hw_id:
+                conn.rollback()
+                raise HTTPException(status_code=500, detail="宿題を保存できませんでした (誰にも割当てていません)")
+            if key_info is None:
+                key_info = _hw_resolve_answer_key(c, sheet, sheet_print_id, title)
+            c.execute("INSERT INTO homework_sheets (homework_id, student_id, mode, key_id) VALUES (?, ?, 'choice', ?)",
+                      (int(_hw_id), int(sid), int(key_info["id"])))
+            assigned.append({"id": sid, "name": st["name"], "homework_id": int(_hw_id)})
         conn.commit()
         # 監査 events (一括1件)
         try:
+            _ev = {
+                "title": title, "due_date": due_date, "subject": subject,
+                "attachment_print_id": attachment_print_id,
+                "assigned_count": len(assigned), "skipped_count": len(skipped),
+                "student_ids": [a["id"] for a in assigned],
+            }
+            if key_info is not None:
+                _ev["answer_key_id"] = key_info["id"]
             c.execute(
                 "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
-                ("homework_assigned_bulk", json.dumps({
-                    "title": title, "due_date": due_date, "subject": subject,
-                    "attachment_print_id": attachment_print_id,
-                    "assigned_count": len(assigned), "skipped_count": len(skipped),
-                    "student_ids": [a["id"] for a in assigned],
-                }, ensure_ascii=False), "admin"),
+                ("homework_assigned_bulk", json.dumps(_ev, ensure_ascii=False), "admin"),
             )
             conn.commit()
         except Exception:
@@ -45462,7 +46229,7 @@ def admin_homework_assign_bulk(
         _msg = f"✅ {len(assigned)}名に宿題「{title}」を一括割当しました"
         if skipped:
             _msg += f"（{len(skipped)}名は対象外/不在でスキップ）"
-        return {
+        out = {
             "ok": True,
             "assigned_count": len(assigned),
             "skipped_count": len(skipped),
@@ -45471,6 +46238,12 @@ def admin_homework_assign_bulk(
             "title": title,
             "message": _msg,
         }
+        if key_info is not None:
+            out["answer_sheet"] = {"key_id": key_info["id"], "reused_key": bool(key_info.get("reused")),
+                                   "num_questions": key_info["num_questions"], "num_choices": key_info["num_choices"],
+                                   "label_style": key_info["label_style"], "print_id": key_info.get("print_id")}
+            out["message"] += f" (📝 記号の解答用紙つき・{key_info['num_questions']} 問)"
+        return out
     except HTTPException:
         raise
     finally:
@@ -45527,6 +46300,8 @@ def admin_homework_list(
                 "created_by": r["created_by"],
             })
         _attach_homework_prints(conn, items)  # 📚 添付プリント情報を付与
+        # 📝 記号の解答用紙 (塾長向け: 正解・答え・○×・点数・期限後・なりすましの提出か・2026-10-18)
+        _attach_homework_answer_sheets(conn, items, admin=True)
         open_count = sum(1 for it in items if it["status"] == "open")
         completed_count = sum(1 for it in items if it["status"] == "completed")
         return {
@@ -45534,6 +46309,7 @@ def admin_homework_list(
             "student_id": student_id,
             "items": items,
             "summary": {"open": open_count, "completed": completed_count, "total": len(items)},
+            "answer_sheet_ready": _hw_sheet_ready(),
         }
     finally:
         conn.close()
@@ -45545,7 +46321,8 @@ def admin_homework_delete(
     authorization: Optional[str] = Header(None),
     x_cron_secret: Optional[str] = Header(None),
 ):
-    """🧑‍🏫 admin: 宿題を削除 (誤割当ての撤回用)。"""
+    """🧑‍🏫 admin: 宿題を削除 (誤割当ての撤回用)。📝 解答用紙の行 (homework_sheets) も同じトランザクションで消す
+    (正解表は他の生徒と共有なので消さない)。"""
     authed = False
     if authorization and authorization.startswith("Bearer "):
         token = authorization[len("Bearer "):].strip()
@@ -45564,7 +46341,11 @@ def admin_homework_delete(
         if not row:
             return {"ok": True, "deleted": 0, "message": "既に存在しません (no-op)"}
         info = {"id": row["id"], "student_id": row["student_id"], "title": row["title"]}
+        _sheet_ready = _hw_sheet_ready()
         c.execute("DELETE FROM homework_assignments WHERE id = ?", (homework_id,))
+        if _sheet_ready:
+            c.execute("DELETE FROM homework_sheets WHERE homework_id = ?", (homework_id,))
+            info["sheet_deleted"] = max(0, c.rowcount or 0)
         conn.commit()
         try:
             c.execute(
@@ -45587,7 +46368,9 @@ def admin_homework_overview(
 ):
     """🧑‍🏫 admin: 全生徒の宿題を「宿題(タイトル+期限+科目)ごと」にまとめ、誰が完了/未完了かを横断表示。
     塾長指示 2026-06-06「宿題を誰がやったか分かるように」。生徒詳細モーダルを1人ずつ開かなくても
-    実施状況を一覧できる集計。返すのは宿題の完了状況(生徒名+完了/未完了+完了日時)のみで、点数等は返さない。
+    実施状況を一覧できる集計。返すのは宿題の完了状況(生徒名+完了/未完了+完了日時)と、📝 記号の解答用紙つきの宿題だけ
+    その点数 (生徒ごとの sheet = {score_correct, score_total, submitted, late}・2026-10-18。正解表で採点し直した値)。
+    問ごとの正解率は GET /api/admin/homework/answer-keys/{key_id} で見る。
     認証: admin Bearer または X-Cron-Secret。"""
     authed = False
     if authorization and authorization.startswith("Bearer "):
@@ -45623,6 +46406,18 @@ def admin_homework_overview(
         )
         rows = c.fetchall()
         truncated = len(rows) >= limit
+        # 📝 記号の解答用紙 (別クエリ・表が無い DB / 読み取り失敗は点数なしで続ける)
+        _sheets, _skeys = {}, {}
+        if rows and _hw_sheet_ready():
+            try:
+                _sheets, _skeys = _hw_load_sheets(c, [r["id"] for r in rows])
+            except Exception as _se:
+                log.warning(f"[hw_sheet] overview の点数を付けられませんでした: {type(_se).__name__}: {_se}")
+                _sheets, _skeys = {}, {}
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
 
         groups = {}
         order = []  # 初出順 = created_at DESC (新しい宿題が先)
@@ -45643,6 +46438,14 @@ def admin_homework_overview(
             ca = str(r["created_at"]) if r["created_at"] else None
             if ca and (g["created_at"] is None or ca < g["created_at"]):
                 g["created_at"] = ca  # グループの出題日 = 最初に割当てた日
+            _sh = _sheets.get(int(r["id"]))
+            _sheet_summary = None
+            if _sh is not None:
+                _k = _skeys.get(int(_sh["key_id"])) if _sh["key_id"] is not None else None
+                _v = _hw_sheet_view(_sh, _k, due, admin=True)
+                _sheet_summary = {"submitted": _v["submitted"], "score_correct": _v["score_correct"],
+                                  "score_total": _v["score_total"] if _v["submitted"] else _v["num_questions"],
+                                  "late": _v["late"], "key_id": _v["key_id"]}
             g["students"].append({
                 "homework_id": r["id"],
                 "student_id": r["student_id"],
@@ -45650,6 +46453,7 @@ def admin_homework_overview(
                 "completed": (r["status"] == "completed"),
                 "completed_at": str(r["completed_at"]) if r["completed_at"] else None,
                 "has_note": bool(r["student_note"]),
+                "sheet": _sheet_summary,
             })
 
         today = _today_jst().isoformat()
@@ -45687,6 +46491,301 @@ def admin_homework_overview(
                 "completion_rate": int(100 * total_done / total_assign) if total_assign else 0,
             },
         }
+    finally:
+        conn.close()
+
+
+# ==========================================================================
+# 📝 記号の解答用紙 — 塾長の画面 (2026-10-18 塾長「◎のとおりでお願いします…記号問題がいい」の第1段)
+#   正解表の一覧 (?print_id= で同じプリントの表を引く)・打った正解の確認 (保存しない)・正解表ごとの結果 (問ごとの正解率・
+#   選ばれた番号の分布・点数の分布)・正解の訂正 (→ その表を使う提出を全員まとめて採点し直す)・宿題 1 件の解答用紙・「やり直し」。
+#   どれも admin Bearer だけ。AI は呼ばない。弱点集計には書かない。表が無い DB は 503「準備中」。
+# ==========================================================================
+_HW_KEY_COLS = "id, print_id, title, num_questions, num_choices, label_style, key_json, reveal_policy, created_at, updated_at"
+
+
+def _hw_require_sheet_ready() -> None:
+    if not _hw_sheet_ready():
+        raise HTTPException(status_code=503, detail="記号の解答用紙は準備中です。少し待ってからもう一度開いてください。")
+
+
+def _hw_key_stats(key: list, num_choices: int, answer_lists: list) -> dict:
+    """正解表を共有する提出 (答えの配列のリスト) の集計: 平均点・点数の分布・問ごとの正解率と選ばれた番号の分布。"""
+    n = len(answer_lists)
+    per_q = []
+    for i, k in enumerate(key):
+        dist = [0] * int(num_choices)
+        blank = correct = 0
+        for ans in answer_lists:
+            a = ans[i] if i < len(ans) else None
+            if a is None:
+                blank += 1
+            elif isinstance(a, int) and 1 <= a <= num_choices:
+                dist[a - 1] += 1
+            if _hw_grade_choice([k], [a])[0]:
+                correct += 1
+        per_q.append({"no": i + 1, "correct": k, "correct_count": correct,
+                      "correct_rate": int(100 * correct / n) if n else None,   # floor (overview の完了率と同じ)
+                      "dist": dist, "blank": blank})
+    scores = [_hw_grade_choice(key, ans)[0] for ans in answer_lists]
+    hist = [0] * (len(key) + 1)
+    for sc in scores:
+        hist[sc] += 1
+    return {"submitted": n, "score_total": len(key),
+            "avg_score": (round(sum(scores) / n, 1) if n else None),
+            "histogram": hist, "per_question": per_q}
+
+
+def _hw_print_titles(c, pids) -> dict:
+    pids = sorted({int(p) for p in pids if p is not None})
+    if not pids:
+        return {}
+    out = {}
+    for i in range(0, len(pids), 500):
+        chunk = pids[i:i + 500]
+        ph = ",".join(["?"] * len(chunk))
+        c.execute(f"SELECT id, title FROM lesson_prints WHERE id IN ({ph})", tuple(chunk))
+        for r in c.fetchall():
+            out[int(r["id"])] = _beautify_print_title(r["title"])
+    return out
+
+
+@app.get("/api/admin/homework/answer-keys")
+def admin_homework_answer_keys(print_id: Optional[int] = None, limit: int = 50, authorization: Optional[str] = Header(None)):
+    """🧑‍🏫 正解表の一覧。?print_id=N ならそのプリントの表 (新しい順・先頭 = 次に使い回す表)。無ければ最近の表。
+    used = その表を使う解答用紙の数・submitted = 提出済みの数。"""
+    _verify_admin_required(authorization)
+    _hw_require_sheet_ready()
+    try:
+        limit = max(1, min(int(limit or 50), 200))
+    except Exception:
+        limit = 50
+    conn = db()
+    try:
+        c = conn.cursor()
+        if print_id is not None:
+            c.execute(f"SELECT {_HW_KEY_COLS} FROM homework_answer_keys WHERE print_id = ? ORDER BY updated_at DESC, id DESC LIMIT ?",
+                      (int(print_id), limit))
+        else:
+            c.execute(f"SELECT {_HW_KEY_COLS} FROM homework_answer_keys ORDER BY updated_at DESC, id DESC LIMIT ?", (limit,))
+        rows = c.fetchall()
+        items = [_hw_key_info(r) for r in rows]
+        counts = {}
+        ids = [it["id"] for it in items]
+        if ids:
+            ph = ",".join(["?"] * len(ids))
+            c.execute("SELECT key_id, COUNT(*) AS n, SUM(CASE WHEN submitted_at IS NOT NULL THEN 1 ELSE 0 END) AS s "
+                      f"FROM homework_sheets WHERE key_id IN ({ph}) GROUP BY key_id", tuple(ids))
+            for r in c.fetchall():
+                counts[int(r["key_id"])] = (int(r["n"] or 0), int(r["s"] or 0))
+        titles = _hw_print_titles(c, [it["print_id"] for it in items])
+        for it in items:
+            it["used"], it["submitted"] = counts.get(it["id"], (0, 0))
+            it["print_title"] = titles.get(int(it["print_id"])) if it["print_id"] is not None else None
+        return {"ok": True, "items": items, "count": len(items)}
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/homework/answer-keys/check")
+def admin_homework_answer_key_check(payload: dict = Body(...), authorization: Optional[str] = Header(None)):
+    """🧑‍🏫 打った正解を読んで確認表 (問1 ウ / 問2 ア …) を返す。保存はしない (CEO の「確認表」と同じ読み方を 1 か所に)。
+    payload: {num_questions, num_choices?, label_style?, key: 「3142」「ウアエイ」… | 配列}。数が合わない・範囲外は 422 (理由つき)。"""
+    _verify_admin_required(authorization)
+    payload = payload if isinstance(payload, dict) else {}
+    try:
+        nq, nc, style = _hw_sheet_params(payload.get("num_questions"), payload.get("num_choices"), payload.get("label_style"))
+        entries = _hw_validate_key(payload.get("key", payload.get("answers")), nq, nc, style)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    return {"ok": True, "num_questions": nq, "num_choices": nc, "label_style": style,
+            "labels": _hw_sheet_labels(style, nc), "key": entries, "key_display": _hw_key_display(entries, style),
+            "ready": _hw_sheet_ready()}
+
+
+@app.get("/api/admin/homework/answer-keys/{key_id}")
+def admin_homework_answer_key_results(key_id: int, authorization: Optional[str] = Header(None)):
+    """🧑‍🏫 正解表 1 つの結果: その表を使う全員の解答用紙 (生徒名・宿題・提出日時 (naive UTC)・期限後・点数・答え・○×) と、
+    提出した人の集計 (平均点・点数の分布・問ごとの正解率・選ばれた番号の分布)。"""
+    _verify_admin_required(authorization)
+    _hw_require_sheet_ready()
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(f"SELECT {_HW_KEY_COLS} FROM homework_answer_keys WHERE id = ?", (int(key_id),))
+        k = c.fetchone()
+        if not k:
+            raise HTTPException(status_code=404, detail="正解表が見つかりません")
+        c.execute("SELECT s.homework_id, s.student_id, s.mode, s.key_id, s.answers_json, s.score_correct, s.score_total, "
+                  "s.submitted_at, s.late, s.by_impersonation, s.reset_count, h.title, h.due_date, h.status, st.name AS student_name "
+                  "FROM homework_sheets s JOIN homework_assignments h ON h.id = s.homework_id "
+                  "LEFT JOIN students st ON st.id = s.student_id "
+                  "WHERE s.key_id = ? ORDER BY s.id DESC LIMIT 2000", (int(key_id),))
+        students, answer_lists = [], []
+        for r in c.fetchall():
+            due = str(r["due_date"]) if r["due_date"] else None
+            v = _hw_sheet_view(r, k, due, admin=True)
+            v.update({"homework_id": r["homework_id"], "student_id": r["student_id"], "student_name": r["student_name"],
+                      "title": r["title"], "due_date": due, "status": r["status"]})
+            students.append(v)
+            if v["submitted"]:
+                answer_lists.append(v["answers"] or [])
+        info = _hw_key_info(k)
+        info["print_title"] = _hw_print_titles(c, [info["print_id"]]).get(int(info["print_id"])) if info["print_id"] is not None else None
+        return {"ok": True, "key": info, "students": students,
+                "stats": _hw_key_stats(info["key"], info["num_choices"], answer_lists)}
+    finally:
+        conn.close()
+
+
+@app.put("/api/admin/homework/answer-keys/{key_id}")
+def admin_homework_answer_key_update(key_id: int, payload: dict = Body(...), authorization: Optional[str] = Header(None)):
+    """🧑‍🏫 正解を直す → その表を使う提出済みの解答用紙を **全員まとめて採点し直す** (同じトランザクション)。
+    payload: {key (必須・「3142」… か配列), label_style?, num_questions?, num_choices?, title?, reveal?}
+    ★提出済みの生徒がいる表は問題数・択数を変えられない (409・正解と記号だけ直せる)。応答 regraded = 採点し直した数・changed = 点数が変わった数。"""
+    _verify_admin_required(authorization)
+    _hw_require_sheet_ready()
+    payload = payload if isinstance(payload, dict) else {}
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(f"SELECT {_HW_KEY_COLS} FROM homework_answer_keys WHERE id = ?", (int(key_id),))
+        k = c.fetchone()
+        if not k:
+            raise HTTPException(status_code=404, detail="正解表が見つかりません")
+        try:
+            nq, nc, style = _hw_sheet_params(
+                payload.get("num_questions") if payload.get("num_questions") not in (None, "") else k["num_questions"],
+                payload.get("num_choices") if payload.get("num_choices") not in (None, "") else k["num_choices"],
+                payload.get("label_style") or k["label_style"])
+            if "key" not in payload and "answers" not in payload:
+                raise ValueError("正解 (key) を入れてください")
+            entries = _hw_validate_key(payload.get("key", payload.get("answers")), nq, nc, style)
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        reveal = str(payload.get("reveal") or payload.get("reveal_policy") or k["reveal_policy"] or "after_due").strip().lower()
+        if reveal not in _HW_REVEAL_POLICIES:
+            raise HTTPException(status_code=422, detail="正解を見せる時期は after_due (期限の翌日から) か immediate (提出したらすぐ) です")
+        title = payload.get("title")
+        title = (str(title).strip()[:200] or None) if title is not None else k["title"]
+        c.execute("SELECT id, answers_json, score_correct FROM homework_sheets WHERE key_id = ? AND submitted_at IS NOT NULL",
+                  (int(key_id),))
+        subs = c.fetchall()
+        if subs and (nq != int(k["num_questions"]) or nc != int(k["num_choices"])):
+            raise HTTPException(status_code=409, detail=f"提出済みの生徒が {len(subs)} 人いるので、問題数・択数は変えられません (正解と記号だけ直せます)")
+        old_key = _hw_json_list(k["key_json"])
+        c.execute("UPDATE homework_answer_keys SET key_json = ?, num_questions = ?, num_choices = ?, label_style = ?, title = ?, "
+                  "reveal_policy = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                  (json.dumps(entries), nq, nc, style, title, reveal, int(key_id)))
+        regraded = changed = 0
+        for r in subs:
+            sc, st, _res = _hw_grade_choice(entries, _hw_json_list(r["answers_json"]))
+            if r["score_correct"] is None or int(r["score_correct"]) != sc:
+                changed += 1
+            c.execute("UPDATE homework_sheets SET score_correct = ?, score_total = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                      (sc, st, int(r["id"])))
+            regraded += 1
+        conn.commit()
+        try:
+            c.execute("INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                      ("homework_answer_key_updated", json.dumps({
+                          "key_id": int(key_id), "regraded": regraded, "changed": changed,
+                          "old_key": old_key, "new_key": entries,
+                      }, ensure_ascii=False), "admin"))
+            conn.commit()
+        except Exception:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        c.execute(f"SELECT {_HW_KEY_COLS} FROM homework_answer_keys WHERE id = ?", (int(key_id),))
+        info = _hw_key_info(c.fetchone())
+        msg = f"✅ 正解表を直しました (提出済み {regraded} 人を採点し直し・点数が変わったのは {changed} 人)"
+        return {"ok": True, "key": info, "regraded": regraded, "changed": changed, "message": msg}
+    except HTTPException:
+        raise
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/homework/{homework_id}/sheet")
+def admin_homework_sheet(homework_id: int, authorization: Optional[str] = Header(None)):
+    """🧑‍🏫 宿題 1 件の解答用紙: 生徒の答え・○×・点数・提出日時 (naive UTC)・期限後・なりすましの提出か、正解表、
+    同じ正解表を使う提出全体の集計 (問ごとの正解率など)。"""
+    _verify_admin_required(authorization)
+    _hw_require_sheet_ready()
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT h.id, h.student_id, h.title, h.due_date, h.status, h.completed_at, st.name AS student_name "
+                  "FROM homework_assignments h LEFT JOIN students st ON st.id = h.student_id WHERE h.id = ?", (int(homework_id),))
+        hw = c.fetchone()
+        if not hw:
+            raise HTTPException(status_code=404, detail="宿題が見つかりません")
+        sheets, keys = _hw_load_sheets(c, [int(homework_id)])
+        sh = sheets.get(int(homework_id))
+        if sh is None:
+            raise HTTPException(status_code=404, detail="この宿題には解答用紙がありません")
+        k = keys.get(int(sh["key_id"])) if sh["key_id"] is not None else None
+        due = str(hw["due_date"]) if hw["due_date"] else None
+        view = _hw_sheet_view(sh, k, due, admin=True)
+        stats = None
+        info = None
+        if k is not None:
+            info = _hw_key_info(k)
+            c.execute("SELECT answers_json FROM homework_sheets WHERE key_id = ? AND submitted_at IS NOT NULL", (int(k["id"]),))
+            stats = _hw_key_stats(info["key"], info["num_choices"], [_hw_json_list(r["answers_json"]) for r in c.fetchall()])
+        return {"ok": True,
+                "homework": {"id": hw["id"], "student_id": hw["student_id"], "student_name": hw["student_name"],
+                             "title": hw["title"], "due_date": due, "status": hw["status"],
+                             "completed_at": str(hw["completed_at"]) if hw["completed_at"] else None},
+                "sheet": view, "key": info, "key_stats": stats}
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/homework/{homework_id}/sheet/reset")
+def admin_homework_sheet_reset(homework_id: int, authorization: Optional[str] = Header(None)):
+    """🧑‍🏫 「やり直し」: 生徒 1 人の解答用紙を提出前に戻す (答え・点数・提出日時・期限後を空に・宿題は open に戻す・reset_count +1)。
+    正解表と他の生徒の提出には触れない。前の答えと点数は events (homework_sheet_reset) に残す (押し間違えたときに追える)。"""
+    _verify_admin_required(authorization)
+    _hw_require_sheet_ready()
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT homework_id, student_id, answers_json, score_correct, score_total, submitted_at, late "
+                  "FROM homework_sheets WHERE homework_id = ?", (int(homework_id),))
+        sh = c.fetchone()
+        if not sh:
+            raise HTTPException(status_code=404, detail="この宿題には解答用紙がありません")
+        if sh["submitted_at"] is None:
+            return {"ok": True, "homework_id": int(homework_id), "already_open": True, "message": "まだ提出されていません (そのまま解けます)"}
+        c.execute("UPDATE homework_sheets SET answers_json = NULL, score_correct = NULL, score_total = NULL, submitted_at = NULL, "
+                  "late = 0, by_impersonation = 0, reset_count = COALESCE(reset_count, 0) + 1, updated_at = CURRENT_TIMESTAMP "
+                  "WHERE homework_id = ? AND submitted_at IS NOT NULL", (int(homework_id),))
+        if c.rowcount == 0:
+            conn.rollback()
+            return {"ok": True, "homework_id": int(homework_id), "already_open": True, "message": "まだ提出されていません (そのまま解けます)"}
+        c.execute("UPDATE homework_assignments SET status = 'open', completed_at = NULL WHERE id = ?", (int(homework_id),))
+        conn.commit()
+        try:
+            c.execute("INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                      ("homework_sheet_reset", json.dumps({
+                          "homework_id": int(homework_id), "student_id": sh["student_id"],
+                          "prev_score_correct": sh["score_correct"], "prev_score_total": sh["score_total"],
+                          "prev_answers": _hw_json_list(sh["answers_json"]), "prev_submitted_at": str(sh["submitted_at"]),
+                          "prev_late": bool(int(sh["late"] or 0)),
+                      }, ensure_ascii=False), "admin"))
+            conn.commit()
+        except Exception:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        return {"ok": True, "homework_id": int(homework_id), "reset": True,
+                "message": "↩️ やり直しにしました (生徒のアプリでもう一度提出できます)"}
+    except HTTPException:
+        raise
     finally:
         conn.close()
 

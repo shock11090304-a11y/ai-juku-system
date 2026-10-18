@@ -518,6 +518,17 @@ jobs:
           node --version || echo "node が無い (テストが「JS の実行環境がある」で FAIL する)"
           python3 scripts/health_check/test_homework_print_open.py
 
+      # 📝 記号の解答用紙 (2026-10-18 塾長「◎のとおりでお願いします…記号問題がいい」の第1段): 正解の読み方 (①/ア/A/a/正誤・2〜8 択・
+      #   「3142」「ウアエイ」・問番号つき・[ ] どれでも正解・* 全員正解)・個別/📤一括の割当で宿題・正解表・解答用紙を同じトランザクションで作る
+      #   (同じプリントは正解表を使い回す・answer_sheet なしは今までどおり)・提出は 1 回 (409)・採点はサーバ・正解の番号は期限の翌日 (JST) から
+      #   (提出前は出さない)・期限後・なりすましの印・✓完了 は 400・弱点集計に書かない・正解を直すと全員を採点し直す・やり直し・
+      #   cascade (宿題/生徒の削除・孤児掃除・統合)・表が無い DB は 503。AI を呼ばない・AIなし枠の許可集合は不変。
+      - name: 記号の解答用紙 (homework_answer_keys / homework_sheets) 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_homework_answer_sheet.py
+
       # 📊 本文の表 (2026-10-17 塾長「アプリ側で表を直しておいて」): 取込仕様 §2 の「［表］」+「｜」区切りの行を、塾生アプリ (class.html)・
       #   マイページ (mypage.js)・CEO (ceo.html の 👀 問題を見る と 📊 分析) で <table> (横スクロール・折り返さない) にする規則を node で実際に
       #   動かして突き合わせる (エスケープが先・pre-wrap の中に改行を入れない・表の無い本文は 1 文字も変えない。JS エンジンが無ければ FAIL)。

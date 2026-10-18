@@ -22,6 +22,7 @@
   - ★既定値の正典は `server/main.py` の `_env_int("DB_...")` 行。この文書や `.env.example` と食い違ったらコードが正しい。
 - **生徒に紐づくテーブルと削除の整合 (2026-09-04)**: `students` を外部キーで参照するのは `payments` / `referrals` だけで、他は削除時に自力で消さないと孤児化する。長らく削除APIが14テーブルしか消しておらず、合成監視も `students` 行だけ消していたため、孤児が30,388行溜まっていた (うち27,797行は5分ごとの監視が残す `otp_codes`)。
   - ★**生徒に紐づく新しいテーブルを足したら、`_ORPHAN_SWEEP_TABLES` と削除API (`admin_student_delete`) / `purge-stale-data` の cascade リストの3箇所すべてに足すこと**。1箇所でも漏れると同じ孤児化が再発する。
+    ★正確には 5 か所 (削除のプレビュー `related_tables`・個別削除・purge・`_ORPHAN_SWEEP_TABLES`・統合 `_MERGE_STUDENT_TABLES`)。`scripts/health_check/check_student_cascade_lists.py` が正典 (init_db の DDL を読む)。
   - CEOダッシュの🧹ボタン (`purge-stale-data`) は、対象の生徒が0件でも「存在しない生徒を指す行」を掃除する。在籍生徒のデータには触れない (条件は `student_id NOT IN (SELECT id FROM students)`)。payload `{"orphans_only": true}` なら生徒本体は消さず孤児行だけ掃除する。
   - ★🧹ボタンの「対象の生徒」(合成監視 `@synthetic-monitor.*` / テスト系キーワード) には、**人手で作ったデモ用アカウントが紛れ込みうる** (2026-09-04 時点で `@synthetic-monitor.local` ドメインのデモ用アカウント6名・`course='kokuritsu_nankan'` 付き)。実行前の一覧で「監視 守」以外の名前が無いか必ず目視すること。★この文書に人名を書かない (公開リポジトリ)。
   - ★`course_applications` / `referrals` は sweep 対象外。申込・紹介の**履歴**なので行は残し、生徒削除時に `student_id` / `referrer_id` / `referred_id` を NULL にするだけ (削除ではない)。「生徒IDの列 (`student_id` / `referrer_id` / `referred_id`) を持つ表は全部 sweep に入れる」と誤解しないこと。★ダッシュの🧹ボタンは2段階確認: 1回目で孤児行の掃除 (常に安全)、2回目で「生徒本体も消すか」を明示的に選ぶ。2回目をキャンセルすると `orphans_only: true` で送られ生徒は残る。
@@ -989,6 +990,35 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   ボタンは宿題一覧の `print_open: true` があるときだけ (静的が API より先に出た窓で、押しても開けないボタンを出さない)。
   あわせて class.html の「提出:」と期限切れの判定を JST に (`gdLocalDate` は端末のタイムゾーンでなく JST 固定・`jstToday()`)。
   回帰テスト: `scripts/health_check/test_homework_print_open.py` (CI `server-tests.yml`・class.html は TZ=America/Los_Angeles で実行)。
+- 📝 **記号の解答用紙 (マーク)** (同じ塾長決定の第1段・サーバ): 塾長が CEO の個別割当 / 📤 一括割当で `answer_sheet` を付けて出すと、生徒は
+  アプリでマークして 1 回だけ提出し、サーバが採点する。★写真の提出 (第2段) は保留 (「記述式は採点が難しいのでしばらくは記号問題」)。
+  - 表は 2 つ (init_db の CREATE TABLE IF NOT EXISTS だけ): `homework_answer_keys` (正解表・生徒に紐づけない・`key_json` は 1 始まり。
+    要素 = 番号 / 番号の配列 (どれでも正解) / 0 (全員正解)・`label_style` = circled/katakana/upper/lower/seigo・2〜8 択 (正誤は 2)・`print_id`) と
+    `homework_sheets` (宿題 1 行に 1 行・`homework_id` UNIQUE・割当と同じトランザクションで作る)。`_hw_sheet_ready()` が False (表が無い) のあいだ
+    生徒の提出・解答用紙つきの割当・塾長の画面は 503「準備中」、一覧の `answer_sheet` は全部 None (`answer_sheet_ready: false`)。
+  - 割当: `POST /api/admin/homework/assign` と `assign-bulk` の `answer_sheet` = `{mode:'choice', key_id}` か
+    `{mode:'choice', key:{num_questions, num_choices, label_style, key}, print_id?}` (`mode:'none'` / 無し = 今までと同じ経路・応答も同じ)。
+    中身は DB に触る前に 1 回だけ確かめる (`_hw_parse_answer_sheet`)。解答用紙つきだけ宿題の行を `INSERT … RETURNING id` で作る
+    (題名で引き直さない)。同じプリント (添付 = 鍵) + 同じ中身の正解表は使い回す・違えば新しい行 (★割当で既存の表を書き換えない)。
+  - 正解の打ち方 (`_hw_parse_key_text`・CEO の確認表 `POST /api/admin/homework/answer-keys/check` と同じ 1 か所): 「3142」「ウアエイ」「CADB」「正誤正正」
+    「○×○○」・全角/半角/ひらがな・区切り自由・「問1③」「(1)ウ」「1.ウ」のような問番号つき (丸数字 / 記号があれば数字は問番号として読まない)・
+    `[14]` = どれでも正解・`*` = 全員正解。数が違う・範囲外・読めない文字は理由つきの 422。
+  - 生徒: 宿題一覧の各 item に `answer_sheet` {mode, available, num_questions, num_choices, label_style, labels, submitted, submitted_at (naive UTC),
+    late, reset_count, answers, score_correct, score_total, results (問ごとの ○×), reveal, reveal_on, correct}。提出 `POST /api/student/homework/{id}/sheet`
+    `{answers:[番号|null], student_note?}` (prefix は元から許可 = 許可集合は不変・AI なし)。本人の宿題でない / 解答用紙なし は 404・数や範囲は 422・
+    二度目は 409 (`submitted_at IS NULL` の UPDATE が 0 行・同時押しも)。採点はサーバだけ・同じトランザクションで宿題を completed。
+    期限 (JST) を過ぎた提出は `late`。★正解の番号 (`correct`) は「提出済み かつ 期限の翌日 (JST) 以降」だけ (期限なしは提出直後)。
+    提出前は期限が過ぎても出さない (期限後の提出を受け付けるので、見てから写せないように)。点数と ○× は正解表で毎回採点し直した値。
+    解答用紙の宿題の `/complete` は 400 (完了 = 提出・古い画面の ✓完了 も止める)。なりすましの提出は `by_impersonation=1`。
+    ★弱点集計 (`question_attempts`) には書かない (点数は「自習の記録」・解答解説 PDF は今も公開)。events は点数だけ。
+  - 塾長 (admin Bearer): `GET /api/admin/homework/{id}/sheet` (答え・○×・正解・同じ表の問ごとの正解率と選ばれた番号の分布)・
+    `GET /api/admin/homework/answer-keys?print_id=` (新しい順 = 先頭が使い回す表・used/submitted)・`GET /api/admin/homework/answer-keys/{key_id}`
+    (その表を使う全員の結果と集計)・`PUT /api/admin/homework/answer-keys/{key_id}` (正解を直す → 提出済みを全員まとめて採点し直す・
+    提出済みがいると問題数/択数は 409)・`POST /api/admin/homework/{id}/sheet/reset` (「やり直し」: 答え・点数・提出時刻を空に・宿題を open・
+    前の答えと点数は events `homework_sheet_reset`)。生徒詳細の宿題一覧 (`/api/admin/homework/list`) と overview にも点数。
+  - cascade: `homework_sheets` は 5 リスト + `admin_homework_delete` (同じトランザクション)・孤児掃除は「宿題の行が無い解答用紙」も消す。
+    5 リストの loop は `_HW_SHEET_TABLES` を表が無ければ飛ばす (Postgres は失敗した 1 文でトランザクションごと止まるため)。
+  - 回帰テスト: `scripts/health_check/test_homework_answer_sheet.py` (CI `server-tests.yml`)。画面 (class.html / mypage / CEO) は別の段。
 - 宿題モード (`?hw=`) の dojo-drill はメニュー (自由演習) を一切出さない: 自動起動できない・やめて戻る (確認あり)・読込失敗は
   すべて案内カード + 「塾生アプリの宿題に戻る」。class.html の「📝 ドリルで解く」は **単元 (topic) のある宿題だけ**に出す
   (無い宿題は提出ボタンだけ)。★残る抜け道: 公開の道場トップ (nyushi-dojo.html) からブックマークで直接開けば問題は解ける
