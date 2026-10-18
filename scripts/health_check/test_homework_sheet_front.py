@@ -28,6 +28,8 @@ CEO (ceo.html の CeoHwSheet = 生徒詳細「📚 宿題」と 📤 一括割�
       提出済みは「✅ 提出 (JST)」と 📝 4/5・期限後・完了時刻は JST
   [4] CEO の CeoHwSheet (ceo.html の inline script を本物のサーバの応答で): 表が無ければ「✍️ 答え方」を出さない・確認表 (問1 ウ …)・
       数が合わない / 確認中は割当を止める・正誤は 2 択に固定・同じプリントの前の正解表を入れる (打った正解は勝手に消さない)・
+      プリント / 科目を替えたら前のプリントから自動で入れた正解は消して止める (正解表の無いプリントに前の正解を ✅ のまま付けない)・
+      前のプリントの「入れる」は出さない・📤 一括割当は出したら元に戻して同じプリントの正解表を探し直す・
       宿題履歴の 📝 4/5・提出時刻・期限後・📊 問ごとの正解率と選ばれた記号・✏️ 正解を直す (確認 → PUT → 採点し直し)・↩️ やり直し (確認 → POST)・
       実施状況のチップの点数・escape
   [5] サーバに戻して確かめる: CEO が作った answer_sheet で割当 / 一括割当が 200・正解表 → 入力欄の文字 → サーバの読み方で同じ正解
@@ -106,6 +108,7 @@ def build_fixtures():
     sid = S.make_student(mod, fake_name, "hwfront-a@example.org", ai_disabled=1)   # 塾生アプリのみ枠 (AIなし)
     tok = {"Authorization": "Bearer " + S.student_token(mod, sid)}
     p1 = S.make_print(mod, "関係詞 <確認> テスト", "/lesson-prints/eng_kankeishi_front_01.pdf")
+    p2 = S.make_print(mod, "時制 (正解表なし) テスト", "/lesson-prints/eng_jisei_front_02.pdf")   # まだ正解表が無いプリント
     today = mod._today_jst()
     fut = today + datetime.timedelta(days=3)
     past = today - datetime.timedelta(days=2)
@@ -155,10 +158,12 @@ def build_fixtures():
     admin_list = client.get(f"/api/admin/homework/list?student_id={sid}", headers=admin).json()
     key_res_a = client.get(f"/api/admin/homework/answer-keys/{keyA}", headers=admin).json()
     keys_p1 = client.get(f"/api/admin/homework/answer-keys?print_id={p1}&limit=5", headers=admin).json()
+    keys_p2 = client.get(f"/api/admin/homework/answer-keys?print_id={p2}&limit=5", headers=admin).json()
     probe = client.get("/api/admin/homework/answer-keys?limit=1", headers=admin)
     check("塾長の画面の応答 (一覧・正解表の結果・プリントの正解表・ready の確かめ) が取れる",
           admin_list.get("ok") and key_res_a.get("ok") and keys_p1.get("items") and probe.status_code == 200,
           (str(admin_list)[:120], str(key_res_a)[:120]))
+    check("正解表の無いプリント (P2) の正解表の一覧は空", keys_p2.get("ok") is not False and keys_p2.get("items") == [], str(keys_p2)[:200])
     rReset = client.post(f"/api/admin/homework/{B}/sheet/reset", headers=admin)
     L2 = client.get("/api/student/homework", headers=tok).json()
     put_body = {"key": "ウ ア エ イ エ", "label_style": "katakana"}
@@ -167,8 +172,8 @@ def build_fixtures():
           and rPut.json().get("regraded") == 1, (rReset.text[:160], rPut.text[:160]))
 
     fx = {
-        "SID": sid, "NAME": fake_name, "A": A, "B": B, "C": C, "D": D, "E": E, "KEY_A": keyA, "P1": p1,
-        "L0": L0, "L1": L1, "L2": L2,
+        "SID": sid, "NAME": fake_name, "A": A, "B": B, "C": C, "D": D, "E": E, "KEY_A": keyA, "P1": p1, "P2": p2,
+        "L0": L0, "L1": L1, "L2": L2, "KEYS_P2": keys_p2,
         "R_A": {"status": rA.status_code, "body": rA.json()},
         "R_B409": {"status": rB2.status_code, "body": rB2.json()},
         "R_C422": {"status": rC422.status_code, "body": rC422.json()},
@@ -656,6 +661,7 @@ var AdminAuth = {
     if (url === '/api/admin/homework/answer-keys?limit=1') r = { status: PROBE_STATUS, body: PROBE_STATUS === 200 ? { ok: true, items: [] } : { detail: '記号の解答用紙は準備中です。' } };
     else if (url === '/api/admin/homework/answer-keys/check') r = FX.CHECKS[body] || null;
     else if (url === '/api/admin/homework/answer-keys?print_id=' + FX.P1 + '&limit=5') r = { status: 200, body: FX.KEYS_P1 };
+    else if (url === '/api/admin/homework/answer-keys?print_id=' + FX.P2 + '&limit=5') r = { status: 200, body: FX.KEYS_P2 };
     else if (url === '/api/admin/homework/answer-keys/' + FX.KEY_A && method === 'GET') r = { status: 200, body: FX.KEYRES_A };
     else if (url === '/api/admin/homework/answer-keys/' + FX.KEY_A && method === 'PUT') r = FX.PUT_A;
     else if (url === '/api/admin/homework/' + FX.B + '/sheet/reset' && method === 'POST') r = FX.RESET_B;
@@ -768,6 +774,66 @@ JS_CEO_CASES = r"""
     ctl2.reset();
     eq('割当てたら元に戻す', [el(R2, '.hws-mode').value, el(R2, '.hws-detail').hidden, el(R2, '.hws-key').value, el(R2, '.hws-nq').value, ctl2.getAnswerSheet().value],
        ['none', true, '', '', null]);
+
+    // (E4b) プリントを替えたら、前のプリントから自動で入れた正解は消す (2026-10-18 点検: 正解表の無い P2 に替えても P1 の正解が ✅ のまま
+    //   付き、サーバはそれを P2 の正解表として保存 → 次から P2 の「前の正解表」として入ってしまう)
+    var R4 = formRoot(); var ctl4 = W.wire(R4); await flush();
+    setVal(R4, '.hws-mode', 'choice', 'change'); TIMERS = [];
+    await ctl4.setPrint(FX.P1); await flush(); await runTimers();
+    eq('P1 を選ぶと前の正解表が入って通る', [el(R4, '.hws-key').value, ctl4.getAnswerSheet().ok], ['ウ ア エ イ エ', true]);
+    await ctl4.setPrint(FX.P2); await flush();
+    eq('正解表の無いプリントに替えると、P1 から入れた問題数・択数・記号・正解を消す',
+       [el(R4, '.hws-nq').value, el(R4, '.hws-nc').value, el(R4, '.hws-style').value, el(R4, '.hws-key').value], ['', '4', 'circled', '']);
+    ok('… ✅ の確認表と ♻️ の案内も消す', el(R4, '.hws-check').innerHTML.indexOf('✅') < 0 && el(R4, '.hws-reuse').innerHTML === '',
+       [el(R4, '.hws-check').innerHTML, el(R4, '.hws-reuse').innerHTML]);
+    eq('… P1 の正解では割当てない', ctl4.getAnswerSheet().ok, false);
+    await runTimers();
+    ok('… 理由は「問題数を入れてください」・答え方は記号のまま', el(R4, '.hws-check').innerHTML.indexOf('❌ 問題数を入れてください') >= 0
+       && el(R4, '.hws-mode').value === 'choice' && ctl4.getAnswerSheet().ok === false, el(R4, '.hws-check').innerHTML);
+    await ctl4.setPrint(FX.P1); await flush(); await runTimers();
+    eq('P1 に戻すとまた入る', [el(R4, '.hws-key').value, ctl4.getAnswerSheet().ok], ['ウ ア エ イ エ', true]);
+    await ctl4.setPrint(null); await flush();
+    eq('科目を替える (プリントなし) ときも P1 の正解を消して止める', [el(R4, '.hws-key').value, el(R4, '.hws-nq').value, ctl4.getAnswerSheet().ok], ['', '', false]);
+    await ctl4.setPrint(FX.P1); await flush(); await runTimers();
+    setVal(R4, '.hws-mode', 'none', 'change');
+    await ctl4.setPrint(FX.P2); await flush();
+    setVal(R4, '.hws-mode', 'choice', 'change');
+    eq('「完了ボタンだけ」の間に替えても、記号に戻すと空', [el(R4, '.hws-key').value, el(R4, '.hws-nq').value], ['', '']);
+    await runTimers();
+    eq('… 割当は止める', ctl4.getAnswerSheet().ok, false);
+    // 塾長が打ち直した正解は消さない (打ったもの)。替えたことだけ知らせる
+    await ctl4.setPrint(FX.P1); await flush(); await runTimers();
+    setVal(R4, '.hws-key', 'ウアエイエ'); await runTimers();
+    eq('P1 の正解を打ち直して通る', ctl4.getAnswerSheet().ok, true);
+    var WARN = '⚠ プリントを変えました。入っている正解が、いま選んだプリントの正解か確かめてください';
+    await ctl4.setPrint(FX.P2); await flush();
+    ok('打ち直した正解は消さず、プリントを変えたことを知らせる', el(R4, '.hws-key').value === 'ウアエイエ'
+       && el(R4, '.hws-reuse').innerHTML.indexOf(WARN) >= 0, el(R4, '.hws-reuse').innerHTML);
+    await ctl4.setPrint(null); await flush();
+    await ctl4.setPrint(FX.P2); await flush();
+    ok('… 科目を替えてから別のプリントを選んでも知らせたまま', el(R4, '.hws-reuse').innerHTML.indexOf(WARN) >= 0, el(R4, '.hws-reuse').innerHTML);
+    setVal(R4, '.hws-key', 'ウアエイエ'); await runTimers();
+    await ctl4.setPrint(FX.P2); await flush();
+    eq('… このプリントで打ち直したら知らせない', el(R4, '.hws-reuse').innerHTML, '');
+    // 打った正解があるときの P1 の「入れる」(押すと P1 の正解が入る) は、P2 に替えたら出さない
+    var R5 = formRoot(); var ctl5 = W.wire(R5); await flush();
+    setVal(R5, '.hws-mode', 'choice', 'change');
+    setVal(R5, '.hws-nq', '5'); setVal(R5, '.hws-style', 'katakana', 'change'); setVal(R5, '.hws-key', 'ウアエイエ'); await runTimers();
+    await ctl5.setPrint(FX.P1); await flush();
+    ok('打った正解があるときは P1 の「入れる」ボタン', el(R5, '.hws-reuse').innerHTML.indexOf('hws-fill') >= 0, el(R5, '.hws-reuse').innerHTML);
+    await ctl5.setPrint(FX.P2); await flush();
+    ok('P2 に替えたら P1 の「入れる」を消す (打った正解はそのまま・プリントを選ぶ前に打った正解なので案内も出さない)',
+       el(R5, '.hws-reuse').innerHTML === '' && el(R5, '.hws-key').value === 'ウアエイエ', el(R5, '.hws-reuse').innerHTML);
+    // 📤 一括割当は出した後 reset() → 選んだままのプリントの正解表を探し直す (hwbAssign と同じ順)
+    ctl4.reset(); await ctl4.setPrint(FX.P1); await flush();
+    ok('出した後: 答え方は元に戻し、同じプリントの前の正解表は案内だけ', el(R4, '.hws-mode').value === 'none' && el(R4, '.hws-key').value === ''
+       && el(R4, '.hws-reuse').innerHTML === '' && el(R4, '.hws-hint').textContent.indexOf('このプリントには前に使った正解表があります') >= 0
+       && ctl4.getAnswerSheet().value === null, [el(R4, '.hws-mode').value, el(R4, '.hws-key').value, el(R4, '.hws-hint').textContent]);
+    setVal(R4, '.hws-mode', 'choice', 'change');
+    eq('… 記号にするとそのプリントの正解表が入る', el(R4, '.hws-key').value, 'ウ ア エ イ エ');
+    await ctl4.setPrint(FX.P2); await flush(); await runTimers();
+    eq('… 続けて正解表の無いプリントに替えると空で止める', [el(R4, '.hws-key').value, ctl4.getAnswerSheet().ok], ['', false]);
+    TIMERS = [];
 
     // (E5) 正解表 → 入力欄の文字 (サーバで読み戻す)
     var K = [[[3, 1, 4, 2], 'katakana', 4, 4], [[3, [1, 4], 0, 2], 'circled', 4, 4], [[1, 2, 1], 'seigo', 3, 2], [[8, 1, [2, 3]], 'upper', 3, 8], [[5, 1], 'lower', 2, 6]];
@@ -975,6 +1041,13 @@ def main():
     check("CEO: 確認表が通っていなければ割当を止める (個別・一括)", ceo_html.count("getAnswerSheet() : { ok: true, value: null };") == 2
           and "if (!sheet.ok) { formMsg.style.color = '#fca5a5'; formMsg.textContent = '❌ ' + sheet.error; return; }" in ceo_html)
     check("CEO: プリントを選んだら前の正解表を探す (個別・一括)", "sheetCtl.setPrint(printSel.value || null)" in ceo_html and "_hwbSheet.setPrint(pp.value || null)" in ceo_html)
+    i_bulk = ceo_html.find("async function hwbAssign() {")
+    bulk_src = ceo_html[i_bulk:ceo_html.find("\n    }\n", i_bulk)] if i_bulk >= 0 else ""
+    bulk_reset = "if (_hwbSheet) { _hwbSheet.reset(); _hwbSheet.setPrint((document.getElementById('hwbPrint') || {}).value || null); }"
+    check("CEO: 📤 一括割当は出せたら「✍️ 答え方」を元に戻す (次のプリントに前の正解を残さない)・選んだままのプリントの正解表を探し直す",
+          bulk_reset in bulk_src and bulk_src.find("hwbSelectAll(false);") < bulk_src.find(bulk_reset)
+          and bulk_src.find("if (!res.ok) {") < bulk_src.find(bulk_reset), len(bulk_src))
+    check("CEO: 個別は出せたら sheetCtl.reset() (前の正解を残さない)", "if (sheetCtl) sheetCtl.reset();" in ceo_html)
     check("CEO: 宿題履歴に結果・📊・✏️・↩️ (CeoHwSheet.historyHtml / wireHistory)", "CeoHwSheet.historyHtml(it, fmtDate)" in ceo_html
           and "CeoHwSheet.wireHistory(histBox, items, { studentName, onChanged: refreshList });" in ceo_html)
     check("CEO: 添付プリントの案内は「生徒のアプリで」(マイページだけではない)", ceo_html.count("生徒のアプリでPDFを開けます") == 2 and "生徒のマイページでPDF" not in ceo_html)

@@ -3506,7 +3506,7 @@
       const $ = c => root.querySelector(c);
       const box = $('.hws-box'), mode = $('.hws-mode'), detail = $('.hws-detail'), nq = $('.hws-nq'), nc = $('.hws-nc'),
         style = $('.hws-style'), key = $('.hws-key'), check = $('.hws-check'), reuse = $('.hws-reuse'), hint = $('.hws-hint');
-      const st = { ready: false, seq: 0, printSeq: 0, pending: false, valid: false, error: '', result: null, checked: null, reuseKey: null, autofilled: null };
+      const st = { ready: false, seq: 0, printSeq: 0, pending: false, valid: false, error: '', result: null, checked: null, reuseKey: null, autofilled: null, printId: null, keyPrint: null };
       let timer = null;
       if (!box) return null;
       probeReady().then(ok => { st.ready = ok; box.hidden = !ok; });
@@ -3569,10 +3569,24 @@
         const b = reuse.querySelector('.hws-fill');
         if (b) b.addEventListener('click', () => fillFrom(k));
       }
+      // 前のプリントから自動で入れた正解 (打ち直していない) は、前のプリントのもの。問題数・択数・記号・正解・確認表をまっさらに戻す
+      function clearAutofilled() {
+        clearTimeout(timer); st.seq++;
+        nq.value = ''; nc.value = '4'; style.value = 'circled'; key.value = '';
+        syncStyle();
+        Object.assign(st, { pending: false, valid: false, error: '', result: null, checked: null, autofilled: null });
+        if (isChoice()) schedule(); else render();
+      }
       async function setPrint(pid) {
         const my = ++st.printSeq;
+        st.printId = pid || null;
         st.reuseKey = null;
-        if (key.value === st.autofilled) reuse.innerHTML = '';
+        // ★プリントを変えたら、前のプリントの正解は残さない (2026-10-18 点検)。残すと、正解表の無いプリントに替えても前の正解が
+        //   ✅ のまま割当てられ、サーバはそれを新しいプリントの正解表として保存し、次からそのプリントの「前の正解表」として入ってしまう
+        if (st.autofilled != null && key.value === st.autofilled) clearAutofilled();
+        // 前のプリントの ♻️ の案内 (「入れる」ボタンは前のプリントの正解表を入れる) も消す。塾長が別のプリントで打った正解は消さずに知らせる
+        reuse.innerHTML = (key.value.trim() && st.keyPrint != null && st.keyPrint !== st.printId)
+          ? '⚠ プリントを変えました。入っている正解が、いま選んだプリントの正解か確かめてください' : '';
         updateHint();
         if (!pid) return;
         if (!(await probeReady())) return;
@@ -3591,7 +3605,7 @@
         else render();
       });
       nq.addEventListener('input', schedule);
-      key.addEventListener('input', schedule);
+      key.addEventListener('input', () => { st.keyPrint = st.printId; schedule(); });   // どのプリントを選んでいる間に打った正解か
       nc.addEventListener('change', schedule);
       style.addEventListener('change', () => { syncStyle(); schedule(); });
       return {
@@ -3609,7 +3623,7 @@
         reset() {
           clearTimeout(timer); st.seq++; st.printSeq++;
           mode.value = 'none'; detail.hidden = true; nq.value = ''; nc.value = '4'; style.value = 'circled'; nc.disabled = false; key.value = '';
-          Object.assign(st, { pending: false, valid: false, error: '', result: null, checked: null, reuseKey: null, autofilled: null });
+          Object.assign(st, { pending: false, valid: false, error: '', result: null, checked: null, reuseKey: null, autofilled: null, printId: null, keyPrint: null });
           reuse.innerHTML = ''; check.innerHTML = ''; hint.textContent = '';
         },
         _state: st,
@@ -7057,6 +7071,9 @@
         }
         if (msg) msg.innerHTML = html;
         hwbSelectAll(false);
+        // 📝 出したら「✍️ 答え方」を元に戻す (個別の sheetCtl.reset() と同じ)。戻さないと、次に選んだ正解表の無いプリントにも
+        //   この正解が ✅ のまま付いてしまう。プリントの選択は残るので、そのプリントの正解表 (いま保存したもの) を探し直す
+        if (_hwbSheet) { _hwbSheet.reset(); _hwbSheet.setPrint((document.getElementById('hwbPrint') || {}).value || null); }
         // 「📚 宿題 実施状況」パネルがあれば即更新 (scope非依存にボタンclickで)
         const rb = document.getElementById('refreshHomeworkStatusBtn'); if (rb) rb.click();
       } catch (e) { if (msg) msg.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(String(e))}</span>`; }
