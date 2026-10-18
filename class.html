@@ -1654,7 +1654,7 @@
       gdDrills.forEach(function (x) { if (String(x.drill_id) === String(drillId)) x.status = 'completed'; });
       hwNoticeAfterSubmit(null);   // ⏰ 出したドリルの 〆 の帯を消す
       var badge = document.getElementById('hwBadge');
-      var curTxt = (badge && badge.textContent) || '';
+      var curTxt = String((badge && badge.textContent) || '');   // 文字列にそろえる (textContent が数のとき indexOf で落ちない・2026-10-18)
       var cur = parseInt(curTxt, 10);
       // '99+' は実数が分からないので触らない (すぐ後の loadHomework が正しい数に直す)
       if (curTxt.indexOf('+') < 0 && cur > 0) updateBadge('hwBadge', cur - 1);
