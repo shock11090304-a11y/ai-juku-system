@@ -4091,7 +4091,7 @@ function showMonthEndResultModal(data, dryRun) {
         ? `<span style="font-size:0.72rem;color:var(--text-dim);font-family:monospace;">${escapeHtmlME(rawDetail)}</span>`
         : `<div style="font-size:0.84rem;">${escapeHtmlME(d.text)}</div>${(rawDetail && rawDetail !== d.text) ? `<details style="margin-top:2px;"><summary style="font-size:0.72rem;color:var(--text-dim);cursor:pointer;">詳細 (原文)</summary><div style="font-size:0.72rem;color:var(--text-dim);font-family:monospace;word-break:break-all;">${escapeHtmlME(rawDetail)}</div></details>` : ''}${action}`;
       html += `<tr style="${rowStyle}">
-        <td><div>${escapeHtmlME(r.studentName || r.registrationId)}</div><div style="font-size:0.72rem;color:var(--text-dim);">${escapeHtmlME(r.email || '')}${r.phone ? ` ・ ${escapeHtmlME(r.phone)}` : ''}</div></td>
+        <td><div>${escapeHtmlME(r.studentName || r.registrationId)}</div><div style="font-size:0.72rem;color:var(--text-dim);overflow-wrap:anywhere;">${escapeHtmlME(r.email || '')}${r.phone ? ` ・ ${escapeHtmlME(r.phone)}` : ''}</div></td>
         <td class="ta-r">${fmtYenME(amt)}</td>
         <td>${badge}</td>
         <td style="max-width:360px;word-break:break-word;">${detailHtml}</td>

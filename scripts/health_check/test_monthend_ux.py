@@ -11,6 +11,7 @@
   7. app.js の ?v= が更新されている
 """
 import importlib.util
+from html.parser import HTMLParser
 import json
 import os
 import re
@@ -43,6 +44,51 @@ def main():
     check("結果/reconcile モーダルは .modal-overlay + .modal", html.count('id="monthEndResultModal" class="modal-overlay hidden"') == 1 and html.count('id="reconcileModal" class="modal-overlay hidden"') == 1)
     check("閉じるボタンは data-modal-close (共通ハンドラで閉じる)", 'id="monthEndResultClose" data-modal-close' in html and 'id="reconcileModalClose" data-modal-close' in html)
     check("app.js: モーダル表示に display:'flex' / 'none' の直書きが残っていない", "modal.style.display = 'flex'" not in js and "reconcileModal').style.display = 'none'" not in js)
+    # 2026-10-20: .panel の backdrop-filter が position:fixed の基準を section に変える → section の中のモーダルは section の高さの
+    # オーバーレイの中央 = 画面の外に出る (実行結果・🔧 確定で起きた。2026-05-07 の生徒追加モーダルと同じ)。モーダルはタブの section の外に置く
+    #   基準を変えるクラスは style.css で backdrop-filter / filter / transform を持つものから拾う (.panel / .header / .stat-card など)。
+    #   HTML はパーサで祖先をたどる (section の入れ子・class の順番に左右されない)
+    trap = set()
+    for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css):
+        if re.search(r"(?:^|;|\s)(?:backdrop-filter|filter|transform)\s*:\s*(?!none)", body):
+            trap |= set(re.findall(r"\.([A-Za-z0-9_-]+)", sel.split(":")[0]))
+    trap -= {"modal-overlay", "modal"}   # モーダル自身 (と中身) は数えない
+
+    class _Scan(HTMLParser):
+        VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
+
+        def __init__(self):
+            super().__init__()
+            self.stack, self.bad = [], []
+
+        def handle_starttag(self, tag, attrs):
+            a = dict(attrs)
+            cls = set((a.get("class") or "").split())
+            if "modal-overlay" in cls:
+                anc = sorted({c for _, cs in self.stack for c in cs if c in trap})
+                if anc:
+                    self.bad.append((a.get("id") or tag, anc))
+            if tag not in self.VOID:
+                self.stack.append((tag, cls))
+
+        def handle_endtag(self, tag):
+            for i in range(len(self.stack) - 1, -1, -1):
+                if self.stack[i][0] == tag:
+                    del self.stack[i:]
+                    break
+    scan = _Scan()
+    scan.feed(html)
+    check("モーダル (.modal-overlay) を backdrop-filter / transform を持つ要素 (タブの .panel など) の中に置いていない (画面の外に出る)",
+          "panel" in trap and not scan.bad, (sorted(trap), scan.bad))
+    # スマホ幅: .modal-overlay は grid なので、.modal に min-width:0 が無いと表の最小幅 (折り返せないメールアドレス) まで広がり ✕ が画面の外に出る
+    mrule = re.search(r"(?m)^\.modal \{([^}]*)\}", css)
+    check(".modal は min-width:0 (スマホで表の幅に引っぱられて画面より広がらない)・高さは dvh も指定 (iPhone のツールバー)",
+          bool(mrule) and re.search(r"min-width:\s*0", mrule.group(1)) and "90dvh" in mrule.group(1), mrule.group(1) if mrule else None)
+    # 重なり: モーダルはどれも z-index 100 の body 直下なので、HTML で後ろにあるほど上に出る。
+    # 実行結果から開く 🔧 確定 (#reconcileModal)・🪪 カード変更 (#cardUpdateModal) は、実行結果より後ろに置く (逆だと結果の下に隠れる)
+    pos = {k: html.find(f'id="{k}"') for k in ("monthEndResultModal", "reconcileModal", "cardUpdateModal")}
+    check("実行結果のモーダルは、そこから開く 🔧 確定・🪪 カード変更より HTML の前にある (上に重なる)",
+          all(v >= 0 for v in pos.values()) and pos["monthEndResultModal"] < pos["reconcileModal"] and pos["monthEndResultModal"] < pos["cardUpdateModal"], pos)
 
     print("2) 画面要素")
     for eid in ("monthEndStatusBanner", "monthEndStepper", "monthEndCurLabel", "monthEndNextLabel", "monthEndArrearsNote", "monthEndSearch", "monthEndSelectAll", "monthEndAlreadyLabel", "monthEndRules"):

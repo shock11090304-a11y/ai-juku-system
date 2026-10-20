@@ -540,7 +540,9 @@ body {
   border: 1px solid var(--panel-border);
   border-radius: 18px;
   width: 100%; max-width: 720px;
+  min-width: 0;   /* 2026-10-20: .modal-overlay は grid なので、既定 (min-width:auto) だと表の最小幅まで広がり、スマホで ✕ が画面の外に出る。広い表は .modal-body の中で横に巻く */
   max-height: 90vh;
+  max-height: 90dvh;   /* iPhone の Safari はツールバーの分だけ 100vh が見える高さより大きい (対応していない古いブラウザは上の 90vh) */
   display: flex; flex-direction: column;
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
   animation: slideUp 0.2s ease-out;
@@ -844,7 +846,7 @@ body {
   .match-tab { padding: 0.4rem 0.7rem; font-size: 0.75rem; }
 
   .modal-overlay { padding: 0.5rem; }
-  .modal { max-width: 100%; width: 100%; max-height: calc(100vh - 1rem); border-radius: 12px; }
+  .modal { max-width: 100%; width: 100%; max-height: calc(100vh - 1rem); max-height: calc(100dvh - 1rem); border-radius: 12px; }
   .modal-sm, .modal-lg { max-width: 100%; }
   .modal-head { padding: 0.85rem 1rem; }
   .modal-head h2 { font-size: 0.95rem; }

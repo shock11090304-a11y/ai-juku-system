@@ -49,7 +49,9 @@ def main():
     check("確定時: 当月分は入金月に記帳・要確認の残りは警告して残す", "candidateMonth(c)" in js and "は今回は反映されません" in js and "IMPORT.candidates = IMPORT.candidates.filter(c => !c.decided && !c.ignored)" in js)
     check("取込タブに「📥 申込取り込み」ボタン", 'id="importAppsFromImportBtn"' in html and "importAppsFromImportBtn" in js)
     check("生徒追加モーダルに取込ヒント欄", 'id="addStudentImportHint"' in html)
-    check("style.css の ?v= が更新済み", "style.css?v=20260908" in html)
+    # 2026-09-08 の取込行の CSS 以降の版であること (後の変更で ?v= を上げても落ちないよう、日付の大小で見る・2026-10-20)
+    _css_v = re.search(r"style\.css\?v=(\d{8})", html)
+    check("style.css の ?v= が更新済み (20260908 以降)", bool(_css_v) and _css_v.group(1) >= "20260908", _css_v.group(0) if _css_v else None)
     # 純粋関数の実行検査 (jsc / node があるときだけ・CI では静的検査のみ)
     jsc = "/System/Library/Frameworks/JavaScriptCore.framework/Versions/Current/Helpers/jsc"
     node = shutil.which("node")
