@@ -57,8 +57,8 @@ const DEFAULT_STRIPE_INVITE_BODY = `{{student}} 様の保護者様
 **月謝 ¥{{fee}} (前払い制 / 翌月分を当月にお支払い)** を自動で毎月引き落とさせていただきます。
 振込手数料はかからず、毎月の振込忘れの心配もございません。
 
-▼カード情報の変更・解約 (24時間いつでも可能)
-{{customerPortal}}
+▼カード情報の変更・解約
+塾長 LINE までご連絡ください（カード変更用のリンクをお送りします）。
 
 銀行振込を継続される場合は、引き続きこれまで通りで結構です。
 
@@ -70,6 +70,14 @@ const DEFAULT_STRIPE_INVITE_BODY = `{{student}} 様の保護者様
 {{ownerEmail}}
 {{ownerPhone}}
 ────────────────────`;
+
+// 2026-10-20: 顧客ポータルでカードを変えても、月謝の引き落とし (KV に登録したカードを使う) には反映されない。
+// 設定に保存された古い案内文の「カード情報の変更・解約 (24時間いつでも可能) + ポータル URL」は、送るときに LINE 連絡へ置き換える
+const OLD_PORTAL_CARD_BLOCK = '▼カード情報の変更・解約 (24時間いつでも可能)\n{{customerPortal}}';
+const NEW_PORTAL_CARD_BLOCK = '▼カード情報の変更・解約\n塾長 LINE までご連絡ください（カード変更用のリンクをお送りします）。';
+function withoutPortalCardChange(body) {
+  return String(body || '').split(OLD_PORTAL_CARD_BLOCK).join(NEW_PORTAL_CARD_BLOCK);
+}
 
 const DEFAULT_SETTINGS = {
   jukuName: '◯◯塾',
@@ -1926,6 +1934,12 @@ function spotChargeBtnForStudent(student) {
   return `<button class="icon-btn" disabled title="カード未登録のため講習費用のカード請求はできません。先に「✓確定」でカード紐付けが必要です。" style="opacity:0.35;cursor:not-allowed;">🎓講習費用</button>`;
 }
 
+// 生徒一覧 行の「🪪」ボタン (月謝のカード変更リンク・2026-10-20)。紐付け✓確定済みで、その登録が今もある生徒だけ
+function cardUpdateBtnForStudent(student) {
+  if (resolveRegForStudent(student).status !== 'linked') return '';
+  return `<button class="icon-btn" data-action="card-update" title="カード変更のリンクを作る (保護者に新しいカードを入れてもらう。名簿の紐付け・月額・これまでの記録はそのまま)" style="color:#7dd3fc;border-color:rgba(56,189,248,0.45);">🪪カード変更</button>`;
+}
+
 // 候補バッジの「✓確定」ボタン → 手動で紐付け確定 (renderAll 等で共通利用)
 function handleLinkRegClick(studentId, regId, customerId) {
   if (!regId) { alert('登録情報が見つかりません。画面を再読込してください。'); return; }
@@ -2626,7 +2640,7 @@ function renderAll() {
       <td class="ta-c">
         <button class="pay-toggle ${paid ? 'paid' : ''}" data-action="toggle" title="${paid ? '入金済' : '未払い'}">${paid ? '✓' : '○'}</button>
       </td>
-      <td class="ta-c">${stripeRegBadge(s)} ${spotChargeBtnForStudent(s)}</td>
+      <td class="ta-c">${stripeRegBadge(s)} ${spotChargeBtnForStudent(s)} ${cardUpdateBtnForStudent(s)}</td>
     </tr>`;
   }).join('');
 
@@ -2634,7 +2648,7 @@ function renderAll() {
     const btn = e.target.closest('[data-action]');
     if (!btn) return;
     const a = btn.dataset.action;
-    if (a !== 'toggle' && a !== 'link-reg' && a !== 'unlink-reg' && a !== 'edit' && a !== 'spot-charge') return;  // email/payer/status は oninput/onchange 側で処理
+    if (a !== 'toggle' && a !== 'link-reg' && a !== 'unlink-reg' && a !== 'edit' && a !== 'spot-charge' && a !== 'card-update') return;  // email/payer/status は oninput/onchange 側で処理
     const tr = btn.closest('tr');
     const id = parseInt(tr.dataset.studentId, 10);
     if (a === 'toggle') {
@@ -2653,6 +2667,11 @@ function renderAll() {
       if (!link || !link.regId) { alert('この生徒はカード未登録のため講習費用の請求はできません。'); return; }
       const nm = (tr.querySelector('.name-cell')?.textContent || `#${id}`).trim();
       openSpotChargeModal(link.regId, nm, link.customerId);
+    } else if (a === 'card-update') {
+      const link = getRegLink(id);
+      if (!link || !link.regId) { alert('この生徒はカード登録が紐付いていないため、カード変更のリンクは作れません。'); return; }
+      const nm = (tr.querySelector('.name-cell')?.textContent || '').trim();
+      openCardUpdateModal(link.regId, link.customerId, { name: nm });
     }
   };
   tbody.onchange = (e) => {
@@ -3026,7 +3045,7 @@ function describeChargeError(r) {
   const decl = String(r.declineCode || '').toLowerCase();
   const raw = String(r.error || r.reason || '');
   const rawL = raw.toLowerCase();
-  if (r.status === 'requires_action') return { text: 'カード会社の本人認証 (3DS) が必要で、無人での引き落としができませんでした。保護者に登録ページからカードを再登録してもらうか、本人認証の URL を送ってください。', action: 'reregister' };
+  if (r.status === 'requires_action') return { text: 'カード会社の本人認証 (3DS) が必要で、無人での引き落としができませんでした。保護者に「🔗 本人認証の URL」を送ってください (「📜 過去の履歴・失敗者一覧・要対応」の 🔐 欄にもあります)。毎月こうなる場合は、今月分の本人認証が済んでから「🪪 カード変更」でカードを入れ直してもらってください。', action: 'reregister' };
   if (r.status === 'uncertain') return { text: '課金されたかどうか不明です (通信が途中で切れました)。Stripe で確認してから「🔧 確定」で状態を確定してください。', action: 'reconcile' };
   if (r.status === 'skipped') {
     if (rawL.includes('kv error')) return { text: '保存先 (KV) の応答が無かったため、安全のため請求しませんでした。少し待って「🔄 プレビュー更新」→ 未請求ならもう一度実行してください。', action: '' };
@@ -3037,14 +3056,14 @@ function describeChargeError(r) {
     if (rawL.includes('初回決済で支払済み')) return { text: 'この月は入塾時の初回カード決済で支払済みのため請求しませんでした。', action: '' };
     return { text: `対象外のため飛ばしました (${raw})`, action: '' };
   }
-  if (code === 'authentication_required' || decl === 'authentication_required') return { text: 'カード会社の本人認証 (3DS) が必要で、無人での引き落としが拒否されました。保護者にカードの再登録を依頼してください。', action: 'reregister' };
-  if (decl === 'insufficient_funds') return { text: '残高不足で拒否されました。日を改めて再請求するか、別のカードの登録を依頼してください。', action: 'retry' };
-  if (code === 'expired_card' || decl === 'expired_card') return { text: 'カードの有効期限が切れています。カードの再登録を依頼してください。', action: 'reregister' };
-  if (['incorrect_cvc', 'incorrect_number', 'invalid_cvc', 'invalid_number'].includes(code) || ['incorrect_cvc', 'incorrect_number'].includes(decl)) return { text: 'カード情報の誤りで拒否されました。カードの再登録を依頼してください。', action: 'reregister' };
-  if (['lost_card', 'stolen_card', 'pickup_card', 'restricted_card'].includes(decl)) return { text: 'カード会社がこのカードを無効にしています。別のカードの登録を依頼してください。', action: 'reregister' };
+  if (code === 'authentication_required' || decl === 'authentication_required') return { text: 'カード会社の本人認証 (3DS) が必要で、無人での引き落としが拒否されました。「🪪 カード変更」のリンクを保護者に送り、新しいカードが登録されたら「🔁 再請求」してください。', action: 'cardupdate' };
+  if (decl === 'insufficient_funds') return { text: '残高不足で拒否されました。日を改めて再請求するか、別のカードにする場合は「🪪 カード変更」のリンクを保護者に送ってください。', action: 'retry' };
+  if (code === 'expired_card' || decl === 'expired_card') return { text: 'カードの有効期限が切れています。「🪪 カード変更」のリンクを保護者に送り、新しいカードが登録されたら「🔁 再請求」してください。', action: 'cardupdate' };
+  if (['incorrect_cvc', 'incorrect_number', 'invalid_cvc', 'invalid_number'].includes(code) || ['incorrect_cvc', 'incorrect_number'].includes(decl)) return { text: 'カード情報の誤りで拒否されました。「🪪 カード変更」のリンクを保護者に送り、新しいカードが登録されたら「🔁 再請求」してください。', action: 'cardupdate' };
+  if (['lost_card', 'stolen_card', 'pickup_card', 'restricted_card'].includes(decl)) return { text: 'カード会社がこのカードを無効にしています。「🪪 カード変更」のリンクを保護者に送り、新しいカードが登録されたら「🔁 再請求」してください。', action: 'cardupdate' };
   if (code === 'resource_missing' || rawL.includes('no such customer') || rawL.includes('no such payment_method')) return { text: 'Stripe 上に顧客/カードが見つかりません (削除済み)。登録し直しが必要です。この人は一覧から自動で外れます。', action: 'reregister' };
   if (code === 'processing_error' || decl === 'processing_error' || decl === 'try_again_later') return { text: 'カード会社側の一時的なエラーです。時間をおいて再請求してください。', action: 'retry' };
-  if (code === 'card_declined' || decl) return { text: `カード会社が拒否しました (理由: ${decl || '非公開'})。保護者にカード会社への確認か、別のカードの登録を依頼してください。`, action: 'reregister' };
+  if (code === 'card_declined' || decl) return { text: `カード会社が拒否しました (理由: ${decl || '非公開'})。保護者にカード会社への確認を頼むか、「🪪 カード変更」のリンクを保護者に送り、新しいカードが登録されたら「🔁 再請求」してください。`, action: 'cardupdate' };
   if (rawL.includes('timeout') || rawL.includes('network')) return { text: '通信エラーです。Stripe で課金の有無を確認してください。', action: 'reconcile' };
   if (r.status === 'failed') return { text: `請求に失敗しました (${raw.slice(0, 80) || 'unknown'})。`, action: 'retry' };
   return { text: raw, action: '' };
@@ -3268,7 +3287,7 @@ function renderMonthEndTable(data) {
     } else if (c.doneStatus === 'uncertain') {
       statusBadge = `<span style="color:#fbbf24;">⚠️ 要確認</span><div style="font-size:0.72rem;color:var(--text-dim);">課金されたか不明。Stripe で確認して確定</div>${fixBtn}`;
     } else if (c.doneStatus === 'requires_action') {
-      statusBadge = '<span style="color:#fbbf24;">🔐 本人認証 (3DS) 待ち</span><div style="font-size:0.72rem;color:var(--text-dim);">保護者のカード再登録が必要</div>';
+      statusBadge = '<span style="color:#fbbf24;">🔐 本人認証 (3DS) 待ち</span><div style="font-size:0.72rem;color:var(--text-dim);">保護者に本人認証の URL を送ってください (📜 履歴の 🔐 欄)</div>';
     } else if (c.alreadyChargedThisMonth) {
       statusBadge = `<span style="color:var(--text-dim);">✅ ${escapeHtmlME(data.month)} 分 引き落とし済</span>`;
     } else if (c.beforeStart) {
@@ -3311,14 +3330,19 @@ function renderMonthEndTable(data) {
     const spotBtn = c.ready
       ? `<button class="btn btn-ghost btn-sm" onclick="chargeSpotFor('${rid}')" title="講習費用などを任意金額で今すぐ1回だけ請求 (月謝は変わりません)" style="color:#a78bfa;border-color:rgba(139,92,246,0.45);">🎓 講習費用</button> `
       : '';
+    // 🪪 カード変更リンク (2026-10-20): 登録・月額・台帳はそのままでカードだけ差し替える。setup 方式で Stripe 顧客のある登録だけ
+    const cardBtn = (c.customerId && c.checkoutMode === 'setup')
+      ? `<button class="btn btn-ghost btn-sm" onclick="openCardUpdateModal('${rid}')" title="保護者に新しいカードを入れてもらうリンクを作ります (名簿の紐付け・月額・これまでの記録はそのまま)" style="color:#7dd3fc;border-color:rgba(56,189,248,0.45);">🪪 カード変更</button> `
+      : '';
     const sub = [c.grade, c.parentName ? `保護者 ${c.parentName}` : '', c.email].filter(Boolean).map(escapeHtmlME).join(' ・ ');
+    const cardLine = cardUpdateLabel(c) ? `<div style="font-size:0.72rem;color:#7dd3fc;margin-top:2px;">🪪 ${escapeHtmlME(cardUpdateLabel(c))}</div>` : '';
     return `<tr>
       ${toggleCell}
-      <td><div style="font-weight:600;">${escapeHtmlME(c.studentName)}</div><div style="font-size:0.74rem;color:var(--text-dim);word-break:break-all;">${sub}</div></td>
+      <td><div style="font-weight:600;">${escapeHtmlME(c.studentName)}</div><div style="font-size:0.74rem;color:var(--text-dim);word-break:break-all;">${sub}</div>${cardLine}</td>
       <td class="ta-r"><strong>${fmtYenME(c.monthlyFee)}</strong>${c.feeBreakdown ? `<div style="font-size:0.72rem;color:var(--text-dim);font-weight:400;white-space:normal;">${escapeHtmlME(c.feeBreakdown)}</div>` : ''}${arrearsSub}</td>
       <td>${statusBadge}</td>
       <td style="font-size:0.8rem;">${rosterCell}</td>
-      <td style="white-space:nowrap">${oneBtn}${spotBtn}<button class="btn btn-ghost btn-sm" onclick="cancelRegistration('${rid}', '${escapeHtmlME(c.studentName)}')" style="color:#f87171;margin-left:0.6rem;opacity:0.75;" title="退塾処理 (カードの登録解除)">🗑</button></td>
+      <td style="white-space:nowrap">${oneBtn}${spotBtn}${cardBtn}<button class="btn btn-ghost btn-sm" onclick="cancelRegistration('${rid}', '${escapeHtmlME(c.studentName)}')" style="color:#f87171;margin-left:0.6rem;opacity:0.75;" title="退塾処理 (カードの登録解除)">🗑</button></td>
     </tr>`;
   }).join('');
   tbody.innerHTML = rows;
@@ -3566,6 +3590,247 @@ async function submitSpotCharge() {
 }
 window.submitSpotCharge = submitSpotCharge;
 
+// === 🪪 月謝のカード変更リンク (2026-10-20 塾長「カード情報の変更はどうすればいい？」) ===
+// /payment/api/admin-card-update が Stripe のカード入力ページ (mode=setup・その登録の顧客) を作る → 保護者が新しいカードを入れる →
+// webhook が同じ登録 (rid) のカードだけを差し替える。名簿の紐付け・月額・引き落とし済みの台帳は rid ごとそのまま残る
+// (以前の回り道「🗑 退塾処理 → 再登録 → 紐付け直し」は rid が変わり、前のカードで払った月が「未請求」に見えて二重取りの穴になった)。
+// rid だけを onclick に渡し、氏名などはプレビュー / 登録一覧 / サーバ (status) から引く (氏名を属性の文字列に埋めない)。
+// ダイアログを開くと status を聞き、送ったリンクがまだ使えるならそれを出す (作り直すと前のリンクが使えなくなるので、作り直しは確認つき)。
+const CARD_UPDATE_STATE = { busy: false, issued: false, ctx: {}, info: null, seq: 0 };
+
+function cardUpdateRegInfo(rid) {
+  const prev = MONTHEND_STATE.lastPreview;
+  const p = (prev && Array.isArray(prev.customers)) ? prev.customers.find(c => c.registrationId === rid) : null;
+  const r = (STRIPE_CUST_CACHE.customers || []).find(c => c.registrationId === rid);
+  const pick = (k) => (p && p[k]) || (r && r[k]) || '';
+  return {
+    studentName: pick('studentName'), customerId: pick('customerId'), cardBrand: pick('cardBrand'),
+    cardLast4: pick('cardLast4'), cardUpdatedAt: Number(pick('cardUpdatedAt')) || 0,
+  };
+}
+
+// 「VISA 末尾 4242（10/20 に変更）」。カード変更リンクで差し替えた登録だけ分かる (最初の登録時のカードは記録していない)
+function cardUpdateLabel(info) {
+  if (!info || !info.cardLast4) return '';
+  const d = fmtDateME(info.cardUpdatedAt);
+  return `${info.cardBrand || 'カード'} 末尾 ${info.cardLast4}${d ? `（${d} に変更）` : ''}`;
+}
+
+function setCardUpdateStatus(html, level) {
+  const el = document.getElementById('cardUpdateStatus');
+  if (!el) return;
+  const colorMap = { info: '#a5b4fc', success: '#34d399', error: '#f87171', warn: '#fbbf24' };
+  if (!html) { el.innerHTML = ''; el.style.cssText = 'font-size:0.84rem;'; return; }
+  el.innerHTML = html;
+  el.style.cssText = `font-size:0.84rem;font-weight:600;line-height:1.5;color:${colorMap[level || 'info']};`;
+}
+
+// リンクを作った後 (または送ったリンクがまだ使えるとき) は「閉じる」を主ボタンにし、「作り直す」は小さく (押し間違いで送ったリンクを殺さない)
+function setCardUpdateButtons(issued) {
+  const btn = document.getElementById('cardUpdateSubmitBtn');
+  const close = document.getElementById('cardUpdateCloseBtn');
+  if (btn) {
+    btn.className = issued ? 'btn btn-ghost btn-sm' : 'btn btn-primary';
+    btn.style.cssText = issued ? 'color:#7dd3fc;border-color:rgba(56,189,248,0.45);' : 'background:#0284c7;border-color:#0284c7;';
+    btn.textContent = issued ? '🪪 作り直す' : '🪪 リンクを作る';
+  }
+  if (close) close.className = issued ? 'btn btn-primary' : 'btn btn-ghost';
+}
+
+function showCardUpdateLink(url, expiresAt) {
+  const name = (CARD_UPDATE_STATE.info && CARD_UPDATE_STATE.info.studentName) || '';
+  document.getElementById('cardUpdateUrl').value = url;
+  document.getElementById('cardUpdateLineText').value = cardUpdateLineText(name, url, expiresAt, CARD_UPDATE_STATE.ctx);
+  document.getElementById('cardUpdateExpires').textContent = fmtDateTimeJstME(expiresAt) || '24 時間';
+  document.getElementById('cardUpdateResult').style.display = 'flex';
+  CARD_UPDATE_STATE.issued = true;
+  setCardUpdateButtons(true);
+  // スマホではコピーのボタンが画面の下に隠れる (主ボタンの「閉じる」だけが見える) ので、見える所まで送る
+  try { document.getElementById('cardUpdateResult').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (_) {}
+}
+
+// ctx: { name: 名簿の氏名 (登録一覧の読み込み前でも出す), failedMonth / failedAmount: 引き落としに失敗した月 (実行結果から開いたとき), sameCard: 3DS の失敗 }
+function openCardUpdateModal(rid, expectCustomerId, ctx) {
+  if (!rid) { alert('この生徒はカード登録がないため、カード変更のリンクは作れません。'); return; }
+  const m = document.getElementById('cardUpdateModal');
+  if (!m) return;
+  const info = cardUpdateRegInfo(rid);
+  CARD_UPDATE_STATE.ctx = ctx || {};
+  if (!info.studentName && CARD_UPDATE_STATE.ctx.name) info.studentName = CARD_UPDATE_STATE.ctx.name;
+  CARD_UPDATE_STATE.info = info;
+  CARD_UPDATE_STATE.issued = false;
+  const seq = ++CARD_UPDATE_STATE.seq;
+  document.getElementById('cardUpdateRid').value = rid;
+  document.getElementById('cardUpdateExpectCustomer').value = expectCustomerId || '';
+  document.getElementById('cardUpdateStudentName').textContent = info.studentName ? `${info.studentName} さん` : '(氏名不明)';
+  const cur = cardUpdateLabel(info);
+  document.getElementById('cardUpdateCurrentCard').textContent = cur ? `いまのカード: ${cur}` : '';
+  document.getElementById('cardUpdateInfo').textContent = info.customerId ? `Stripe: ${info.customerId} / ${rid}` : rid;
+  document.getElementById('cardUpdatePw').value = getMonthEndAdminPw() || '';
+  document.getElementById('cardUpdateUrl').value = '';
+  document.getElementById('cardUpdateLineText').value = '';
+  document.getElementById('cardUpdateResult').style.display = 'none';
+  setCardUpdateStatus('', '');
+  const btn = document.getElementById('cardUpdateSubmitBtn');
+  if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+  setCardUpdateButtons(false);
+  m.classList.remove('hidden');
+  m.style.display = '';
+  // 送ったリンクがまだ使えるか・いまのカード をサーバに聞く (パスワードが入っていれば。入っていなければ「リンクを作る」で入力)
+  const pw = (document.getElementById('cardUpdatePw').value || '').trim();
+  if (pw) {
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }   // 確かめている間に押すと、送ったリンクを確認なしで作り直してしまう
+    loadCardUpdateStatus(rid, expectCustomerId || '', pw, seq).finally(() => {
+      if (seq === CARD_UPDATE_STATE.seq && btn && !CARD_UPDATE_STATE.busy) { btn.disabled = false; btn.style.opacity = ''; }
+    });
+  }
+}
+window.openCardUpdateModal = openCardUpdateModal;
+
+async function loadCardUpdateStatus(rid, expectCustomerId, pw, seq) {
+  try {
+    setCardUpdateStatus('⏳ いまの状態を確かめています...', 'info');
+    const res = await fetch('/payment/api/admin-card-update', {
+      method: 'POST',
+      headers: { 'X-Admin-Password': pw, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'status', registrationId: rid, expectCustomerId }),
+    });
+    let data = {};
+    try { data = await res.json(); } catch (_) { data = {}; }
+    if (seq !== CARD_UPDATE_STATE.seq) return;   // 別の生徒で開き直した
+    if (!res.ok || !data.ok) {
+      setCardUpdateStatus(res.status === 401 ? '' : `⚠️ ${escapeHtmlME(data.message || data.error || `状態を確かめられませんでした (${res.status})`)}`, 'warn');
+      return;
+    }
+    shareVerifiedAdminPw(pw);
+    if (data.studentName) {
+      CARD_UPDATE_STATE.info.studentName = data.studentName;
+      document.getElementById('cardUpdateStudentName').textContent = `${data.studentName} さん`;
+    }
+    if (data.card && data.card.last4) {
+      const lbl = cardUpdateLabel({ cardBrand: data.card.brand, cardLast4: data.card.last4, cardUpdatedAt: data.card.updatedAt });
+      document.getElementById('cardUpdateCurrentCard').textContent = `いまのカード: ${lbl}`;
+    }
+    if (data.link && data.link.url) {
+      showCardUpdateLink(data.link.url, data.link.expiresAt);
+      setCardUpdateStatus(`📨 ${escapeHtmlME(fmtDateTimeJstME(data.link.createdAt))} に作ったリンクがまだ使えます (保護者はまだ入力していません)。もう一度送るときは、下の文面をコピーしてください。`, 'warn');
+    } else {
+      setCardUpdateStatus('', '');
+    }
+  } catch (_) {
+    if (seq === CARD_UPDATE_STATE.seq) setCardUpdateStatus('', '');
+  }
+}
+
+function closeCardUpdateModal() {
+  const m = document.getElementById('cardUpdateModal');
+  if (!m) return;
+  CARD_UPDATE_STATE.seq++;
+  m.classList.add('hidden');
+  m.style.display = 'none';
+}
+window.closeCardUpdateModal = closeCardUpdateModal;
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const m = document.getElementById('cardUpdateModal');
+  if (m && !m.classList.contains('hidden')) closeCardUpdateModal();
+});
+
+function fmtDateTimeJstME(epochSec) {
+  const n = Number(epochSec) || 0;
+  if (n <= 0) return '';
+  try {
+    return new Date(n * 1000).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  } catch (_) { return ''; }
+}
+
+// 保護者に LINE で送る文面。★「本日の課金はありません」とは書かない: 失敗した月を、カード変更の直後に新しいカードで取り直すことがある
+function cardUpdateLineText(studentName, url, expiresAt, ctx) {
+  const c = ctx || {};
+  const who = studentName ? `${String(studentName).trim()}さんの` : '';
+  const until = fmtDateTimeJstME(expiresAt);
+  const lines = [
+    `${who}月謝のお支払いカードを変更するためのリンクです。`,
+    '下のリンクを開いて、新しいカードを入力してください。',
+    '（カードを入力しただけでは料金はかかりません。これからの月謝は新しいカードで引き落とし、前のカードは使わなくなります）',
+  ];
+  if (c.sameCard) lines.push('※同じカードのままでよい場合も、このリンクから入れ直してください（カード会社の本人確認が出ることがあります）。');
+  if (c.failedMonth && /^\d{4}-\d{2}$/.test(c.failedMonth)) {
+    const amt = Number(c.failedAmount) || 0;
+    lines.push(`※お引き落としできなかった${parseInt(c.failedMonth.slice(5), 10)}月分${amt ? `（${fmtYenME(amt)}）` : ''}は、カードの変更が済んだあと、ご入力いただいたカードであらためて引き落とします。`);
+  }
+  lines.push(url);
+  lines.push(until ? `※リンクの有効期限は ${until} までです。期限が切れたら、この LINE でお知らせください。` : '※リンクの有効期限は 24 時間です。期限が切れたら、この LINE でお知らせください。');
+  return lines.join('\n');
+}
+
+async function submitCardUpdateLink() {
+  if (CARD_UPDATE_STATE.busy) return;
+  const rid = document.getElementById('cardUpdateRid').value;
+  const expectCustomerId = document.getElementById('cardUpdateExpectCustomer').value;
+  const pw = (document.getElementById('cardUpdatePw').value || '').trim();
+  if (!rid) { setCardUpdateStatus('対象が不正です。画面を再読込してください。', 'error'); return; }
+  if (!pw) { setCardUpdateStatus('🔒 管理パスワードを入力してください', 'warn'); return; }
+  if (CARD_UPDATE_STATE.issued && !confirm('前に作ったリンクは使えなくなります (保護者に送っていたら、新しいリンクを送り直すことになります)。\n\n新しいリンクを作り直しますか?')) return;
+  CARD_UPDATE_STATE.busy = true;
+  const seq = CARD_UPDATE_STATE.seq;
+  const btn = document.getElementById('cardUpdateSubmitBtn');
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+  setCardUpdateStatus('⏳ リンクを作っています...', 'info');
+  try {
+    const res = await fetch('/payment/api/admin-card-update', {
+      method: 'POST',
+      headers: { 'X-Admin-Password': pw, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create_link', registrationId: rid, expectCustomerId, replace: !!CARD_UPDATE_STATE.issued }),
+    });
+    let data = {};
+    try { data = await res.json(); } catch (_) { data = {}; }
+    if (seq !== CARD_UPDATE_STATE.seq) return;   // 待っている間に閉じた
+    if (res.status === 409 && data.error === 'LINK_ACTIVE') {
+      // 状態を確かめる前に押した (パスワード未入力で開いた等): 送ったリンクを殺さずに、そのリンクを出す
+      shareVerifiedAdminPw(pw);
+      if (data.link && data.link.url) showCardUpdateLink(data.link.url, data.link.expiresAt);
+      else { CARD_UPDATE_STATE.issued = true; setCardUpdateButtons(true); }
+      setCardUpdateStatus(`📨 ${escapeHtmlME(fmtDateTimeJstME((data.link || {}).createdAt))} に作ったリンクがまだ使えます (保護者はまだ入力していません)。新しく作らずに、下の文面を送り直してください。`, 'warn');
+      return;
+    }
+    if (!res.ok || !data.ok || !data.url) {
+      const hint = res.status === 404 && !data.error ? ' (画面が古い可能性があります。再読み込みしてください)' : '';
+      setCardUpdateStatus(`❌ ${escapeHtmlME(data.message || data.error || `エラー (${res.status})`)}${hint}`, 'error');
+      return;
+    }
+    shareVerifiedAdminPw(pw);
+    if (data.studentName && CARD_UPDATE_STATE.info) CARD_UPDATE_STATE.info.studentName = data.studentName;
+    showCardUpdateLink(data.url, data.expiresAt);
+    setCardUpdateStatus(`✅ リンクを作りました。下の文面をコピーして、保護者に LINE で送ってください。${data.expiredPrevious ? '<br>(前に作ったリンクは使えなくしました)' : ''}`, 'success');
+  } catch (e) {
+    setCardUpdateStatus(`❌ ネットワークエラー: ${escapeHtmlME(e.message)}`, 'error');
+  } finally {
+    CARD_UPDATE_STATE.busy = false;
+    if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+  }
+}
+window.submitCardUpdateLink = submitCardUpdateLink;
+
+async function copyCardUpdateText(which, btnEl) {
+  const el = document.getElementById(which === 'url' ? 'cardUpdateUrl' : 'cardUpdateLineText');
+  const text = el ? el.value : '';
+  if (!text) return;
+  let ok = false;
+  try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); ok = true; } } catch (_) { ok = false; }
+  if (!ok) {
+    try { el.focus(); el.select(); ok = document.execCommand('copy'); } catch (_) { ok = false; }
+  }
+  // スマホでは上の状態欄が画面の外にあることが多いので、押したボタン自体に結果を出す
+  if (btnEl) {
+    if (!btnEl.dataset.label) btnEl.dataset.label = btnEl.textContent;
+    btnEl.textContent = ok ? '✅ コピーしました' : '⚠️ コピーできませんでした';
+    setTimeout(() => { btnEl.textContent = btnEl.dataset.label; }, 2000);
+  }
+  setCardUpdateStatus(ok ? `📋 ${which === 'url' ? 'リンク' : '文面'}をコピーしました。LINE に貼り付けて送ってください。` : '⚠️ コピーできませんでした。枠の中を長押し (または選択) してコピーしてください。', ok ? 'success' : 'warn');
+}
+window.copyCardUpdateText = copyCardUpdateText;
+
 function escapeHtmlME(s) {
   // シングルクォートも潰す: onclick="fn('...')" のような単引用符コンテキストに埋め込むため
   // (rid はサーバ生成 token_urlsafe で通常混入しないが、構造的防御・2026-07-02 review)
@@ -3810,7 +4075,11 @@ function showMonthEndResultModal(data, dryRun) {
       const amt = Number(r.amount) || 0;
       let action = '';
       if (!dryRun && r.status === 'failed' && r.registrationId) {
-        action = `<div style="margin-top:4px;"><button type="button" class="btn btn-ghost btn-sm" onclick="retryCharge('${rid}', '${m}', '${nm}', ${amt})" style="color:#34d399;border-color:rgba(16,185,129,0.45);">🔁 再請求</button></div>`;
+        // 🪪 カードを替えれば通る失敗には「カード変更」も並べる (登録し直しが要る resource_missing と、課金の有無が不明な通信エラーは除く)
+        const isAuth = String(r.errorCode || '') === 'authentication_required' || String(r.declineCode || '') === 'authentication_required';
+        const cardFix = (d.action !== 'reregister' && d.action !== 'reconcile')
+          ? ` <button type="button" class="btn btn-ghost btn-sm" onclick="openCardUpdateModal('${rid}', '', { failedMonth: '${m}', failedAmount: ${amt}, sameCard: ${isAuth} })" style="color:#7dd3fc;border-color:rgba(56,189,248,0.45);">🪪 カード変更</button>` : '';
+        action = `<div style="margin-top:4px;"><button type="button" class="btn btn-ghost btn-sm" onclick="retryCharge('${rid}', '${m}', '${nm}', ${amt})" style="color:#34d399;border-color:rgba(16,185,129,0.45);">🔁 再請求</button>${cardFix}</div>`;
       } else if (!dryRun && r.status === 'uncertain' && r.registrationId) {
         action = `<div style="margin-top:4px;"><button type="button" class="btn btn-ghost btn-sm" onclick="openReconcileModal('${rid}', '${m}', '${nm}', ${amt})" style="color:#fbbf24;border-color:rgba(245,158,11,0.45);">🔧 確定</button></div>`;
       } else if (r.status === 'requires_action' && r.redirectUrl) {
@@ -3904,9 +4173,14 @@ function renderChargeHistory(data, filterType) {
         <td style="font-size:0.82rem">${escapeHtmlME(r.email)}</td>
         <td style="font-size:0.82rem">${escapeHtmlME(r.phone)}</td>
         <td class="ta-r">${fmtYenME(r.amount)}</td>
-        <td style="font-size:0.82rem;color:var(--text-dim);max-width:250px;word-break:break-word">${escapeHtmlME(r.errorCode || '')} / ${escapeHtmlME(r.declineCode || '')}<br>${escapeHtmlME(r.errorDetail || '').substring(0, 100)}</td>
-        <td>
-          <button class="btn btn-ghost btn-sm" onclick="retryCharge('${escapeHtmlME(r.registrationId)}', '${escapeHtmlME(data.month)}', '${escapeHtmlME(r.studentName)}', ${r.amount})">🔁 再請求</button>
+        <td style="font-size:0.82rem;max-width:280px;word-break:break-word">${escapeHtmlME(describeChargeError({ ...r, status: 'failed', error: r.errorDetail }).text)}<details style="margin-top:2px;"><summary style="font-size:0.72rem;color:var(--text-dim);cursor:pointer;">詳細 (原文)</summary><div style="font-size:0.72rem;color:var(--text-dim);font-family:monospace;word-break:break-all;">${escapeHtmlME(r.errorCode || '')} / ${escapeHtmlME(r.declineCode || '')}<br>${escapeHtmlME(r.errorDetail || '').substring(0, 160)}</div></details></td>
+        <td style="white-space:nowrap">
+          ${r.collected
+            ? '<span style="color:var(--success);font-size:0.82rem;" title="この月はその後に引き落とし済みです (再請求すると二重になるため出しません)">✅ その後に回収済み</span>'
+            : (r.invoiced
+              ? '<span style="color:#fbbf24;font-size:0.82rem;" title="この月の請求書を発行済みです (請求書で支払われると二重になるため、カードの再請求は出しません)">📄 請求書を発行済み</span>'
+              : `<button class="btn btn-ghost btn-sm" onclick="retryCharge('${escapeHtmlME(r.registrationId)}', '${escapeHtmlME(data.month)}', '${escapeHtmlME(r.studentName)}', ${Number(r.amount) || 0})">🔁 再請求</button>`
+                + ` <button class="btn btn-ghost btn-sm" onclick="openCardUpdateModal('${escapeHtmlME(r.registrationId)}', '', { failedMonth: '${escapeHtmlME(data.month)}', failedAmount: ${Number(r.amount) || 0}, sameCard: ${String(r.errorCode || '') === 'authentication_required' || String(r.declineCode || '') === 'authentication_required'} })" style="color:#7dd3fc;border-color:rgba(56,189,248,0.45);">🪪 カード変更</button>`)}
         </td>
       </tr>`;
     }
@@ -3917,7 +4191,7 @@ function renderChargeHistory(data, filterType) {
     html += '<h3 style="margin-top:1rem;color:#fbbf24;">🔐 3DS 認証要</h3>';
     html += '<table class="table"><thead><tr><th>生徒名</th><th>メール</th><th class="ta-r">金額</th><th>確認URL</th></tr></thead><tbody>';
     for (const r of data.requires_action) {
-      const link = r.redirectUrl ? `<a href="${escapeHtmlME(r.redirectUrl)}" target="_blank" rel="noopener" style="color:var(--primary-light)">🔗 顧客に送る URL</a>` : '<span style="color:var(--text-dim)">URL なし</span>';
+      const link = r.redirectUrl ? `<a href="${escapeHtmlME(r.redirectUrl)}" target="_blank" rel="noopener" style="color:var(--primary-light)">🔗 本人認証の URL (保護者に送る)</a>` : '<span style="color:var(--text-dim)">URL なし</span>';
       html += `<tr>
         <td>${escapeHtmlME(r.studentName)}</td>
         <td style="font-size:0.82rem">${escapeHtmlME(r.email)}</td>
@@ -4336,7 +4610,14 @@ async function retryCharge(rid, month, studentName, amount) {
   // 🚨 Round 4 fix: 既に lock cleanup OK (retryBusy = null on all returns)
   const pw = getMonthEndAdminPw();
   if (!pw) { alert('管理パスワードを入力してください'); MONTHEND_STATE.retryBusy = null; return; }
-  if (!confirm(`🚨 ${studentName} (${fmtYenME(amount)}) を即時再請求します (実際にカードに課金されます)。\n\n本当に実行しますか?`)) { MONTHEND_STATE.retryBusy = null; return; }
+  // 振込などで受け取った月はサーバでは分からない (名簿は端末側) → 名簿で入金済みなら確認で強く知らせる (2026-10-20)
+  let rosterPaidNote = '';
+  try {
+    const sidR = buildRegIdToStudentMap()[rid];
+    const payR = (sidR !== undefined && sidR !== null) ? getPayment(month, sidR) : null;
+    if (payR && payR.paid) rosterPaidNote = `\n\n⚠ 名簿では、この月は入金済み (${payR.note || '振込など'}) になっています。カードでも引き落とすと二重になります。`;
+  } catch (_) {}
+  if (!confirm(`🚨 ${studentName} (${fmtYenME(amount)}) を即時再請求します (実際にカードに課金されます)。${rosterPaidNote}\n\n本当に実行しますか?`)) { MONTHEND_STATE.retryBusy = null; return; }
   // failed → 先に mark_unpaid で lock 解除 (= done_key 削除) してから retry
   try {
     // 1. mark_unpaid
@@ -4345,7 +4626,14 @@ async function retryCharge(rid, month, studentName, amount) {
       body: JSON.stringify({ action: 'mark_unpaid', registrationId: rid, month }),
     });
     const d1 = await r1.json();
-    if (!r1.ok || d1.error) { alert(`❌ unlock 失敗: ${d1.message || d1.error}`); return; }
+    if (d1.error === 'ALREADY_COLLECTED') {
+      // 回収済みの月 (サーバが二重取りを止めた): 古い 📜 失敗の行が残っているので一覧を取り直す
+      alert(`✋ 再請求はしませんでした\n\n${d1.message || ''}`);
+      fetchChargeHistory();
+      setTimeout(() => fetchMonthEndPreview(), 500);
+      return;
+    }
+    if (!r1.ok || d1.error) { alert(`❌ 再請求できませんでした: ${d1.message || d1.error}`); return; }
     if (d1.warning) alert(`⚠️ ${d1.warning}`);
     // 2. retry
     const r2 = await fetch('/payment/api/admin-charge-reconcile', {
@@ -4353,7 +4641,7 @@ async function retryCharge(rid, month, studentName, amount) {
       body: JSON.stringify({ action: 'retry', registrationId: rid, month }),
     });
     const d2 = await r2.json();
-    if (!r2.ok || d2.error) { alert(`❌ retry 失敗: ${d2.message || d2.error}\n${d2.detail || ''}`); return; }
+    if (!r2.ok || d2.error) { alert(`❌ 再請求できませんでした: ${d2.message || d2.error}\n${d2.detail || ''}`); fetchChargeHistory(); return; }
     // ⚠️ warning = 「3DS 認証待ち (未課金・🔐一覧に記録済み)」等。黙殺すると「✅ 完了」だけ見て
     // 回収済みと誤認するため必ず表示する (reconcileCharge 側と同じ規約)
     alert(`✅ retry 完了: ${d2.paymentIntentId || ''} (${d2.stripeStatus || ''})${d2.warning ? `\n\n⚠️ ${d2.warning}` : ''}`);
@@ -4380,7 +4668,7 @@ async function cancelRegistration(rid, studentName) {
   if (!pw) { alert('管理パスワードを入力してください'); MONTHEND_STATE.cancelBusy = null; return; }
   // 🚨 2nd review fix: studentName が空文字の case を弾く
   if (!studentName || !studentName.trim()) { alert('生徒氏名が空です。データ破損の可能性があるため中止します。'); MONTHEND_STATE.cancelBusy = null; return; }
-  if (!confirm(`🗑 ${studentName} の登録を解除します。\n\nこの操作で:\n- カード情報が Stripe から detach されます\n- 以降の月末バッチに表示されません\n- 過去の引き落とし履歴は残ります (1 年)\n\n続行しますか?`)) { MONTHEND_STATE.cancelBusy = null; return; }
+  if (!confirm(`🗑 ${studentName} の登録を解除します。\n\nこの操作で:\n- カード情報が Stripe から detach されます\n- 以降の月末バッチに表示されません\n- 過去の引き落とし履歴は残ります (1 年)\n\n※カードを変えたいだけなら、解除せずに「🪪 カード変更」を使ってください。\n\n続行しますか?`)) { MONTHEND_STATE.cancelBusy = null; return; }
   const typed = prompt(`安全のため生徒氏名を正確に入力してください: ${studentName}`);
   if (typed === null) { MONTHEND_STATE.cancelBusy = null; return; }
   // 🚨 2nd review fix: 空文字 typed や trim 後一致を厳密に
@@ -5362,7 +5650,7 @@ function buildStripeInviteFor(studentId) {
     student: s,
     to: getEmail(studentId),
     subject: renderTemplate(SETTINGS.stripeInviteSubject || DEFAULT_STRIPE_INVITE_SUBJECT, vars),
-    body: renderTemplate(SETTINGS.stripeInviteBody || DEFAULT_STRIPE_INVITE_BODY, vars),
+    body: renderTemplate(withoutPortalCardChange(SETTINGS.stripeInviteBody || DEFAULT_STRIPE_INVITE_BODY), vars),
   };
 }
 
@@ -5815,7 +6103,7 @@ function buildInvoiceHTML(s, month) {
       <tbody>
         <tr><td style="padding:11px 18px; border:1px solid #e5e7eb; background:#ecfdf5; font-weight:600; width:30%;">支払いリンク</td><td style="padding:11px 18px; border:1px solid #e5e7eb; word-break:break-all; font-size:12px; color:#059669;">${escapeHtml(stripeUrl)}</td></tr>
         <tr><td style="padding:11px 18px; border:1px solid #e5e7eb; background:#ecfdf5; font-weight:600;">使い方</td><td style="padding:11px 18px; border:1px solid #e5e7eb;">URL にアクセス → カード情報入力 → 月額自動引き落としが開始されます</td></tr>
-        ${customerPortal ? `<tr><td style="padding:11px 18px; border:1px solid #e5e7eb; background:#ecfdf5; font-weight:600;">変更・解約</td><td style="padding:11px 18px; border:1px solid #e5e7eb; word-break:break-all; font-size:12px; color:#059669;">${escapeHtml(customerPortal)}</td></tr>` : ''}
+        ${customerPortal ? `<tr><td style="padding:11px 18px; border:1px solid #e5e7eb; background:#ecfdf5; font-weight:600;">解約 (カード変更は塾長 LINE へ)</td><td style="padding:11px 18px; border:1px solid #e5e7eb; word-break:break-all; font-size:12px; color:#059669;">${escapeHtml(customerPortal)}</td></tr>` : ''}
       </tbody>
     </table>
     ` : ''}

@@ -3,14 +3,14 @@
 
 システム点検で「パスワード比較だけで試行回数の上限が無く、月末の一括引き落とし・スポット課金・任意宛先メール・
 顧客一覧が総当たりで開く」と確定した点を直した。Vercel の Python 関数は 1 ファイル 1 関数で共有モジュールを
-持てないため、10 本に同じ塊 (_verify_admin + KV カウンタ) を置いている。全部に対して:
+持てないため、11 本に同じ塊 (_verify_admin + KV カウンタ) を置いている (2026-10-20 にカード変更リンク admin-card-update を追加)。全部に対して:
   - 正しいパスワードは通る / 空は通らず失敗にも数えない
   - 同じ IP で 10 回失敗すると、正しいパスワードでも通らない (別 IP はまだ通る)
   - 全体で 60 回失敗すると、どの IP でも通らない
   - IP は x-real-ip (Vercel 付与) を優先し、x-forwarded-for は末尾を採る
   - chat.py は ?admin_pw= クエリを受け付けない
   - stripe-charges.py (月の決済一覧 = 支払者の氏名・メール) は認証前に Stripe を呼ばない (2026-10-08 まで無認証だった)
-CI では stripe が入るので 10 本すべてを import する。ローカルで stripe が無い場合はその関数だけ skip する。
+CI では stripe が入るので 11 本すべてを import する。ローカルで stripe が無い場合はその関数だけ skip する。
 """
 import importlib.util
 import io
@@ -24,7 +24,7 @@ REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 API = os.path.join(REPO, "api")
 FILES = ["admin-charge-spot", "admin-charge-reconcile", "admin-charge-month-end-execute", "admin-charge-readonly",
          "past-due-invoice", "mail-send", "admin-registration-cancel", "registered-customers", "chat",
-         "stripe-charges"]
+         "stripe-charges", "admin-card-update"]
 PW = "correct-horse-battery-staple"
 FAILURES = []
 

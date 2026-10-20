@@ -27,6 +27,9 @@ on:
       - 'scripts/health_check/test_*.py'
       - 'api/**'
       - 'payment/courses.json'
+      # 🪪 カード変更リンクの回帰テスト (test_card_update_link.py) は月謝アプリの画面の配線も見る (画面だけ直した push でも ?v= 検査と一緒に走らせる)
+      - 'payment/app.js'
+      - 'payment/index.html'
       - 'scripts/check_course_price_sync.py'
       - '.github/workflows/server-tests.yml'
       # 🧒 中学の教科別ドリル (数学・理科・社会・国語) の回帰テストはシードと入試道場の単元カタログを読む (シードだけ直した push でも走らせる)
@@ -292,6 +295,12 @@ jobs:
         run: |
           python3 scripts/health_check/test_enroll_first_charge.py
           python3 scripts/check_course_price_sync.py
+
+      # 🪪 月謝のカード変更リンク (2026-10-20): 塾長がリンクを作る → 保護者が新しいカードを入れる → 同じ登録 (rid) のカードだけ差し替える
+      #   (rid・月額・台帳・名簿の紐付けは不変・前のカードを外す・本体 webhook は触らない)。KV / Stripe / Resend は偽物。
+      - name: 月謝 カード変更リンク 回帰テスト
+        if: ${{ !cancelled() }}
+        run: python3 scripts/health_check/test_card_update_link.py
 
       # 🧹🗄️ events の保持期限 / /api/track のレート制限 / R2 バックアップの省メモリ dump (2026-09-07)
       - name: イベント掃除・計測制限・バックアップ dump 回帰テスト

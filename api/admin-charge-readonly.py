@@ -56,8 +56,8 @@ def _json(handler, status, payload):
 # 🔐 2026-09-07 総当たり対策 (システム点検で確定): パスワード比較だけで試行回数の上限が無く、月末の一括引き落とし・
 #   スポット課金・任意宛先メール・顧客一覧が総当たりで開く状態だった。失敗回数を Upstash KV (webhook の冪等化で
 #   常用) に IP ごと・全体で記録し、上限に達したら比較せずに拒否する。KV が無い環境では従来どおり比較のみ。
-#   ★10 本の関数に同じ塊を置いている (Vercel の Python 関数は 1 ファイル 1 関数で共有モジュールを持たない)。
-#     直すときは全部一緒に直すこと。scripts/health_check/test_vercel_admin_guard.py が 10 本とも検査する。
+#   ★11 本の関数に同じ塊を置いている (Vercel の Python 関数は 1 ファイル 1 関数で共有モジュールを持たない)。
+#     直すときは全部一緒に直すこと。scripts/health_check/test_vercel_admin_guard.py が 11 本とも検査する。
 _ADMIN_FAIL_IP_LIMIT = 10        # 同一 IP: 10 回/時
 _ADMIN_FAIL_GLOBAL_LIMIT = 60    # 全体: 60 回/時 (IP を変えながらの総当たりを止める)
 _ADMIN_FAIL_WINDOW_SEC = 3600
@@ -157,6 +157,21 @@ def _add_month(ym, delta):
     while m <= 0:
         m += 12; y -= 1
     return f"{y:04d}-{m:02d}"
+
+
+def _failed_month_flags(rid, month):
+    """失敗の記録がある月の、その後: collected = 回収済み (台帳 charge:history に記録 / charge:done が成功・処理中 / 入塾時の初回決済の月)、
+    invoiced = その月の請求書を発行済み (past-due-invoice.py の pastdue:issued)。表示用 (止めるのは reconcile の _month_already_collected)"""
+    reg = _fetch_record(f"reg:completed:{rid}") or {}
+    collected = bool(_fetch_record(f"charge:history:{rid}:{month}"))
+    if not collected:
+        d = _fetch_record(f"charge:done:{rid}:{month}")
+        collected = isinstance(d, dict) and str(d.get("status") or "") in ("succeeded", "processing")
+    if not collected and isinstance(reg, dict):
+        collected = str(reg.get("first_charge_month") or "").strip() == month
+    cus = str(reg.get("stripe_customer_id") or "").strip() if isinstance(reg, dict) else ""
+    invoiced = bool(cus and _fetch_record(f"pastdue:issued:{cus}:{month}"))
+    return {"collected": collected, "invoiced": invoiced}
 
 
 def _fetch_index(index_key, month):
@@ -330,6 +345,10 @@ def _handle_preview(handler):
             "registeredAt": registered_at,
             "startMonth": _start,            # 受講開始月 (滞納判定の下限・2026-09-23)
             "beforeStart": before_start,     # 請求対象月が受講開始月より前 (画面は請求対象外として表示・合計に入れない)
+            # 🪪 2026-10-20 カード変更リンクで差し替えたカード (webhook が書く・表示用)。変更していない登録は空・0
+            "cardBrand": r.get("card_brand", ""),
+            "cardLast4": r.get("card_last4", ""),
+            "cardUpdatedAt": int(r.get("card_updated_at") or 0),
         })
 
     # 🚨 第二ゲート (2026-07-02 review): charge:done は TTL 60日・charge:history は 1年。
@@ -426,6 +445,9 @@ def _handle_history(handler, params):
                     "declineCode": r.get("decline_code", ""),
                     "errorDetail": r.get("error_detail", ""),
                     "failedAt": r.get("failed_at", 0),
+                    # 🛡️ 2026-10-20 その後に回収済み (台帳に成功記録 / done が成功・処理中 / 入塾時の初回決済の月)・請求書を発行済み。
+                    # charge:failed は回収後も消えないので、画面はこの行に 🔁 再請求を出さない (サーバの reconcile も ALREADY_COLLECTED で止める)
+                    **_failed_month_flags(rid, month),
                 })
                 result["summary"]["failed_count"] += 1
 

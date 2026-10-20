@@ -5,13 +5,13 @@
 #   74e2c5fb/216d9ac/d59461f) は解消済み。関数を足してもデプロイは落ちない。
 #   ただしアーキテクチャ方針は不変:
 #     - API ロジックは Railway 側の server/main.py に書く
-#     - api/*.py は Stripe 等「Vercel でしか動けない」関数のみ (基準値 12個)
+#     - api/*.py は Stripe 等「Vercel でしか動けない」関数のみ (基準値 13個・2026-10-20 に月謝のカード変更リンク admin-card-update.py を追加)
 #   このスクリプトは基準値超過を警告するだけで常に exit 0 (CI をブロックしない)。
 #
 # 使い方: bash scripts/check_vercel_function_cap.sh   (常に exit 0 / 基準値超過で警告表示)
 set -euo pipefail
 
-BASELINE=12
+BASELINE=13
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 API_DIR="$REPO_ROOT/api"
 

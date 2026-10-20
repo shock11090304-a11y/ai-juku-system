@@ -135,6 +135,49 @@
 - CORS: 申込書のオリジンだけ `Access-Control-Allow-Origin` を返す (`REGISTER_CORS_ORIGINS`、既定 Netlify の graceful-eclair-56bdac)。戻り先は `enroll-thanks.html` (同サイト。`ENROLL_RETURN_BASE` で上書き可)。
 - テスト: `scripts/health_check/test_enroll_first_charge.py`。運用手順: `Desktop/🏫 運営・集客/塾運営/入塾申込_初回カード決済/README.md`。
 
+## 🪪 月謝のカード変更リンク (2026-10-20 塾長「塾の支払いの Stripe のカード情報の変更はどうすればいい？」)
+- 月末一斉・個別・再請求は KV `reg:completed:{rid}` の `stripe_payment_method_id` を名指しで使う。**Stripe ダッシュボードや顧客ポータルでカードを替えても月謝には効かない**
+  (webhook は payment_method / setup_intent / customer.updated を扱わない)。以前の回り道 (🗑 退塾処理 → register.html で再登録 → 紐付け直し) は rid が変わり、
+  rid 単位の台帳 (`charge:done` / `charge:history`) が引き継がれず、前のカードで払った月が「未請求」に見えた (二重取りの穴)。
+- 流れ: 月謝アプリ「🪪 カード変更」(💳 月末引き落としの各行・👥 全生徒のカード列 (紐付け✓確定済み)・実行結果の失敗行) → `POST /payment/api/admin-card-update`
+  (`api/admin-card-update.py`・管理パスワード) が Checkout (mode=setup・その登録の Stripe 顧客) を作る → 塾長が LINE で送る → 保護者が入力 →
+  `api/stripe-webhook.py` `_handle_card_update_checkout` が**同じ rid** のカードだけを差し替える。rid・月額・台帳・名簿の紐付け・`first_charge_month` / `start_month` はそのまま。
+- ★metadata は `system=juku-payment-card-update` + `card_update_rid`。**`registration_id` を付けない**: `_handle_checkout_completed` の従来の分岐は registration_id があると
+  新規登録とみなして reg:completed を metadata だけ (月額 0) で作り直す。本体 (Railway) の webhook は `juku-payment` 前方一致で skip する。
+- ★`reg:completed` の書き換えは「読んだときのままなら書く」(`_kv_compare_and_set`・Upstash の EVAL。webhook と `admin-registration-cancel.py` の update_fee に同じ Lua)。
+  月額の保存とカード変更が重なると後から書いた側が相手の変更を黙って消し、退塾処理と重なると消えた登録を生き返らせていた。重なったら読み直して載せ直す。
+  EVAL は `_kv_eval` で送り、断られた (Upstash は HTTP 4xx) ときだけ「書く直前に読み直して比べてから SET」に倒す (カード変更・月額の保存を止めない)。
+  ★`_redis_safe` / `_redis` は 4xx も通信失敗も None にするので EVAL には使わない。応答が無いときは error (webhook は `_RetryLater`・月額の保存は 502)。
+- 前のカードは detach する。ただし外さない: `charge:done:{rid}:{月}` が `"pending"` (execute が請求できる翌月〜3 か月前)・Stripe に前のカードの未完了の
+  PaymentIntent (3DS 待ち・処理中) がある・どちらかを確かめられない (塾長通知に★)。外したカードは戻せないので迷ったら残す (どの請求も KV に無いカードは使わない)。
+  古いリンクの完了が後から届いたら (session.created が適用済みのものより前) 差し替えずにそのカードを外して★通知。登録が無ければ (リンクの後に退塾処理) 入力されたカードを外して★通知。
+  KV / Stripe に聞けない・KV に書けないときは `_RetryLater` (500 → Stripe が再送)。差し替えより前に外部へは何もしない。書けたのに応答が届かず再送されたら、後始末 (detach・メール・記録) をやり直す。
+  差し替えた登録が `reg:completed:index` に無い (zombie) ときは★で知らせる (戻すのは手で)。
+- ★申込の完了イベントの再送 (24 時間後の Dashboard 再送など) は `_registration_replay` で登録を書き直さない (同じ session_id でカードのある登録)。書き直すと、外したはずの前のカードと元の月額に戻る。
+  KV に聞けなければ `_RetryLater` (確かめずに書き直さない)。再送のとき一覧から抜けていれば `ZADD NX` で戻す (前回 SET は通ったが応答が届かず ZADD まで行かなかった場合。zombie は戻さない)。
+- カード変更の webhook は同じ Checkout セッションを 1 回だけ処理する (`card_update:session:{sid}` があれば何もしない・読めなければ `_RetryLater`)。
+  差し替えなかった場合もリンクの記録を消す。書いた直後の確認で登録が消えていた (退塾処理と重なった)・別のカードになっていたら、差し替え扱いにしない
+  (保護者に「承りました」を送らない・`missing_after_apply` / `superseded`・塾長に★)。保護者のメールが登録に無いときも★ (完了画面は確認メールを約束している)。
+- リンクを作り直すと、新しいリンクを作れてから前のリンクを Checkout の expire で失効させる (`card_update:link:{rid}` 2 日・URL も持つ。画面は `status` で「送ったリンクがまだ使える」を出し、作り直しは確認つき)。
+  ★まだ使えるリンクがあるとき、`create_link` は `replace: true` が無ければ作らず 409 `LINK_ACTIVE` で今のリンクを返す (状態を確かめる前に押しても、送ったリンクを殺さない)。
+  前のリンクの記録を読めなければ作らない (503)。断る登録: 旧方式 (checkout_mode≠setup)・Stripe 顧客なし・`reg:zombie`・名簿の紐付け (expectCustomerId) と顧客が不一致。
+  🗑 退塾処理は、開いているリンクを失効させ、カード変更で残していた前のカード (`card_prev_payment_method_id`) も外す (best-effort。そのカードで本人認証待ち・処理中の請求が Stripe に残っている・確かめられないときは外さない)。
+- ★回収済みの月の 🔁 再請求を止める (`admin-charge-reconcile.py` `_month_already_collected`・mark_unpaid と retry の両方で 409 ALREADY_COLLECTED):
+  📜「❌ 失敗」の行 (`charge:failed` は回収後も消えない) の 🔁 は mark_unpaid → retry で、mark_unpaid は done を無条件に消し retry は done の NX しか見なかったため、
+  後から 💳 個別請求などで回収した月でも二重に引き落とした (カード変更の後に失敗した月を取り直す場面で踏みやすい)。台帳 history・done の succeeded/processing・初回決済の月・
+  その月の請求書を発行済み (`pastdue:issued:{cus}:{月}`) で止める。KV に聞けなければ 503 (止める側に倒す)。振込で受け取った月はサーバでは分からないので、
+  画面の 🔁 の確認で名簿の入金済みを知らせる。📜 の行は readonly の `collected` / `invoiced` で「✅ その後に回収済み」「📄 請求書を発行済み」と出し、🔁 を出さない
+  (まだの行は 🔁 と 🪪 カード変更・失敗の説明つき)。
+- 顧客ポータルでカードを変えても月謝には効かない: Stripe 案内メールは、設定に保存された古い文 (「カード情報の変更・解約 (24時間いつでも可能)」+ ポータル URL) でも
+  送るときに LINE 連絡へ置き換える (`withoutPortalCardChange`)。設定画面の説明にも注意書き。
+- メール: 保護者「お支払いカードの変更を承りました」(`CARD_UPDATE_MAIL_ENABLED=0` で停止。止めるなら完了ページの「確認のメールが届きます」も直す)・
+  塾長「【カード変更】」/「★要対応【カード変更】」(`ENROLL_NOTIFY_EMAIL` → 無ければ `COURSE_NOTIFY_EMAIL`)。テストモードの Checkout は送らない。
+  調査用の記録 `card_update:session:{session}` (1 年)・`card_update:index`。
+- 画面表示用に `card_brand` / `card_last4` / `card_exp` / `card_updated_at` を reg に書く (registered-customers と月末プレビューが返す)。最初の登録時のカードは記録していない (変更した登録だけ「🪪 VISA 末尾 4242（10/20 に変更）」)。
+- 保護者向けの文 (LINE・決済画面・完了ページ・確認メール) は「本日の課金はありません」と書かない (失敗した月を変更の直後に新しいカードで取り直すことがある)。
+  「カードを入力しただけでは料金はかかりません。これからの月謝は新しいカードで…」にそろえる。
+- 戻り先 `payment/card-update-complete.html` (中断は `?canceled=1`)。テスト: `scripts/health_check/test_card_update_link.py` (server-tests.yml・A〜F)。
+
 ## 教材・問題を作るときのルール (2026-08-02 塾長指摘を反映)
 - **解説フォーマットは `server/main.py` の生成プロンプトが正典**。書き始める前に必ず読むこと。自己流の散文で書かない。
   - 数学(理系): 「方針→立式→計算→答え→補足」の 5 段階 (3行以上)。同プールの `seed-data/rikei_kyotsu_math_manual.json` が実例。
@@ -631,7 +674,7 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 ## Vercel は Pro プラン (2026-07-18 に Hobby から移行済み)
 - 商用利用の規約準拠 + B2B(学校導入)前提で Pro 化 ($20/月・$20分の従量クレジット込み。現使用量は枠内に余裕)。
 - **旧「12 Serverless Function 上限」は解消済み**: Hobby 固有の上限だったため、`api/*.py` の個数で Vercel デプロイが失敗することはもう無い (過去3回の本番凍結事故 74e2c5fb / 216d9ac / d59461f は Hobby 時代の話)。
-- **アーキテクチャ方針は不変**: API ロジックは Railway 側の `server/main.py` に書く。`api/*.py` は Stripe 等「Vercel でしか動けない」関数のみ (現12個が基準値)。
+- **アーキテクチャ方針は不変**: API ロジックは Railway 側の `server/main.py` に書く。`api/*.py` は Stripe 等「Vercel でしか動けない」関数のみ (現13個が基準値・2026-10-20 にカード変更リンク `admin-card-update.py` で +1)。
 - `scripts/check_vercel_function_cap.sh` と CI (`.github/workflows/vercel-function-cap.yml`) は基準値超過を**警告するだけの非ブロッキング**(常に exit 0) に変更済み。正当に関数を増やしたときは同スクリプトの `BASELINE` を実数に更新して警告を止める。
 - 既存の `__ep` action 同居 (例: `admin-charge-month-end-preview` / `admin-charge-history` は `admin-charge-readonly.py` に同居) はそのまま稼働中・触らない。新規に Vercel 専用関数が本当に必要なら素直に足してよい (同居の曲芸は不要になった)。
 - 本番が古いままの症状 (新URL 404 / app.js が古い / `gh` の "Vercel" status=failure) を見たら、関数数ではなく Vercel ビルドログと healthcheck の `deploy_freshness` を見る。

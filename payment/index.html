@@ -396,6 +396,7 @@
       ④ 既に引き落とし済みの月は自動 skip (重複請求防止)<br>
       ⑤ 失敗した顧客は結果に赤色で表示 → その場の「🔁 再請求」か、下の 📜 履歴から個別対応<br>
       ⑥ 一斉実行の<strong>あと</strong>にカード登録した生徒は、表の「💳 個別請求」でその人だけ請求できます (下の 📖 台帳で月別の請求済み状況を確認)<br>
+      ⑦ 保護者から「カードを変えたい」と言われたら、その生徒の「🪪 カード変更」でリンクを作って LINE で送る (🗑 退塾処理や再登録はしない・Stripe の画面でカードを替えても月謝には効かない)<br>
       <span style="color:var(--text-dim);font-size:0.85rem;">※ AIコーチングの課金 (¥14,500/月) とは完全に分離されています</span>
       </div>
     </details>
@@ -904,6 +905,49 @@
   </div>
 </div>
 
+<!-- 🪪 月謝のカード変更リンク (2026-10-20)。登録・月額・台帳はそのままで、保護者が入れた新しいカードに差し替える (月末タブ / 全生徒 / 実行結果から開く) -->
+<div id="cardUpdateModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="cardUpdateTitle">
+  <div style="background:var(--panel,#1f2937);color:var(--text,#fff);border-radius:14px;max-width:500px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);max-height:calc(100vh - 4rem);min-height:0;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="padding:18px 22px 12px;border-bottom:1px solid rgba(255,255,255,0.08);">
+      <h3 id="cardUpdateTitle" style="margin:0;font-size:1.1rem;font-weight:700;color:#7dd3fc;">🪪 カード変更のリンクを作る</h3>
+      <p style="margin:4px 0 0;font-size:0.8rem;color:var(--text-muted,#9ca3af);line-height:1.5;">保護者がこのリンクで新しいカードを入れると、<strong>次の引き落としから新しいカード</strong>になります。名簿の紐付け・月額・これまでの引き落としの記録はそのままです。</p>
+    </div>
+    <div style="padding:14px 22px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;flex:1;min-height:0;">
+      <input type="hidden" id="cardUpdateRid">
+      <input type="hidden" id="cardUpdateExpectCustomer">
+      <div style="background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.3);border-radius:8px;padding:10px 12px;">
+        <div style="font-size:0.98rem;font-weight:700;" id="cardUpdateStudentName">—</div>
+        <div style="font-size:0.78rem;color:#7dd3fc;margin-top:3px;" id="cardUpdateCurrentCard"></div>
+        <div style="font-size:0.72rem;color:var(--text-muted,#9ca3af);margin-top:2px;word-break:break-all;" id="cardUpdateInfo"></div>
+      </div>
+      <label style="display:flex;flex-direction:column;gap:4px;">
+        <span style="font-size:0.82rem;font-weight:600;">🔒 管理パスワード <span style="color:#f87171;">*</span></span>
+        <input type="password" id="cardUpdatePw" placeholder="管理パスワード" autocomplete="off" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.3);color:inherit;font-size:16px;">
+      </label>
+      <div id="cardUpdateStatus" style="font-size:0.84rem;"></div>
+      <div id="cardUpdateResult" style="display:none;flex-direction:column;gap:8px;">
+        <label style="display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:0.82rem;font-weight:600;">リンク (<span id="cardUpdateExpires">24 時間</span>まで有効)</span>
+          <input type="text" id="cardUpdateUrl" readonly style="padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.3);color:inherit;font-size:0.8rem;font-family:monospace;">
+        </label>
+        <label style="display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:0.82rem;font-weight:600;">LINE に貼る文面</span>
+          <textarea id="cardUpdateLineText" readonly rows="7" style="padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.3);color:inherit;font-size:0.84rem;line-height:1.5;resize:vertical;"></textarea>
+        </label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-primary btn-sm" style="background:#0284c7;border-color:#0284c7;" onclick="copyCardUpdateText('line', this)">📋 文面をコピー</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="copyCardUpdateText('url', this)">🔗 リンクだけコピー</button>
+        </div>
+      </div>
+      <p style="margin:2px 0 0;font-size:0.74rem;color:var(--text-muted,#9ca3af);line-height:1.5;">・リンクを作っただけでは何も変わりません (保護者が入力するまで前のカードのまま)。<br>・作り直すと、前に作ったリンクは使えなくなります。<br>・保護者が入力を終えると、塾長に「【カード変更】」、保護者に確認のメールが届き、💳 月末引き落としの名前の下に「🪪 VISA 末尾…（10/20 に変更）」と出ます。前のカードは自動で外します (引き落としの処理中などは残して、メールで知らせます)。<br>・引き落としに失敗した月は、差し替わった後に「📜 過去の履歴・失敗者一覧・要対応」の「🔁 再請求」で新しいカードから取り直せます (引き落とし済みの月は二重に引き落としません)。</p>
+    </div>
+    <div style="padding:14px 22px;border-top:1px solid rgba(255,255,255,0.08);display:flex;gap:10px;justify-content:flex-end;background:var(--panel,#1f2937);flex-shrink:0;">
+      <button class="btn btn-ghost" id="cardUpdateCloseBtn" onclick="closeCardUpdateModal()">閉じる</button>
+      <button class="btn btn-primary" id="cardUpdateSubmitBtn" style="background:#0284c7;border-color:#0284c7;" onclick="submitCardUpdateLink()">🪪 リンクを作る</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay hidden" id="settingsModal">
   <div class="modal">
     <div class="modal-head">
@@ -995,7 +1039,7 @@
         </div>
 
         <p class="form-hint" style="margin-top:1rem">
-          <strong>Customer Portal (生徒側のセルフサービス)</strong>: <a href="https://dashboard.stripe.com/settings/billing/portal" target="_blank" style="color:var(--primary-light)">Stripe Dashboard → Settings → Customer Portal</a> を有効化 → 「Login Link」をコピー → 下記に貼付けると、Stripe案内メール本文に自動挿入されます。生徒/親が自分でカード変更・解約できるようになります。
+          <strong>Customer Portal (生徒側のセルフサービス)</strong>: <a href="https://dashboard.stripe.com/settings/billing/portal" target="_blank" style="color:var(--primary-light)">Stripe Dashboard → Settings → Customer Portal</a> を有効化 → 「Login Link」をコピー → 下記に貼付けると、Stripe案内メール本文に自動挿入されます。生徒/親が自分で解約できるようになります。<br>⚠️ ポータルでカードを変えても、月謝の引き落とし (💳 月末引き落とし) には<strong>反映されません</strong>。カード変更は各生徒の「🪪 カード変更」のリンクを送ってください。
         </p>
         <label class="form-group form-group-wide">
           <span>Customer Portal Login Link</span>
@@ -1018,7 +1062,7 @@
 
       <div class="form-section">
         <h3>Stripe カード決済 案内メールテンプレート</h3>
-        <p class="form-hint">「全生徒タブ → 💳 Stripe案内メール一斉送信」で使われるテンプレートです。<br>使える変数: <code>{{student}}</code> 生徒名 / <code>{{fee}}</code> 月謝額 / <code>{{deadlineDay}}</code> 引落日 / <code>{{paymentLink}}</code> カード決済URL / <code>{{customerPortal}}</code> 解約・カード変更ポータル / <code>{{juku}}</code> 塾名 / <code>{{owner}}</code> 塾長名</p>
+        <p class="form-hint">「全生徒タブ → 💳 Stripe案内メール一斉送信」で使われるテンプレートです。<br>使える変数: <code>{{student}}</code> 生徒名 / <code>{{fee}}</code> 月謝額 / <code>{{deadlineDay}}</code> 引落日 / <code>{{paymentLink}}</code> カード決済URL / <code>{{customerPortal}}</code> 解約ポータル (★カード変更には使わない: 月謝の引き落としに反映されない) / <code>{{juku}}</code> 塾名 / <code>{{owner}}</code> 塾長名</p>
         <label class="form-group form-group-wide">
           <span>件名</span>
           <input type="text" id="setStripeInviteSubject">
@@ -1178,6 +1222,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="app.js?v=20261008a-stripe-charges-auth"></script>
+<script src="app.js?v=20261020a-card-update-link"></script>
 </body>
 </html>

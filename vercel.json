@@ -96,6 +96,10 @@
       "destination": "/api/admin-registration-cancel"
     },
     {
+      "source": "/payment/api/admin-card-update",
+      "destination": "/api/admin-card-update"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://ai-juku-api-production.up.railway.app/api/:path*"
     },

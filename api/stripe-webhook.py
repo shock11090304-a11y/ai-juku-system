@@ -36,6 +36,11 @@ Env:
                  COURSE_NOTIFY_EMAIL (塾長への申込通知。案内メール失敗に気づける唯一の経路なので実質必須)
                  COURSE_WELCOME_ENABLED=0 で講座の案内メールだけ止められる (月謝の一斉メールには影響しない)
      講座の invoice / subscription イベント (毎月の更新・失敗・解約) は月謝の台帳に混ぜず skip する
+  6. 🆕 2026-10-20 カード変更リンク (api/admin-card-update.py・metadata.system=juku-payment-card-update) の
+     checkout.session.completed → 同じ reg:completed:{rid} の stripe_payment_method_id を新しいカードに差し替え、
+     前のカードを外し (引き落とし処理中なら外さない)、保護者に確認メール・塾長に通知 (_handle_card_update_checkout)。
+     rid・月額・台帳 (charge:done / history)・名簿の紐付けはそのまま。購読するイベントは増えない
+     Env (追加): CARD_UPDATE_MAIL_ENABLED=0 で保護者への確認メールだけ止める (塾長通知は ENROLL_NOTIFY_EMAIL / COURSE_NOTIFY_EMAIL)
 
 依存: 標準ライブラリのみ
 """
@@ -886,6 +891,41 @@ def _enroll_notify_owner(record, vars_, mail_status, ledger_state, warnings):
         _log(f"webhook enroll: owner notify failed: {e!r}")
 
 
+def _registration_replay(reg_id, session_id):
+    """同じ Checkout の完了が後から届いたか (24 時間を過ぎてからの Dashboard の再送など。webhook:seen は 24 時間で消える)。
+    同じセッションで登録が済んでいてカードもあるなら、その登録 (dict) を返す = 書き直さない: 登録の後の 🪪 カード変更 (2026-10-20)・
+    月額の編集を、申込時の古い内容 (外したはずの前のカード・元の月額) で上書きしてしまうため。
+    カードの無い登録 (前回の処理でカードを取れなかった) は None = 従来どおり書き直して直せる。
+    KV に聞けなければ _RetryLater (確かめずに書き直すと、カード変更を巻き戻す)"""
+    if not reg_id or not session_id:
+        return None
+    got = _redis_safe("GET", f"reg:completed:{reg_id}")
+    if not isinstance(got, dict):
+        raise _RetryLater(f"KV read failed (replay check) rid={reg_id}")
+    raw = got.get("result")
+    if not raw:
+        return None
+    try:
+        cur = json.loads(raw)
+    except Exception:
+        return None
+    if not isinstance(cur, dict):
+        return None
+    same = session_id in (cur.get("session_id"), cur.get("first_charge_session_id"))
+    return cur if (same and cur.get("stripe_payment_method_id")) else None
+
+
+def _registration_index_repair(reg_id, cur, fallback_score):
+    """再送のときに一覧 (reg:completed:index) から抜けていれば戻す: 前回 SET は通ったが応答が届かず、ZADD まで行かずに
+    再送された場合 (戻さないと月末の一覧に出ず、毎月の引き落としから漏れる)。NX なので並び (登録日時) は変えない。
+    Stripe で顧客/カードが見つからず外した登録 (reg:zombie) は戻さない"""
+    z = _redis_safe("GET", f"reg:zombie:{reg_id}")
+    if not isinstance(z, dict) or z.get("result"):
+        return
+    score = int((cur or {}).get("completed_at") or fallback_score or time.time())
+    _redis_safe("ZADD", "reg:completed:index", "NX", str(score), reg_id)
+
+
 def _handle_enroll_first_charge(obj, reg_id, metadata, existing):
     """mode=payment (first_charge=1) の完了。PaymentIntent から保存カードを取り、setup 相当の reg:completed を書く"""
     session_id = obj.get("id", "")
@@ -998,12 +1038,18 @@ def _handle_enroll_first_charge(obj, reg_id, metadata, existing):
     # バッチの SET NX が先に勝って初回決済と二重になる隙があった。先に done を書けばバッチはこの生徒を必ず飛ばす。
     # 名簿の書き込みが失敗して Stripe が再送しても、同じ pi の done は「written」扱いで整合する
     ledger_state = _enroll_write_ledger(reg_id, month, pi_id, first_total, record, now_ts)
-    res = _redis_safe("SET", f"reg:completed:{reg_id}", json.dumps(record, ensure_ascii=False))
-    if not (isinstance(res, dict) and res.get("result") == "OK"):
-        _log(f"webhook enroll CRITICAL: KV error writing reg:completed rid={reg_id} — asking Stripe to retry")
-        raise _RetryLater(f"reg:completed write failed rid={reg_id}")
+    replay = _registration_replay(reg_id, session_id)
+    if replay:
+        # 同じ決済の完了の再送: 登録 (その後のカード変更・月額の編集を含む) と一覧の並びはそのまま。メール等は下の NX で 1 回きり
+        _log(f"webhook enroll: reg={reg_id} already registered by this session — record kept as is")
+        _registration_index_repair(reg_id, replay, now_ts)
+    else:
+        res = _redis_safe("SET", f"reg:completed:{reg_id}", json.dumps(record, ensure_ascii=False))
+        if not (isinstance(res, dict) and res.get("result") == "OK"):
+            _log(f"webhook enroll CRITICAL: KV error writing reg:completed rid={reg_id} — asking Stripe to retry")
+            raise _RetryLater(f"reg:completed write failed rid={reg_id}")
+        _redis_safe("ZADD", "reg:completed:index", str(now_ts), reg_id)
     _redis_safe("DEL", f"reg:pending:{reg_id}")
-    _redis_safe("ZADD", "reg:completed:index", str(now_ts), reg_id)
     if customer:
         _redis_safe("SET", f"reg:by_customer:{customer}", reg_id)
     warnings = []
@@ -1052,6 +1098,479 @@ def _enroll_notify_duplicate(record, duplicate_of):
         _log(f"webhook enroll: duplicate notify failed: {e!r}")
 
 
+# ─────────────── 🪪 カード変更 (2026-10-20 塾長「カード情報の変更はどうすればいい？」→ 専用リンク) ───────────────
+# 月謝アプリの「🪪 カード変更」(api/admin-card-update.py) が作る Checkout (mode=setup・その登録の Stripe 顧客) の完了。
+# 同じ reg:completed:{rid} の stripe_payment_method_id を新しいカードに差し替える。rid・月額・台帳 (charge:done / history)・
+# 名簿の紐付けは変えない (退塾処理→再登録の回り道は rid が変わって台帳が引き継がれず、二重取りの穴があった)。
+# ★rid は metadata.card_update_rid。registration_id にすると、_handle_checkout_completed の従来の分岐が「新規のカード登録」と
+#   みなして reg:completed を metadata だけの別物 (月額 0) で作り直す。system タグでここに分けるが、鍵の名前でも二重に防ぐ。
+# ★KV / Stripe に聞けないときは _RetryLater (500 → Stripe が再送)。差し替えより前に外部へ何もしないので、再送しても二重にならない。
+CARD_UPDATE_SYSTEM_TAG = "juku-payment-card-update"   # api/admin-card-update.py と同じ値。本体 (Railway) は juku-payment 前方一致で skip
+CARD_UPDATE_RECORD_TTL = 365 * 86400
+_CARD_BRANDS = {"visa": "VISA", "mastercard": "Mastercard", "amex": "American Express", "jcb": "JCB",
+                "diners": "Diners Club", "discover": "Discover", "unionpay": "UnionPay"}
+CARD_UPDATE_NOTIFY_SUBJECT = "【カード変更】{student_name} さん — {new_card} に差し替えました"
+CARD_UPDATE_NOTIFY_SUBJECT_WARN = "★要対応【カード変更】{student_name} さん — {reason}"
+CARD_UPDATE_NOTIFY_BODY = """保護者がカード変更のリンクでカードを入力しました。
+
+{result}
+
+生徒: {student_name}（{grade}）／保護者: {parent_name}
+入力されたカード: {new_card}
+今までのカード: {old_card}
+保護者への確認メール: {parent_mail}
+登録 ID: {rid}
+{warnings}{after}"""
+CARD_UPDATE_AFTER_APPLIED = """
+・名簿の紐付け・月額・これまでの引き落としの記録はそのままです。
+・引き落としに失敗していた月があれば、月謝アプリ「💳 月末引き落とし」の「📜 過去の履歴・失敗者一覧・要対応」でその月を開き、この生徒の「🔁 再請求」を押してください (新しいカードで引き落とします。引き落とし済み・請求書を出した月は止まります)。
+  その月を振込で受け取っていないかも確かめてください。
+"""
+CARD_UPDATE_PARENT_SUBJECT = "【トリリオン英語塾】お支払いカードの変更を承りました"
+CARD_UPDATE_PARENT_BODY = """{parent_name} 様
+
+いつもありがとうございます。トリリオン英語塾です。
+{student_name} さんの月謝のお支払いカードの変更を承りました。
+
+新しいカード：{new_card}
+
+これからの月謝の引き落としには、新しいカードを使います。前のカードは今後使いません。
+このお手続きにお心当たりがない場合は、公式 LINE またはメール（{contact}）までご連絡ください。
+
+このメールは自動送信です。
+
+トリリオン英語塾
+"""
+_CARD_UPDATE_PARENT_MAIL_LABELS = {"sent": "送信済み", "disabled": "停止中 (CARD_UPDATE_MAIL_ENABLED=0)", "no_email": "★登録にメールが無いので送っていません",
+                                   "no_api_key": "★未送信 (RESEND_API_KEY 未設定)", "failed": "★送信失敗", "": "-"}
+
+
+def _card_info(pm):
+    """PaymentMethod → (ブランド表示, 末尾 4 桁, 有効期限 MM/YY)。取れなければ空文字"""
+    card = pm.get("card") if isinstance(pm, dict) else None
+    card = card if isinstance(card, dict) else {}
+    raw_brand = str(card.get("brand") or "").lower()
+    brand = _CARD_BRANDS.get(raw_brand, raw_brand.upper())
+    last4 = str(card.get("last4") or "")
+    try:
+        exp = f"{int(card.get('exp_month')):02d}/{int(card.get('exp_year')) % 100:02d}"
+    except Exception:
+        exp = ""
+    return brand, last4, exp
+
+
+def _card_label(brand, last4, exp):
+    if not last4:
+        return "（不明）"
+    return f"{brand or 'カード'} 末尾 {last4}" + (f"（有効期限 {exp}）" if exp else "")
+
+
+def _card_update_stripe_post(secret_key, path, idempotency_key=""):
+    """Stripe POST (空 body)。カードを顧客から外す (detach) ときだけ使う"""
+    headers = {"Authorization": f"Bearer {secret_key}", "Content-Type": "application/x-www-form-urlencoded",
+               "Stripe-Version": "2024-06-20", "Content-Length": "0"}
+    if idempotency_key:
+        headers["Idempotency-Key"] = idempotency_key
+    req = urllib.request.Request(f"https://api.stripe.com/v1/{path}", data=b"", headers=headers)
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def _card_update_detach(secret_key, pm_id, label):
+    """カードを顧客から外す (以後どの請求にも使えない)。結果: detached / already / failed"""
+    try:
+        _card_update_stripe_post(secret_key, f"payment_methods/{pm_id}/detach", idempotency_key=f"juku-card-update-detach-{pm_id}")
+        return "detached"
+    except urllib.error.HTTPError as e:
+        try:
+            msg = e.read().decode("utf-8", errors="replace")[:300]
+        except Exception:
+            msg = str(e)
+        if any(s in msg.lower() for s in ("not attached", "not previously attached", "already detached")):
+            return "already"
+        _log(f"webhook card-update: detach {label} {pm_id} failed: {e.code} {msg[:160]}")
+        return "failed"
+    except Exception as e:
+        _log(f"webhook card-update: detach {label} {pm_id} error: {e!r}")
+        return "failed"
+
+
+_KV_CAS_SCRIPT = ("local cur = redis.call('GET', KEYS[1]) "
+                  "if not cur then return -1 end "
+                  "if cur ~= ARGV[1] then return 0 end "
+                  "redis.call('SET', KEYS[1], ARGV[2]) "
+                  "return 1")
+
+
+def _kv_eval(*args):
+    """EVAL を送り (state, reply) を返す。state: ok / rejected (KV がコマンドを断った = HTTP 4xx。EVAL が使えない等) / down (応答なし)。
+    _redis_safe は 4xx も通信失敗も None にするので EVAL だけ見分ける (Upstash はコマンドの誤りを HTTP 400 で返す)"""
+    url = os.environ.get("KV_REST_API_URL", "").strip()
+    token = os.environ.get("KV_REST_API_TOKEN", "").strip()
+    if not url or not token:
+        return "down", None
+    try:
+        req = urllib.request.Request(url, data=json.dumps(list(args)).encode(),
+                                     headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            return "ok", json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        return ("rejected" if 400 <= e.code < 500 else "down"), None
+    except Exception:
+        return "down", None
+
+
+def _kv_compare_and_set(key, expected_raw, new_raw):
+    """読んだときのまま変わっていなければ書く (Upstash の EVAL・1 往復で原子的)。
+    返り値: ok / changed (別の書き込みが先に入った) / missing (消えた = 退塾処理など) / error (KV 応答なし)。
+    ★月額の編集 (admin-registration-cancel.py update_fee) と同時に読み書きすると、後から書いた側が相手の変更を黙って消す。
+      退塾処理と重なると、消えた登録を書き戻して生き返らせる。どちらも「読んだときのままなら書く」で防ぐ。
+    EVAL を断られたときは、書く直前に読み直して比べてから SET する (原子的ではないが、従来の無条件の SET よりは安全。
+    カード変更・月額の保存そのものは止めない)。応答が無いときは error (呼び出し側が再送・やり直しを頼む)"""
+    state, res = _kv_eval("EVAL", _KV_CAS_SCRIPT, "1", key, expected_raw, new_raw)
+    if state == "ok" and isinstance(res, dict) and res.get("result") in (1, 0, -1):
+        return {1: "ok", 0: "changed", -1: "missing"}[res["result"]]
+    if state == "down":
+        return "error"
+    _log(f"kv CAS: EVAL unavailable ({state} {str(res)[:120]}) — compare-then-SET for {key}")
+    cur = _redis_safe("GET", key)
+    if not isinstance(cur, dict):
+        return "error"
+    if cur.get("result") is None:
+        return "missing"
+    if cur.get("result") != expected_raw:
+        return "changed"
+    res2 = _redis_safe("SET", key, new_raw)
+    return "ok" if (isinstance(res2, dict) and res2.get("result") == "OK") else "error"
+
+
+_PI_UNFINISHED = ("requires_action", "processing", "requires_confirmation", "requires_capture")
+
+
+def _card_update_old_card_busy(secret_key, rid, customer, old_pm):
+    """前のカードを今外してはいけない理由 (塾長通知の★の文)。空文字なら外してよい。
+    ① 月末一斉・個別・再請求がこの登録をちょうど引き落とし中 (charge:done が "pending"。execute が請求できる翌月〜3 か月前)
+    ② 前のカードで本人認証 (3DS) 待ち・処理中の請求が Stripe にある (外すと保護者が本人認証を済ませられなくなる)
+    KV / Stripe に聞けなければ外さない (外すのは後からでもできるが、外したカードは戻せない)"""
+    this_m = _course_jst().strftime("%Y-%m")
+    p1 = _enroll_prev_month(this_m)
+    p2 = _enroll_prev_month(p1)
+    for m in (_enroll_next_month(this_m), this_m, p1, p2, _enroll_prev_month(p2)):
+        got = _redis_safe("GET", f"charge:done:{rid}:{m}")
+        if not isinstance(got, dict):
+            return "引き落としの記録を確かめられなかったため"
+        if str(got.get("result") or "").strip() == "pending":
+            return (f"{_enroll_month_label(m)}分の引き落としがちょうど処理中だったため。その月は前のカードで引き落とされた可能性があるので、"
+                    "「📜 過去の履歴・失敗者一覧・要対応」で確かめてください")
+    pis = _stripe_get(secret_key, f"payment_intents?customer={customer}&limit=20")
+    if not isinstance(pis, dict) or not isinstance(pis.get("data"), list):
+        return "Stripe で前のカードの請求の状況を確かめられなかったため"
+    for pi in pis["data"]:
+        pm = pi.get("payment_method")
+        if isinstance(pm, dict):
+            pm = pm.get("id")
+        if pm != old_pm or pi.get("status") not in _PI_UNFINISHED:
+            continue
+        m = str((pi.get("metadata") or {}).get("month") or "")
+        label = f"{_enroll_month_label(m)}分の" if m else ""
+        if pi.get("status") == "requires_action":
+            return (f"{label}引き落としが前のカードで本人認証 (3DS) 待ちのため。保護者が本人認証を済ませれば、その分は前のカードで引き落とされます。"
+                    "その分も新しいカードで引き落とし直す場合は Claude に相談してください")
+        return f"{label}前のカードでの請求がまだ処理中 ({pi.get('status')}) のため"
+    return ""
+
+
+def _card_update_save(session_id, record):
+    """調査用の記録 (受付番号 = Checkout の session_id で 1 年)"""
+    _redis_safe("SET", f"card_update:session:{session_id}", json.dumps(record, ensure_ascii=False), "EX", str(CARD_UPDATE_RECORD_TTL))
+    _redis_safe("ZADD", "card_update:index", str(int(time.time())), session_id)
+
+
+def _card_update_clear_link(rid, session_id):
+    """「リンク発行済み」の記録 (card_update:link:{rid}) を、このリンクのものなら消す (後から出した別のリンクは残す)"""
+    got = _redis_safe("GET", f"card_update:link:{rid}")
+    raw = got.get("result") if isinstance(got, dict) else None
+    try:
+        if raw and json.loads(raw).get("session_id") == session_id:
+            _redis_safe("DEL", f"card_update:link:{rid}")
+    except Exception:
+        pass
+
+
+def _card_update_mail_parent(rec, vars_, session_id):
+    """保護者へ「カードの変更を承りました」。返り値は _CARD_UPDATE_PARENT_MAIL_LABELS のキー"""
+    if os.environ.get("CARD_UPDATE_MAIL_ENABLED", "1").strip().lower() in ("0", "false", "off"):
+        return "disabled"
+    to_email = str(rec.get("email") or "").strip()
+    if not to_email or not COURSE_EMAIL_RE.match(to_email):
+        return "no_email"
+    api_key = os.environ.get("RESEND_API_KEY", "").strip()
+    if not api_key:
+        return "no_api_key"
+    from_raw = os.environ.get("FROM_EMAIL", "noreply@trillion-ai-juku.com").strip() or "noreply@trillion-ai-juku.com"
+    from_email = from_raw if "<" in from_raw else f"トリリオン英語塾 <{from_raw}>"
+    contact = os.environ.get("COURSE_REPLY_TO", "").strip() or COURSE_CONTACT_DEFAULT
+    if not COURSE_EMAIL_RE.match(contact):
+        contact = COURSE_CONTACT_DEFAULT
+    try:
+        parent_name = str(rec.get("parentName") or rec.get("parent_name") or "").strip() or "保護者"   # vars_ の "-" (塾長通知の空欄表示) を宛名にしない
+        body = CARD_UPDATE_PARENT_BODY.format(parent_name=parent_name, student_name=vars_["student_name"],
+                                              new_card=vars_["new_card"], contact=contact)
+        _resend_send_text(api_key, from_email, to_email, contact, CARD_UPDATE_PARENT_SUBJECT, body,
+                          idempotency_key=f"card-update/{session_id}/parent")
+        return "sent"
+    except Exception as e:
+        _log(f"webhook card-update: parent mail FAILED session={session_id}: {e!r}")
+        return "failed"
+
+
+def _card_update_notify_owner(session_id, vars_, result, warnings, reason="", applied=False):
+    """塾長通知 (ENROLL_NOTIFY_EMAIL、無ければ COURSE_NOTIFY_EMAIL)。★が 1 つでもあれば件名を「★要対応」にする"""
+    api_key = os.environ.get("RESEND_API_KEY", "").strip()
+    notify_to = os.environ.get("ENROLL_NOTIFY_EMAIL", "").strip() or os.environ.get("COURSE_NOTIFY_EMAIL", "").strip()
+    if not (notify_to and api_key and COURSE_EMAIL_RE.match(notify_to)):
+        return
+    from_raw = os.environ.get("FROM_EMAIL", "noreply@trillion-ai-juku.com").strip() or "noreply@trillion-ai-juku.com"
+    from_email = from_raw if "<" in from_raw else f"トリリオン英語塾 <{from_raw}>"
+    starred = [w for w in warnings if w.startswith("★")]
+    v = {**vars_, "result": result, "warnings": ("\n" + "\n".join(warnings) + "\n") if warnings else "",
+         "after": CARD_UPDATE_AFTER_APPLIED if applied else "",
+         "reason": reason or ("差し替えましたが要確認あり" if applied else "差し替えていません")}
+    v.setdefault("parent_mail", "-")
+    subject = (CARD_UPDATE_NOTIFY_SUBJECT if (applied and not starred and not reason) else CARD_UPDATE_NOTIFY_SUBJECT_WARN).format(**v)
+    try:
+        _resend_send_text(api_key, from_email, notify_to, "", subject, CARD_UPDATE_NOTIFY_BODY.format(**v),
+                          idempotency_key=f"card-update/{session_id}/owner")
+    except Exception as e:
+        _log(f"webhook card-update: owner notify failed session={session_id}: {e!r}")
+
+
+def _handle_card_update_checkout(obj):
+    session_id = obj.get("id", "")
+    md = obj.get("metadata") or {}
+    rid = str(md.get("card_update_rid") or "").strip()
+    setup_intent_id = obj.get("setup_intent") or ""
+    if isinstance(setup_intent_id, dict):
+        setup_intent_id = setup_intent_id.get("id") or ""
+    sess_customer = obj.get("customer") or ""
+    if isinstance(sess_customer, dict):
+        sess_customer = sess_customer.get("id") or ""
+    live = obj.get("livemode") is not False   # テストモードの Checkout はメールを送らない (入塾・講座と同じ)
+    now = int(time.time())
+    audit = {"session_id": session_id, "registration_id": rid, "at": now, "livemode": obj.get("livemode")}
+    vars_ = {"student_name": str(md.get("student_name") or "").strip() or "(氏名不明)", "grade": "-", "parent_name": "-",
+             "rid": rid or "(なし)", "new_card": "（不明）", "old_card": "（不明）", "parent_mail": "-"}
+
+    def _stop(status, reason, warnings, result=("カードは差し替えていません (月末は今までのカードのままです)。保護者の画面には「受け付けました」と出ていて、"
+                                               "確認メールは届きません。保護者に連絡してください。"), **extra):
+        _log(f"webhook card-update: NOT applied ({status}) rid={rid} session={session_id} {extra}")
+        _card_update_save(session_id, {**audit, "status": status, **extra})
+        if rid:
+            _card_update_clear_link(rid, session_id)   # 使い終わったリンク: 画面に「まだ使えます」と出さない
+        if vars_["old_card"] == "（不明）":
+            vars_["old_card"] = "（そのまま）"
+        if live:
+            _card_update_notify_owner(session_id, vars_, result, warnings, reason=reason)
+
+    # 同じセッションは 1 回だけ: 調査用の記録があれば処理済み (Dashboard からの再送などで、後からのカード変更や退塾処理を巻き戻さない)
+    if session_id:
+        prior = _redis_safe("GET", f"card_update:session:{session_id}")
+        if not isinstance(prior, dict):
+            raise _RetryLater(f"KV read failed (card_update:session) session={session_id}")
+        if prior.get("result"):
+            _log(f"webhook card-update: session {session_id} already handled — skip")
+            return
+
+    if obj.get("mode") != "setup" or not rid or not setup_intent_id:
+        _stop("invalid_session", "リンクの中身が不正", ["★カード変更リンクの記録 (登録 ID / SetupIntent) が欠けていました。Claude に調査を依頼してください"])
+        return
+    secret_key = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+    if not secret_key:
+        _log(f"webhook card-update CRITICAL: STRIPE_SECRET_KEY missing rid={rid} session={session_id} — asking Stripe to retry")
+        raise _RetryLater("STRIPE_SECRET_KEY missing")
+    si = _stripe_get(secret_key, f"setup_intents/{setup_intent_id}")
+    if not isinstance(si, dict) or not si.get("id"):
+        raise _RetryLater(f"setup_intent fetch failed {setup_intent_id}")
+    new_pm = si.get("payment_method") or ""
+    if isinstance(new_pm, dict):
+        new_pm = new_pm.get("id") or ""
+    si_customer = si.get("customer") or ""
+    if isinstance(si_customer, dict):
+        si_customer = si_customer.get("id") or ""
+    if si.get("status") != "succeeded" or not new_pm:
+        _stop("setup_not_succeeded", "カードを確認できませんでした",
+              [f"★Stripe でカードの登録が完了していません (SetupIntent の状態: {si.get('status')})。"
+               "月謝アプリの「🪪 カード変更」でリンクを作り直して、保護者に送ってください"],
+              setup_intent_status=si.get("status"))
+        return
+    customer = sess_customer or si_customer
+    if sess_customer and si_customer and sess_customer != si_customer:
+        _stop("customer_mismatch", "Stripe の顧客が一致しません", ["★リンクの顧客と入力されたカードの顧客が違いました。Claude に調査を依頼してください"],
+              customer_id=sess_customer, setup_intent_customer=si_customer)
+        return
+    # 新しいカードの種類・末尾は、登録を読む前に取る (読んでから書くまでの間に外部へ問い合わせない = 他の書き込みと重なりにくくする)
+    new_info = _card_info(_stripe_get(secret_key, f"payment_methods/{new_pm}"))
+    vars_["new_card"] = _card_label(*new_info)
+    created = int(obj.get("created") or 0)
+    key = f"reg:completed:{rid}"
+    rec, old_pm = None, ""
+    for attempt in range(4):
+        got = _redis_safe("GET", key)
+        if not isinstance(got, dict):
+            raise _RetryLater(f"KV read failed rid={rid}")
+        raw = got.get("result")
+        if not raw:
+            # 登録が無い (リンクを出した後に 🗑 退塾処理をした等)。どの請求にも使われないカードなので外す
+            st = _card_update_detach(secret_key, new_pm, "new-unused")
+            _stop("registration_missing", "カード登録が見つかりません",
+                  ["★この生徒のカード登録が見つかりません (リンクを出した後に退塾処理をした等)。"
+                   + ("入力されたカードは使わないので外しました。" if st in ("detached", "already") else "入力されたカードを Stripe から外せませんでした。Stripe の顧客画面で外してください。")
+                   + "続けて通う場合は、カードの登録 (payment/register.html) からやり直してください"],
+                  result="カードは差し替えていません (この生徒のカード登録が見つかりません)。保護者には「受け付けました」の画面が出ているので、連絡してください。",
+                  customer_id=customer, payment_method_id=new_pm, detach_new=st)
+            return
+        try:
+            rec = json.loads(raw)
+        except Exception:
+            rec = None
+        if not isinstance(rec, dict):
+            _stop("parse_error", "登録データが読めません", ["★登録データ (reg:completed) が読めませんでした。Claude に調査を依頼してください"])
+            return
+        vars_.update(student_name=str(rec.get("studentName") or rec.get("student_name") or "").strip() or vars_["student_name"],
+                     grade=str(rec.get("grade") or "").strip() or "-",
+                     parent_name=str(rec.get("parentName") or rec.get("parent_name") or "").strip() or "-")
+        rec_customer = str(rec.get("stripe_customer_id") or "").strip()
+        if not customer or rec_customer != customer:
+            _stop("customer_mismatch", "登録の Stripe 顧客と一致しません",
+                  ["★リンクで入力されたカードの顧客が、この生徒の登録の顧客と違いました。前のカードのまま引き落とします。Claude に調査を依頼してください"],
+                  customer_id=customer, registration_customer_id=rec_customer)
+            return
+        old_pm = str(rec.get("stripe_payment_method_id") or "").strip()
+        if old_pm == new_pm:
+            if rec.get("card_update_session_id") == session_id:
+                # KV には書けたが応答が届かず _RetryLater で再送された (調査用の記録がまだ無いことは上で確かめ済み) →
+                # 後始末 (前のカードを外す・メール・記録) がまだなので、ここでやる
+                _log(f"webhook card-update: applied earlier but follow-up missing rid={rid} session={session_id} — finishing")
+                _card_update_after_apply(secret_key, obj, rec, vars_, audit, rid, customer, new_pm,
+                                         str(rec.get("card_prev_payment_method_id") or "").strip(), live)
+                return
+            _log(f"webhook card-update: card already in use rid={rid} session={session_id} pm={new_pm} — skip")
+            _card_update_save(session_id, {**audit, "status": "already_applied", "payment_method_id": new_pm})
+            return
+        prev_created = int(rec.get("card_update_session_created") or 0)
+        if created and prev_created and created < prev_created:
+            # 後から出したリンクで既に差し替え済み (古いリンクの完了が遅れて届いた)。新しい方を残し、こちらのカードは外す
+            st = _card_update_detach(secret_key, new_pm, "stale")
+            _stop("stale_session", "古いリンクの入力は使いませんでした",
+                  ["★同じ生徒に作った古いリンクでも、カードが入力されました。後から作ったリンクのカードを使い、古いリンクのカードは"
+                   + ("外しました。" if st in ("detached", "already") else "外せませんでした (Stripe の顧客画面で外してください)。")
+                   + "保護者が 2 枚のカードを入れた可能性があるので、どちらを使うか確かめてください"],
+                  result="古いリンクで入力されたカードは使っていません (後から作ったリンクで、既に別のカードに差し替え済みです)。",
+                  payment_method_id=new_pm, detach_new=st)
+            return
+        new_rec = {
+            **rec,
+            "stripe_payment_method_id": new_pm,
+            "card_brand": new_info[0],       # 画面の「🪪 VISA 末尾 4242（10/20 に変更）」用 (番号そのものは持たない)
+            "card_last4": new_info[1],
+            "card_exp": new_info[2],
+            "card_updated_at": now,
+            "card_update_session_id": session_id,
+            "card_update_session_created": created,
+            "card_update_setup_intent_id": setup_intent_id,
+            "card_update_count": int(rec.get("card_update_count") or 0) + 1,
+            "card_prev_payment_method_id": old_pm,
+        }
+        cas = _kv_compare_and_set(key, raw, json.dumps(new_rec, ensure_ascii=False))
+        if cas == "ok":
+            break
+        if cas == "error":
+            _log(f"webhook card-update CRITICAL: KV error writing reg:completed rid={rid} — asking Stripe to retry")
+            raise _RetryLater(f"reg:completed write failed rid={rid}")
+        _log(f"webhook card-update: reg:completed {cas} while applying rid={rid} — re-read ({attempt + 1})")
+    else:
+        raise _RetryLater(f"reg:completed kept changing rid={rid}")
+    _log(f"webhook card-update: applied rid={rid} session={session_id} customer={customer} pm {old_pm} -> {new_pm}")
+    _card_update_after_apply(secret_key, obj, rec, vars_, audit, rid, customer, new_pm, old_pm, live)
+
+
+def _card_update_after_apply(secret_key, obj, rec, vars_, audit, rid, customer, new_pm, old_pm, live):
+    """差し替えを書けた後の後始末: 書けたことの確認・一覧に載っているか・前のカードを外す・保護者と塾長へのメール・調査用の記録"""
+    session_id = obj.get("id", "")
+    key = f"reg:completed:{rid}"
+    warnings = []
+    # 書けた後にもう一度読む: 消えていた (退塾処理と重なった)・別のカードになっていた (後から別のカード変更) なら差し替え扱いにしない。
+    # 読めなかったときは差し替えは済んでいる (書けた) とみなし、前のカードだけ残す
+    chk = _redis_safe("GET", key)
+    applied_ok = isinstance(chk, dict)
+    if applied_ok:
+        chk_raw = chk.get("result")
+        try:
+            cur_pm = (json.loads(chk_raw) or {}).get("stripe_payment_method_id") if chk_raw else None
+        except Exception:
+            cur_pm = None
+        if not chk_raw or cur_pm != new_pm:
+            st = _card_update_detach(secret_key, new_pm, "new-after-cancel") if not chk_raw else "kept"
+            status = "missing_after_apply" if not chk_raw else "superseded"
+            _log(f"webhook card-update: {status} rid={rid} session={session_id} current_pm={cur_pm} detach_new={st}")
+            _card_update_save(session_id, {**audit, "status": status, "payment_method_id": new_pm, "current_payment_method_id": cur_pm,
+                                           "detach_new": st})
+            _card_update_clear_link(rid, session_id)
+            if live:
+                msg = ("★差し替えた直後に、この生徒のカード登録が消えました (退塾処理と重なった可能性)。入力されたカードは"
+                       + ("使わないので外しました。" if st in ("detached", "already") else "外せませんでした (Stripe の顧客画面で外してください)。")
+                       + "保護者に連絡してください" if not chk_raw else
+                       "★差し替えた直後に、別の操作で登録のカードが変わりました (後から別のカード変更が入った可能性)。Claude に調査を依頼してください")
+                vars_["old_card"] = "（不明）"
+                _card_update_notify_owner(session_id, vars_, "カードの差し替えは確定していません。", [msg], reason="差し替え直後に登録が変わりました")
+            return
+    # 月末の一覧 (reg:completed:index) に載っているか。Stripe で顧客/カードが見つからず外れた登録は、差し替えても引き落とされない
+    zs = _redis_safe("ZSCORE", "reg:completed:index", rid)
+    if isinstance(zs, dict) and "error" not in zs and zs.get("result") is None:
+        warnings.append("★この生徒の登録は月末引き落としの一覧から外れています (前に Stripe で顧客かカードが見つからなかったため)。"
+                        "新しいカードでも引き落とされないので、Claude に一覧への戻しを依頼してください")
+    old_pm_obj = _stripe_get(secret_key, f"payment_methods/{old_pm}") if old_pm else None
+    vars_["old_card"] = _card_label(*_card_info(old_pm_obj)) if old_pm else "（なし）"
+    detach_state = "none"
+    if old_pm and not applied_ok:
+        detach_state = "kept_unconfirmed"
+        warnings.append("★差し替えた直後の確認で登録を読めなかったため、前のカードは外していません (これからの引き落としには使いません)")
+    elif old_pm:
+        old_owner = old_pm_obj.get("customer") if isinstance(old_pm_obj, dict) else None
+        if isinstance(old_owner, dict):
+            old_owner = old_owner.get("id")
+        busy = _card_update_old_card_busy(secret_key, rid, customer, old_pm)
+        if busy:
+            detach_state = "kept_busy"
+            warnings.append(f"★前のカードは外していません: {busy}。これからの引き落としは新しいカードです。前のカードはこれからは使わないので、そのままで大丈夫です")
+        elif isinstance(old_pm_obj, dict) and old_pm_obj.get("id") and not old_owner:
+            detach_state = "already"
+        elif isinstance(old_pm_obj, dict) and old_owner and old_owner != customer:
+            detach_state = "other_customer"
+            warnings.append("★前のカードが別の Stripe 顧客に付いていたので外していません。Claude に調査を依頼してください")
+        else:
+            detach_state = _card_update_detach(secret_key, old_pm, "old")
+            if detach_state == "failed":
+                warnings.append("★前のカードを Stripe から外せませんでした (これからの引き落としには使いません)。Stripe の顧客画面で外してください")
+    vars_["old_card"] += {"detached": "（外しました）", "already": "（既に外れていました）", "kept_busy": "（残しています）",
+                          "kept_unconfirmed": "（残しています）", "other_customer": "（残しています）",
+                          "failed": "（外せませんでした）"}.get(detach_state, "")
+    if vars_["new_card"] == "（不明）":
+        warnings.append("★新しいカードの種類と末尾の番号を Stripe から取れませんでした (差し替えは済んでいます)")
+    parent_status = _card_update_mail_parent(rec, vars_, session_id) if live else ""
+    vars_["parent_mail"] = _CARD_UPDATE_PARENT_MAIL_LABELS.get(parent_status, parent_status)
+    if parent_status in ("failed", "no_api_key"):
+        warnings.append("★保護者への確認メールを送れませんでした (差し替えは済んでいます)。保護者の画面には「確認のメールをお送りします」と出ているので、LINE で「変更できました」と伝えてください")
+    elif parent_status == "no_email":
+        warnings.append("★登録に保護者のメールアドレスが無いため、確認メールを送っていません (差し替えは済んでいます)。LINE で「変更できました」と伝えてください")
+    _card_update_save(session_id, {**audit, "status": "applied", "customer_id": customer, "payment_method_id": new_pm,
+                                   "prev_payment_method_id": old_pm, "detach_prev": detach_state, "parent_mail": parent_status,
+                                   "student_name": vars_["student_name"], "new_card": vars_["new_card"]})
+    _card_update_clear_link(rid, session_id)
+    if live:
+        _card_update_notify_owner(session_id, vars_, "差し替えました。これからの引き落としは新しいカードです。", warnings, applied=True)
+
+
 def _handle_checkout_completed(event):
     """🆕 v2 (2026-05-13): mode=setup 対応。
     旧 mode=subscription も後方互換のため一応動くようにしておく。
@@ -1073,6 +1592,10 @@ def _handle_checkout_completed(event):
     # 🆕 2026-09-16 月額講座 (支払いリンク) は registration_id を持たない別系統 → 受講案内メールだけ送って終わり
     if system_tag == COURSE_SYSTEM_TAG:
         _handle_course_checkout(obj)
+        return
+    # 🪪 2026-10-20 カード変更リンク (api/admin-card-update.py) は既存の登録のカードを差し替えるだけ。下の新規登録の道に入れない
+    if system_tag == CARD_UPDATE_SYSTEM_TAG:
+        _handle_card_update_checkout(obj)
         return
     if not reg_id and system_tag != "juku-payment-monthly":
         _log(f"webhook: not juku-payment event (mode={mode} system={system_tag}) — skip")
@@ -1135,6 +1658,12 @@ def _handle_checkout_completed(event):
     # 🆕 mode によって record の意味が異なる:
     #   mode=setup       : amount=0 / payment_method 必須 / monthly_fee で月額保存
     #   mode=subscription: amount=初回課金額 / subscription_id 必須 (legacy)
+    replay = _registration_replay(reg_id, session_id)
+    if replay:
+        _log(f"webhook: reg={reg_id} already completed by this session — kept as is (later card change / fee edit not overwritten)")
+        _registration_index_repair(reg_id, replay, int(time.time()))
+        _redis_safe("DEL", f"reg:pending:{reg_id}")
+        return
     record = {
         **existing,
         "registration_id": reg_id,

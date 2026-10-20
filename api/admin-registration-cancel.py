@@ -55,8 +55,8 @@ def _json(handler, status, payload):
 # 🔐 2026-09-07 総当たり対策 (システム点検で確定): パスワード比較だけで試行回数の上限が無く、月末の一括引き落とし・
 #   スポット課金・任意宛先メール・顧客一覧が総当たりで開く状態だった。失敗回数を Upstash KV (webhook の冪等化で
 #   常用) に IP ごと・全体で記録し、上限に達したら比較せずに拒否する。KV が無い環境では従来どおり比較のみ。
-#   ★10 本の関数に同じ塊を置いている (Vercel の Python 関数は 1 ファイル 1 関数で共有モジュールを持たない)。
-#     直すときは全部一緒に直すこと。scripts/health_check/test_vercel_admin_guard.py が 10 本とも検査する。
+#   ★11 本の関数に同じ塊を置いている (Vercel の Python 関数は 1 ファイル 1 関数で共有モジュールを持たない)。
+#     直すときは全部一緒に直すこと。scripts/health_check/test_vercel_admin_guard.py が 11 本とも検査する。
 _ADMIN_FAIL_IP_LIMIT = 10        # 同一 IP: 10 回/時
 _ADMIN_FAIL_GLOBAL_LIMIT = 60    # 全体: 60 回/時 (IP を変えながらの総当たりを止める)
 _ADMIN_FAIL_WINDOW_SEC = 3600
@@ -138,6 +138,65 @@ def _redis(*args):
         return None
 
 
+_KV_CAS_SCRIPT = ("local cur = redis.call('GET', KEYS[1]) "
+                  "if not cur then return -1 end "
+                  "if cur ~= ARGV[1] then return 0 end "
+                  "redis.call('SET', KEYS[1], ARGV[2]) "
+                  "return 1")
+
+
+def _kv_eval(*args):
+    """EVAL を送り (state, reply) を返す。state: ok / rejected (KV がコマンドを断った = HTTP 4xx) / down (応答なし)。
+    _redis は 4xx も通信失敗も None にするので EVAL だけ見分ける (Upstash はコマンドの誤りを HTTP 400 で返す)。stripe-webhook.py と同じ"""
+    url = os.environ.get("KV_REST_API_URL", "").strip()
+    token = os.environ.get("KV_REST_API_TOKEN", "").strip()
+    if not url or not token:
+        return "down", None
+    try:
+        req = urllib.request.Request(url, data=json.dumps(list(args)).encode(),
+                                     headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            return "ok", json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        return ("rejected" if 400 <= e.code < 500 else "down"), None
+    except Exception:
+        return "down", None
+
+
+def _kv_compare_and_set(key, expected_raw, new_raw):
+    """読んだときのまま変わっていなければ書く (Upstash の EVAL・1 往復で原子的。stripe-webhook.py と同じ)。
+    返り値: ok / changed (別の書き込みが先に入った) / missing (消えた) / error (KV 応答なし)。
+    ★2026-10-20 カード変更 (webhook が同じ登録のカードを差し替える) と月額の保存が重なると、後から書いた側が相手の変更を黙って消していた。
+    EVAL を断られたときは、書く直前に読み直して比べてから SET する (原子的ではないが従来の無条件の SET より安全・月額の保存は止めない)"""
+    state, res = _kv_eval("EVAL", _KV_CAS_SCRIPT, "1", key, expected_raw, new_raw)
+    if state == "ok" and isinstance(res, dict) and res.get("result") in (1, 0, -1):
+        return {1: "ok", 0: "changed", -1: "missing"}[res["result"]]
+    if state == "down":
+        return "error"
+    _log(f"kv CAS: EVAL unavailable ({state} {str(res)[:120]}) — compare-then-SET for {key}")
+    cur = _redis("GET", key)
+    if not isinstance(cur, dict):
+        return "error"
+    if cur.get("result") is None:
+        return "missing"
+    if cur.get("result") != expected_raw:
+        return "changed"
+    res2 = _redis("SET", key, new_raw)
+    return "ok" if (isinstance(res2, dict) and res2.get("result") == "OK") else "error"
+
+
+def _stripe_get_json(secret_key, path):
+    """Stripe GET (失敗は None)。退塾処理の後始末で、前のカードに未完了の請求が無いかを見るだけに使う"""
+    try:
+        req = urllib.request.Request(f"https://api.stripe.com/v1/{path}", headers={
+            "Authorization": f"Bearer {secret_key}", "Stripe-Version": "2024-06-20"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        _log(f"stripe GET {path} error: {e}")
+        return None
+
+
 def _stripe_post(secret_key, path, form, idempotency_key=None):
     """Stripe POST with proper empty-body handling (Content-Length: 0 for empty form)"""
     body = urllib.parse.urlencode(form).encode() if form else b""
@@ -198,30 +257,42 @@ class handler(BaseHTTPRequestHandler):
                 if fee_breakdown is not None:
                     fee_breakdown = str(fee_breakdown)[:300]
                 expect_customer_id = (payload.get("expectCustomerId") or "").strip()
-                got_u = _redis("GET", f"reg:completed:{rid}")
-                if not got_u or not isinstance(got_u, dict) or not got_u.get("result"):
-                    _json(self, 404, {"error": "REGISTRATION_NOT_FOUND",
-                                      "message": "登録が見つかりません(未紐付け/解除済み)。引き落とし額は更新されません。"}); return
-                try:
-                    reg_u = json.loads(got_u["result"])
-                except Exception:
-                    _json(self, 500, {"error": "PARSE_ERROR"}); return
-                # 🛡️ 誤レコード更新防止: expectCustomerId が送られたら KV の stripe_customer_id と一致を確認 (重複登録対策)
-                actual_cust = (reg_u.get("stripe_customer_id") or "").strip()
-                if expect_customer_id and actual_cust and expect_customer_id != actual_cust:
-                    _json(self, 409, {"error": "CUSTOMER_MISMATCH",
-                                      "message": "紐付け情報と登録レコードの顧客IDが一致しません。重複登録の可能性があるため更新を中止しました。"}); return
-                prev_fee = int(reg_u.get("monthly_fee", 0) or 0)
-                now_u = int(time.time())
-                # read-modify-write: 全既存フィールド保持・monthly_fee(+任意 breakdown)のみ更新・EX 付けない
-                record_u = {**reg_u, "monthly_fee": new_fee, "monthly_fee_prev": prev_fee,
-                            "monthly_fee_edited_at": now_u, "monthly_fee_edited_by": "admin-roster-edit"}
-                if fee_breakdown is not None:
-                    record_u["fee_breakdown"] = fee_breakdown
-                set_u = _redis("SET", f"reg:completed:{rid}", json.dumps(record_u, ensure_ascii=False))
-                if not set_u or not isinstance(set_u, dict) or set_u.get("result") != "OK":
-                    _log(f"update-fee SET failed rid={rid} res={set_u}")
-                    _json(self, 502, {"error": "KV_WRITE_FAILED", "message": "登録金額の保存に失敗しました。再度お試しください。"}); return
+                key_u = f"reg:completed:{rid}"
+                for _attempt_u in range(3):
+                    got_u = _redis("GET", key_u)
+                    if not got_u or not isinstance(got_u, dict) or not got_u.get("result"):
+                        _json(self, 404, {"error": "REGISTRATION_NOT_FOUND",
+                                          "message": "登録が見つかりません(未紐付け/解除済み)。引き落とし額は更新されません。"}); return
+                    try:
+                        reg_u = json.loads(got_u["result"])
+                    except Exception:
+                        _json(self, 500, {"error": "PARSE_ERROR"}); return
+                    # 🛡️ 誤レコード更新防止: expectCustomerId が送られたら KV の stripe_customer_id と一致を確認 (重複登録対策)
+                    actual_cust = (reg_u.get("stripe_customer_id") or "").strip()
+                    if expect_customer_id and actual_cust and expect_customer_id != actual_cust:
+                        _json(self, 409, {"error": "CUSTOMER_MISMATCH",
+                                          "message": "紐付け情報と登録レコードの顧客IDが一致しません。重複登録の可能性があるため更新を中止しました。"}); return
+                    prev_fee = int(reg_u.get("monthly_fee", 0) or 0)
+                    now_u = int(time.time())
+                    # read-modify-write: 全既存フィールド保持・monthly_fee(+任意 breakdown)のみ更新・EX 付けない
+                    record_u = {**reg_u, "monthly_fee": new_fee, "monthly_fee_prev": prev_fee,
+                                "monthly_fee_edited_at": now_u, "monthly_fee_edited_by": "admin-roster-edit"}
+                    if fee_breakdown is not None:
+                        record_u["fee_breakdown"] = fee_breakdown
+                    # 🪪 2026-10-20: 読んだときのままなら書く (カード変更の webhook と重なったら読み直して載せ直す = 新しいカードを消さない)
+                    cas_u = _kv_compare_and_set(key_u, got_u["result"], json.dumps(record_u, ensure_ascii=False))
+                    if cas_u == "ok":
+                        break
+                    if cas_u == "missing":
+                        _json(self, 404, {"error": "REGISTRATION_NOT_FOUND",
+                                          "message": "登録が見つかりません(未紐付け/解除済み)。引き落とし額は更新されません。"}); return
+                    if cas_u == "error":
+                        _log(f"update-fee SET failed rid={rid}")
+                        _json(self, 502, {"error": "KV_WRITE_FAILED", "message": "登録金額の保存に失敗しました。再度お試しください。"}); return
+                    _log(f"update-fee: reg:completed changed while saving rid={rid} — re-read ({_attempt_u + 1})")
+                else:
+                    _json(self, 409, {"error": "CONCURRENT_UPDATE",
+                                      "message": "同じ登録が同時に更新されていたため、保存できませんでした。もう一度「✓ 変更を保存」を押してください。"}); return
                 sname_u = (reg_u.get("studentName") or reg_u.get("student_name") or "").strip()
                 _log(f"update-fee: rid={rid} fee {prev_fee} -> {new_fee} customer={actual_cust} name={sname_u}")
                 _json(self, 200, {"ok": True, "registrationId": rid, "monthly_fee": new_fee, "prev": prev_fee,
@@ -318,6 +389,39 @@ class handler(BaseHTTPRequestHandler):
             _redis("ZADD", "reg:canceled:index", str(now_ts), rid)
             _redis("DEL", f"reg:completed:{rid}")
             _redis("ZREM", "reg:completed:index", rid)
+
+            # 🪪 2026-10-20 カード変更リンク (admin-card-update.py) の後始末。どちらも best-effort (失敗しても退塾処理は完了):
+            #   ① まだ開いているカード変更リンクを失効させる (退塾後に保護者が入力して「受け付けました」と出るのを防ぐ)
+            #   ② カード変更で前のカードを外さずに残していたら (引き落としの処理中だった等) ここで外す
+            if secret_key:
+                try:
+                    link_got = _redis("GET", f"card_update:link:{rid}")
+                    link_raw = link_got.get("result") if isinstance(link_got, dict) else None
+                    link_sid = (json.loads(link_raw) or {}).get("session_id") if link_raw else ""
+                    if link_sid:
+                        try:
+                            _stripe_post(secret_key, f"checkout/sessions/{link_sid}/expire", [])
+                        except Exception as e:
+                            _log(f"cancel: card-update link {link_sid} expire skipped: {str(e)[:120]}")
+                        _redis("DEL", f"card_update:link:{rid}")
+                    prev_pm = str(reg.get("card_prev_payment_method_id") or "").strip()
+                    if prev_pm and prev_pm != payment_method_id:
+                        # 前のカードを残していたのは、そのカードで本人認証 (3DS) 待ち・処理中の請求があったため (webhook)。
+                        # まだ残っているなら外さない (外すとその請求を保護者が済ませられなくなる)。確かめられなければ外さない
+                        pis = _stripe_get_json(secret_key, f"payment_intents?customer={customer_id}&limit=20") if customer_id else None
+                        busy = (not isinstance(pis, dict)) or any(
+                            (pi.get("payment_method") == prev_pm and pi.get("status") in ("requires_action", "processing", "requires_confirmation", "requires_capture"))
+                            for pi in (pis.get("data") or []))
+                        if busy:
+                            _log(f"cancel: previous card {prev_pm} kept (unfinished payment or not checkable) rid={rid}")
+                        else:
+                            try:
+                                _stripe_post(secret_key, f"payment_methods/{prev_pm}/detach", [],
+                                             idempotency_key=f"juku-detach-{rid}-{prev_pm}")
+                            except Exception as e:
+                                _log(f"cancel: previous card {prev_pm} detach skipped: {str(e)[:120]}")
+                except Exception as e:
+                    _log(f"cancel: card-update cleanup error rid={rid}: {e!r}")
 
             _log(f"cancel: rid={rid} customer={customer_id} pm={payment_method_id} stripe_errors={stripe_errors}")
             _json(self, 200, {

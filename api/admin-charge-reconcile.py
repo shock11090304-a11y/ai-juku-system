@@ -70,8 +70,8 @@ def _json(handler, status, payload):
 # 🔐 2026-09-07 総当たり対策 (システム点検で確定): パスワード比較だけで試行回数の上限が無く、月末の一括引き落とし・
 #   スポット課金・任意宛先メール・顧客一覧が総当たりで開く状態だった。失敗回数を Upstash KV (webhook の冪等化で
 #   常用) に IP ごと・全体で記録し、上限に達したら比較せずに拒否する。KV が無い環境では従来どおり比較のみ。
-#   ★10 本の関数に同じ塊を置いている (Vercel の Python 関数は 1 ファイル 1 関数で共有モジュールを持たない)。
-#     直すときは全部一緒に直すこと。scripts/health_check/test_vercel_admin_guard.py が 10 本とも検査する。
+#   ★11 本の関数に同じ塊を置いている (Vercel の Python 関数は 1 ファイル 1 関数で共有モジュールを持たない)。
+#     直すときは全部一緒に直すこと。scripts/health_check/test_vercel_admin_guard.py が 11 本とも検査する。
 _ADMIN_FAIL_IP_LIMIT = 10        # 同一 IP: 10 回/時
 _ADMIN_FAIL_GLOBAL_LIMIT = 60    # 全体: 60 回/時 (IP を変えながらの総当たりを止める)
 _ADMIN_FAIL_WINDOW_SEC = 3600
@@ -192,6 +192,50 @@ def _get_record(key):
     if not s: return None
     try: return json.loads(s)
     except Exception: return None
+
+
+def _month_already_collected(reg, rid, month):
+    """この月を、もうカード (や請求書) で受け取っているか。2026-10-20
+    返り値: (state, reason)。state: "collected" (理由の文つき) / "not" / "unknown" (KV に聞けない = 安全のため止める)。
+    台帳 charge:history に記録がある (成功のときだけ書かれる・1 年)・charge:done が成功/処理中・入塾時の初回決済の月・
+    その月の請求書を発行済み (past-due-invoice.py の pastdue:issued・90 日。請求書で払われると二重になる)。
+    ★📜「❌ 失敗」の行 (charge:failed は回収後も消えない) の 🔁 再請求は mark_unpaid → retry の順に呼ぶ。mark_unpaid は done を
+      無条件に消し、retry は done の NX しか見ないため、その後に 💳 個別請求などで回収済みの月でも二重に引き落としていた
+      (🪪 カード変更の後に、失敗した月を取り直す場面で踏みやすい)。mark_unpaid と retry の両方で止める。
+      振込で受け取った月はサーバでは分からない (名簿は端末側) → 画面の確認で名簿の入金済みを出す"""
+    if str((reg or {}).get("first_charge_month") or "").strip() == month:
+        return "collected", "入塾時の初回決済で支払済みの月です"
+
+    def _get(key):
+        got = _redis("GET", key)
+        if not isinstance(got, dict):
+            return False, None
+        v = got.get("result")
+        if not v:
+            return True, None
+        try:
+            return True, json.loads(v)
+        except Exception:
+            return True, v
+    ok, hist = _get(f"charge:history:{rid}:{month}")
+    if not ok:
+        return "unknown", ""
+    if hist:
+        return "collected", "台帳に引き落とし成功の記録があります"
+    ok, done = _get(f"charge:done:{rid}:{month}")
+    if not ok:
+        return "unknown", ""
+    if isinstance(done, dict) and str(done.get("status") or "") in ("succeeded", "processing"):
+        return "collected", "この月は引き落とし済み (処理中を含む) です"
+    cus = str((reg or {}).get("stripe_customer_id") or "").strip()
+    if cus:
+        ok, inv = _get(f"pastdue:issued:{cus}:{month}")
+        if not ok:
+            return "unknown", ""
+        if inv:
+            return "collected", ("この月の請求書を発行済みです (請求書で支払われると二重になります)。カードで取り直す場合は、"
+                                 "先に Stripe でその請求書を無効にしてから Claude に相談してください")
+    return "not", ""
 
 
 class handler(BaseHTTPRequestHandler):
@@ -344,6 +388,22 @@ class handler(BaseHTTPRequestHandler):
                     _resp_mp["warning"] = mp_warning
                 _json(self, 200, _resp_mp)
                 return
+
+            if action in ("mark_unpaid", "retry"):
+                # 🛡️ 2026-10-20 回収済みの月は「未課金にする」も「再請求」も止める (二重取り防止・_month_already_collected)
+                c_state, collected = _month_already_collected(reg, rid, month)
+                if c_state == "unknown":
+                    _json(self, 503, {"error": "KV_UNAVAILABLE",
+                                      "message": "保存先 (KV) が応答しないため、引き落とし済みかを確かめられませんでした。少し待ってからもう一度押してください。"})
+                    return
+                if c_state == "collected":
+                    _log(f"reconcile: {action} refused (already collected) rid={rid} month={month}: {collected}")
+                    _json(self, 409, {
+                        "error": "ALREADY_COLLECTED",
+                        "message": (f"{_month_label_ja(month)}は既に受け取り済みです ({collected})。"
+                                    "もう一度引き落とすと二重取りになるので止めました。返金や取り消しが必要なら Claude に相談してください"),
+                    })
+                    return
 
             if action == "mark_unpaid":
                 # Stripe で実際は未課金 → done_key + uncertain を削除 (再実行可能化)
