@@ -34968,7 +34968,9 @@ def _peek_line_link_token(token: str) -> Optional[int]:
 def _line_link_token_status(token: str) -> dict:
     """🔍 連携コードの状態診断 (read-only)。[line-link-diag] (2026-06-12 塾長報告
     「発行直後なのに期限切れ」の原因特定用): webhook の invalid 時ログと
-    /api/admin/line/link-token-status で共用。reason: valid|used|expired|not_found。"""
+    /api/admin/line/link-token-status で共用。reason: valid|used|expired|not_found。
+    ★used には「連携を外したときの無効化」(line-unlink) も含む。events.line_unlinked の props.at と used_at が同じ時刻ならそれ
+      (Postgres の TIMESTAMP は空白区切りで返るので、文字列ではなく _parse_db_dt で時刻として比べる)。"""
     out = {"found": False, "reason": "not_found", "server_now": datetime.now(timezone.utc).isoformat()}
     token = _normalize_link_code(token)
     if not token:
@@ -35014,18 +35016,71 @@ def _line_user_taken_by_other(line_user_id: str, student_id: int) -> bool:
         conn.close()
 
 
+def _line_student_linked_other(student_id: int, line_user_id: str) -> bool:
+    """この生徒が、送ってきた LINE とは別の LINE に既に紐付いているか (付け替えの事前判定)。"""
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT line_user_id FROM students WHERE id = ?", (int(student_id),))
+        row = c.fetchone()
+    finally:
+        conn.close()
+    cur = (row["line_user_id"] if row else None) or ""
+    return bool(cur) and cur != line_user_id
+
+
+# 🔒 2026-10-23: 連携済みの生徒に別の LINE からコードが届いたときの返事。黙って付け替えると、ログインコードやお知らせが
+#   保護者の LINE に移り、子どもに届かなくなる (保護者が子どものマイページや入塾承認メールのコードを送る)。
+#   ★Manager のチャットには LINE の表示名しか出ない → 生徒の名前を添えてもらう。保護者が「自分も受け取りたい」で付け替えを
+#     頼むと元の問題を手で起こすので、子どもの LINE で連携済みならそのままでよいと書く (taken の文言と表記をそろえる)。
+_LINE_STUDENT_LINKED_OTHER = (
+    "⚠️ この生徒アカウントには、既に別のLINEが連携されています（連携できるのは1つだけです）。\n"
+    "保護者の方へ: お子さまのLINEで連携済みであれば、このままで大丈夫です。\n"
+    "機種変更などで付け替えたいときは、生徒のお名前を添えて、このトークで塾にご連絡ください。"
+)
+
+
+def _line_record_bind_refused(student_id: int, stage: str) -> None:
+    """付け替えを断った記録 (events.line_bind_refused)。塾長が「先に連携した LINE が保護者のもの」家庭を後から洗えるように。
+    props は生徒 id と経路だけ (LINE の userId は入れない)。session_id は生徒 ID にしない (週次レポートが活動として数える)。"""
+    try:
+        conn = db()
+        try:
+            conn.cursor().execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("line_bind_refused", json.dumps({"student_id": int(student_id), "stage": stage}, ensure_ascii=False), "line_webhook"),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception as e:
+        log.warning(f"[LINE bind] refused event write failed: {type(e).__name__}")
+
+
 def _bind_line_user(student_id: int, line_user_id: str) -> str:
     """連携コード検証済みの student に line_user_id を 1:1 で紐付け。
-    戻り値: "ok" | "taken" (line_user_id が既に別生徒に紐付き)。"""
+    戻り値: "ok" | "taken" (line_user_id が既に別生徒に紐付き) | "linked_other" (この生徒が既に別の LINE に紐付き) |
+    "missing" (生徒が無い)。
+    🔒 2026-10-23: 連携済みの生徒は付け替えない。付け替えは管理者が連携を外してから
+      (POST /api/admin/students/{id}/line-unlink)。同じ LINE からの送り直しは "ok" (冪等)。
+      条件を UPDATE の WHERE に入れ、事前判定と UPDATE の間に別の LINE が先に連携しても上書きしない。"""
     conn = db()
     c = conn.cursor()
     try:
         c.execute("SELECT id FROM students WHERE line_user_id = ? AND id != ?", (line_user_id, int(student_id)))
         if c.fetchone():
             return "taken"
-        c.execute("UPDATE students SET line_user_id = ? WHERE id = ?", (line_user_id, int(student_id)))
+        c.execute(
+            "UPDATE students SET line_user_id = ? WHERE id = ? "
+            "AND (line_user_id IS NULL OR line_user_id = '' OR line_user_id = ?)",
+            (line_user_id, int(student_id), line_user_id),
+        )
+        updated = c.rowcount
         conn.commit()
-        return "ok"
+        if updated and updated > 0:
+            return "ok"
+        c.execute("SELECT 1 FROM students WHERE id = ?", (int(student_id),))
+        return "linked_other" if c.fetchone() else "missing"
     finally:
         conn.close()
 
@@ -35292,12 +35347,26 @@ def _handle_line_event(event: dict):
                         log.warning(f"[LINE bind] taken: userId(...{user_id[-6:]}) は別生徒に紐付き済 (要求 sid={peek_sid})")
                         _line_reply_text(reply_token, "⚠️ このLINEは既に別の生徒アカウントに連携済みです。\nお心当たりがなければ塾までご連絡ください。")
                         return
+                    # 🔒 2026-10-23: 生徒が別の LINE と連携済みなら付け替えない (保護者が送ると子どもに届かなくなる)。
+                    #   コードは消費しない (taken と同じ・管理者が連携を外すと未使用のコードはまとめて無効になる)。
+                    if _line_student_linked_other(peek_sid, user_id):
+                        log.warning(f"[LINE bind] linked_other: student_id={peek_sid} は別の LINE と連携済 (送信 userId ...{user_id[-6:]})")
+                        _line_record_bind_refused(peek_sid, "pre")
+                        _line_reply_text(reply_token, _LINE_STUDENT_LINKED_OTHER)
+                        return
                     sid = _consume_line_link_token(code_text)  # ここで初めて atomic single-use 消費
                     if sid:
                         result = _bind_line_user(sid, user_id)
                         if result == "ok":
                             log.info(f"[LINE bind] student_id={sid} linked (userId ...{user_id[-6:]})")
                             _line_reply_text(reply_token, "✅ LINE連携が完了しました！\n今後はログインコードやお知らせがLINEに届きます。")
+                        elif result == "linked_other":
+                            log.warning(f"[LINE bind] linked_other(race): student_id={sid} userId(...{user_id[-6:]})")
+                            _line_record_bind_refused(sid, "race")
+                            _line_reply_text(reply_token, _LINE_STUDENT_LINKED_OTHER)
+                        elif result == "missing":
+                            log.warning(f"[LINE bind] missing student: student_id={sid}")
+                            _line_reply_text(reply_token, "⚠️ 連携コードが無効または期限切れです。マイページで新しいコードを発行してください。")
                         else:
                             log.warning(f"[LINE bind] taken(race): student_id={sid} userId(...{user_id[-6:]})")
                             _line_reply_text(reply_token, "⚠️ このLINEは既に別の生徒アカウントに連携済みです。\nお心当たりがなければ塾までご連絡ください。")
@@ -35500,7 +35569,9 @@ def admin_issue_line_link(payload: dict, authorization: Optional[str] = Header(N
             raise HTTPException(status_code=404, detail="生徒が見つかりません")
         sid = int(row["id"])
         already = bool(row["line_user_id"]) if ("line_user_id" in row.keys()) else False
-        code = _create_line_link_token(sid)  # [line-link-noexpiry] 期限なし (single-use のみ)
+        # 🔒 2026-10-23: 連携済みの生徒にはコードを発行しない。別の LINE から送っても付け替わらない (_bind_line_user) ので、
+        #   出したコードを機種変更した生徒に渡すと「塾に連絡」が返って同じところを回る。先に line-unlink で外す。
+        code = None if already else _create_line_link_token(sid)  # [line-link-noexpiry] 期限なし (single-use のみ)
         return {
             "ok": True,
             "code": code,
@@ -35508,9 +35579,69 @@ def admin_issue_line_link(payload: dict, authorization: Optional[str] = Header(N
             "add_friend_url": LINE_ADD_FRIEND_URL,
             "student": {"id": sid, "name": row["name"], "email": row["email"]},
             "instructions": "この連携コードを生徒に伝え、①公式LINEを友だち追加 → ②コードをトークに送信、で連携完了です（期限なし・1回で完了）。",
+            # 🔒 2026-10-23: 連携済みの生徒は別の LINE から送っても付け替わらない (_bind_line_user)
+            "already_linked_note": ("この生徒は LINE 連携済みなので、コードは発行していません（別の LINE から送っても付け替わりません）。"
+                                    "別の LINE につなぎ直すときは、先に「🔌 連携を外す」をしてから、もう一度発行してください。") if already else None,
         }
     finally:
         conn.close()
+
+
+@app.post("/api/admin/students/{student_id}/line-unlink")
+def admin_line_unlink(student_id: int, authorization: Optional[str] = Header(None),
+                      x_cron_secret: Optional[str] = Header(None)):
+    """🔌 2026-10-23: 生徒の LINE 連携を外す (機種変更で LINE アカウントが変わった・保護者の LINE につながっていた の救済)。
+    連携済みの生徒は別の LINE からコードを送っても付け替わらない (_bind_line_user) ので、付け替えはここで外してから。
+    あわせて、この生徒の未使用の連携コードをすべて無効にする (入塾承認メールのコードは期限なし。残すと外した直後に
+    保護者が古いコードを送って先に連携できてしまう)。外したあとは新しいコードを発行して本人に渡す。
+    ログインコードやお知らせは、次に連携するまでメールで届く。認証: admin Bearer または X-Cron-Secret。"""
+    if not _admin_or_cron_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    now_iso = _utc_naive_iso()
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT id, name, line_user_id FROM students WHERE id = ?", (int(student_id),))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        was_linked = bool(row["line_user_id"])
+        if was_linked:
+            c.execute("UPDATE students SET line_user_id = NULL WHERE id = ?", (int(student_id),))
+        c.execute("UPDATE line_link_tokens SET used_at = ? WHERE student_id = ? AND used_at IS NULL",
+                  (now_iso, int(student_id)))
+        invalidated = max(0, c.rowcount or 0)
+        conn.commit()
+        # 記録は外したあと別に書く (Postgres は失敗した文があると同じトランザクションの commit まで落ちる)。
+        #   LINE の userId は残さない (生徒 id と件数だけ)
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("line_unlinked", json.dumps({"student_id": int(student_id), "was_linked": was_linked,
+                                              "invalidated_codes": invalidated, "actor": "admin",
+                                              # 無効にしたコードの used_at と同じ時刻 (診断の reason=used が「外したときの無効化」か見分ける。Postgres は表記が空白区切り)
+                                              "at": now_iso},
+                                             ensure_ascii=False), "admin_action"),
+            )
+            conn.commit()
+        except Exception:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+    finally:
+        conn.close()
+    log.info(f"[LINE unlink] student_id={student_id} was_linked={was_linked} invalidated_codes={invalidated}")
+    return {
+        "ok": True,
+        "student": {"id": int(row["id"]), "name": row["name"]},
+        "was_linked": was_linked,
+        "invalidated_codes": invalidated,
+        "message": ("LINE 連携を外しました。ログインコードやお知らせは、次に連携するまでメールで届きます。"
+                    "つなぎ直すときは「連携コードを発行」で新しいコードを出し、本人に渡してください"
+                    "（それまでに発行した未使用のコードは無効にしました）。") if was_linked
+                   else ("この生徒は LINE 連携されていません。" + ("（未使用の連携コードは無効にしました）" if invalidated else "")),
+    }
 
 # ==========================================================================
 # Routes: Cron-style (triggered externally)
@@ -60800,10 +60931,20 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
     #   (キャリアメール不達対策)。LINE連携コードを自動発行 → welcome メール本文 + CEO承認結果モーダルの
     #   両方に「①公式LINE友だち追加 →②コード送信」案内を載せ、塾長は QR/ID で直接渡せる(メール不要)。
     #   _create_line_link_token は専用接続で commit/close するため承認 txn(commit済)後の呼出しで安全。
+    #   🔒 2026-10-23: 既に LINE 連携済みの生徒 (既存アカウントへの合流) には出さない。別の LINE から送っても付け替わらず
+    #   (_bind_line_user)、保護者が送ると「塾に連絡」が返るだけになる。
     line_link_code = None
     if student_id:
         try:
-            line_link_code = _create_line_link_token(int(student_id))
+            _lk_conn = db()
+            try:
+                _lk_c = _lk_conn.cursor()
+                _lk_c.execute("SELECT line_user_id FROM students WHERE id = ?", (int(student_id),))
+                _lk_row = _lk_c.fetchone()
+            finally:
+                _lk_conn.close()
+            if not (_lk_row and _lk_row["line_user_id"]):
+                line_link_code = _create_line_link_token(int(student_id))
         except Exception as _le:
             log.warning(f"[CourseApp] LINE link code issue failed: {_le}")
 
@@ -60874,7 +61015,9 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
                 "📲 LINE でログイン通知を受け取る (メールが届きにくい方におすすめ)\n"
                 "① トリリオン公式LINEを友だち追加\n"
                 f"② このコードを LINE のトークに送信: {line_link_code}\n"
-                "→ 連携後は、ログイン用リンクが LINE にも届きます。"
+                "→ 連携後は、ログイン用リンクが LINE にも届きます。\n"
+                "※連携できる LINE は1つだけです。お子さまの LINE で受け取る場合は、このコードをお子さまに渡してください"
+                "（あとから別の LINE に付け替えるには塾へのご連絡が必要です）。"
             )
         res = _send_message_email(email_lower, welcome_subject, body_text, student_name=name)
         sent_link = res.get("sent", False)

@@ -710,3 +710,14 @@ jobs:
         run: |
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_line_richmenu.py
+
+      # 🔒 LINE 連携の付け替え防止 (2026-10-23)。連携済みの生徒に別の LINE (保護者が子どものマイページや入塾承認メールの
+      #   コードを送る) から有効なコードが届いても、子どもの連携を黙って上書きしない (「塾に連絡」を返す・コードは消費しない)。
+      #   付け替えは管理者が POST /api/admin/students/{id}/line-unlink で外してから (未使用のコードもまとめて無効)。
+      #   CEO の「🔌 連携を外す」の配線を JS で動かす (JS エンジンが無ければ FAIL・LINE は偽物)。
+      - name: LINE 連携の付け替え防止・連携を外す 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          node --version || echo "node が無い (テストが「JS の実行環境がある」で FAIL する)"
+          python3 scripts/health_check/test_line_bind_guard.py

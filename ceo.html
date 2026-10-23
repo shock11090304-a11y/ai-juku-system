@@ -11035,9 +11035,12 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         //   ログインコードは「メールではなく LINE」に届く (server/main.py の request_magic_link が
         //   LINE 優先配信)。この行が無いと、子供メールを設定しても「届かない」と言われたときに
         //   塾長が原因を画面から切り分けられなかった (has_line は /api/admin/stats が既に返している)。
-        row('LINE連携',     st.has_line
+        // 🔌 2026-10-23: 連携済みの生徒は別の LINE からコードを送っても付け替わらない (保護者の LINE に移って子どもに届かなくなるのを防ぐ)。
+        //   機種変更で LINE アカウントが変わったときなどは、ここで外してから「② 連携コードを発行」で新しいコードを本人に渡す。
+        row('LINE連携',     `<span class="sd-line-state">${st.has_line
               ? `<span style="color:#06c755;">📲 連携済</span> <span style="color:#71717a;font-size:0.78rem;">(保護者側のログインコードはメールではなく LINE に届きます)</span>`
-              : `<span style="color:#71717a;">未連携</span> <span style="color:#71717a;font-size:0.78rem;">(ログインコードはメールで届きます)</span>`),
+                + `<button type="button" class="sd-line-unlink-btn" data-student-id="${esc(st.id)}" style="${editBtnStyle}" title="機種変更で LINE が変わった・別の LINE につながっている ときに外します">🔌 連携を外す</button>`
+              : `<span style="color:#71717a;">未連携</span> <span style="color:#71717a;font-size:0.78rem;">(ログインコードはメールで届きます)</span>`}</span>`),
         row('学年',         esc(st.grade || '未登録') + editGradeBtn),
         row('在籍クラス',   classesHtml + editClassesBtn + classesEditor),
         row('志望校・目標', esc(st.goal || '未登録') + editGoalBtn),
@@ -11347,10 +11350,16 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             });
             const d = await r.json().catch(() => ({}));
             if (!r.ok) { show(`❌ LINE連携コード: ${esc(detailText(d, '発行失敗 (' + r.status + ')'))}`, 'err'); return; }
-            lineBtn.dataset.issued = '1';
             const who = whoLine(d, sid);
+            // 🔒 2026-10-23: 連携済みの生徒にはコードを出さない (別の LINE から送っても付け替わらない)。先に「🔌 連携を外す」
+            if (d.already_linked && !d.code) {
+              show(who.html + `<div style="color:#fbbf24;font-size:0.8rem;line-height:1.6;">⚠️ ${esc(d.already_linked_note || 'この生徒は LINE 連携済みなので、コードは発行していません。別の LINE につなぎ直すときは、先に上の「🔌 連携を外す」をしてから、もう一度発行してください。')}</div>`, 'warn');
+              return;
+            }
+            lineBtn.dataset.issued = '1';
             let html = who.html;
-            if (d.already_linked) html += `<div style="margin-bottom:6px;color:#fbbf24;font-size:0.76rem;">※ 既に LINE 連携済みです (連携し直す場合のみ使ってください)</div>`;
+            // (反映の切り替わりの数分だけ: 旧サーバは連携済みでもコードを返す)
+            if (d.already_linked) html += `<div style="margin-bottom:6px;color:#fbbf24;font-size:0.76rem;line-height:1.5;">※ 既に LINE 連携済みです。別の LINE につなぎ直すときは、先に上の「🔌 連携を外す」をしてください。</div>`;
             html += `<div style="text-align:center;padding:10px;background:rgba(0,0,0,0.45);border-radius:8px;${who.mismatch ? 'opacity:0.5;' : ''}">
               <div style="font-size:0.72rem;color:#a3a3a3;margin-bottom:4px;">連携コード${who.mismatch ? ' ・使用不可 (上の警告を参照)' : ' (期限なし・1回で完了)'}</div>
               <div style="font-size:1.05rem;font-weight:800;color:#6ee7b7;font-family:'SF Mono',monospace;word-break:break-all;">${who.mismatch ? '— — — — — —' : esc(d.code || '')}</div>
@@ -11486,6 +11495,50 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
               } catch (e) { msg.style.color = '#fca5a5'; msg.textContent = '失敗: ' + (e.message || String(e)); sv.disabled = false; }
             });
           } catch (e) { box.innerHTML = `<span style="color:#fca5a5;">❌ ${esc(e.message || String(e))}</span>`; }
+        });
+      });
+      // 🔌 2026-10-23: LINE 連携を外す (付け替えの救済)。外すと未使用の連携コードもすべて無効になる (サーバ側)。
+      //   ★結果はこの行の中で書き換える (モーダルは閉じない = 続けて「② 連携コードを発行」を押せる)。
+      infoPane.querySelectorAll('.sd-line-unlink-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const sid = Number(btn.dataset.studentId) || 0;
+          if (sid <= 0) { alert('生徒 ID を特定できません'); return; }
+          if (!confirm(`${st.name || '#' + sid} さんの LINE 連携を外しますか？\n\n`
+              + '・ログインコードやお知らせは、次に連携するまでメールで届きます。\n'
+              + '・これまでに発行した未使用の連携コードはすべて無効になります。\n'
+              + '・つなぎ直すときは、外したあと下の「② 連携コードを発行」で新しいコードを出し、本人に渡してください。\n'
+              + '・外すのは連携先の LINE を替えるときだけです (「保護者も受け取りたい」では外さない。届くのは連携した 1 つの LINE だけ)。\n'
+              + '・誤って外したときは、② で新しいコードを出して元の LINE から送ってもらえば戻ります (外したことは LINE 側に通知されません)。')) return;
+          btn.disabled = true; btn.style.opacity = '0.5';
+          try {
+            const res = await AdminAuth.fetch(`/api/admin/students/${sid}/line-unlink`, { method: 'POST' });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.ok) {
+              const dt = (data && typeof data.detail === 'string') ? data.detail : ('HTTP ' + res.status);
+              alert(`外せませんでした: ${dt}`);
+              btn.disabled = false; btn.style.opacity = '';
+              return;
+            }
+            if (data.student && String(data.student.id) !== String(sid)) {
+              alert(`⚠️ 画面の生徒 (#${sid}) とサーバが返した生徒 (#${data.student.id}) が一致しません。ページを再読込して確かめてください。`);
+              return;
+            }
+            _applySavedToStudent(sid, st, { has_line: false });
+            // ② で出していたコードはサーバ側で無効になった。残すと「期限なし・1回で完了」のまま渡してしまい、
+            //   ② を押し直すと「発行済みのコードも有効なまま」と事実と逆の確認が出る。
+            const lineIssueBtn = infoPane.querySelector('.sd-issue-linelink-btn');
+            if (lineIssueBtn) delete lineIssueBtn.dataset.issued;
+            const helpBox = infoPane.querySelector('.sd-login-help-result');
+            if (helpBox && helpBox.style.display !== 'none' && helpBox.querySelector('.sd-line-copy')) {
+              helpBox.innerHTML = '<div style="color:#fbbf24;">上に出ていた連携コードは、連携を外したので無効になりました。「② 連携コードを発行」で新しいコードを出してください。</div>';
+            }
+            const cell = btn.closest('.sd-line-state');
+            if (cell) cell.innerHTML = `<span style="color:#71717a;">未連携</span> <span style="color:#fbbf24;font-size:0.78rem;">(いま外しました。ログインコードはメールで届きます。つなぎ直すときは「② 連携コードを発行」で新しいコードを)</span>`;
+            alert(`✅ ${data.message || 'LINE 連携を外しました'}`);
+          } catch (e) {
+            alert(`エラー: ${e.message || e}`);
+            btn.disabled = false; btn.style.opacity = '';
+          }
         });
       });
       // 🎯 2026-05-26 audit fix: 学年/志望校 編集 button の listener 配線

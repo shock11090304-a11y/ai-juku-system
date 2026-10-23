@@ -331,6 +331,8 @@
           <div style="display:inline-block; padding:0.18rem 0.65rem; background:#06c755; border-radius:999px; font-size:0.7rem; font-weight:800; color:#fff; margin-bottom:0.4rem; letter-spacing:0.02em;">📲 LINE連携</div>
           <h3 style="margin:0 0 0.25rem 0; font-size:1.1rem; color:#fff; font-weight:800; line-height:1.35;">ログインコードを LINE で受け取る</h3>
           <p style="margin:0; font-size:0.82rem; color:#bbf7d0; line-height:1.5;">メールが届きにくい方へ。連携すると、次回からログインコードやお知らせが <strong>公式LINE</strong> に届きます。</p>
+          <!-- 🔒 2026-10-23: 連携済みの生徒は別の LINE から送っても付け替わらない (server/main.py の _bind_line_user) -->
+          <p style="margin:0.3rem 0 0 0; font-size:0.74rem; color:#86efac; line-height:1.5;">連携できる LINE は1つだけです。受け取る人の LINE から送ってください（あとから付け替えるときは塾にご連絡ください）。</p>
         </div>
         <div style="display:flex; gap:0.45rem; flex-wrap:wrap; align-items:center;">
           <button type="button" id="lineLinkBtn" aria-label="LINE連携コードを発行する" style="display:inline-block; padding:0.6rem 1.2rem; background:#06c755; border:0; border-radius:10px; color:#fff; font-weight:800; font-size:0.92rem; cursor:pointer; min-height:44px; box-shadow:0 4px 14px rgba(6,199,85,0.35);">🔗 連携コードを発行</button>
