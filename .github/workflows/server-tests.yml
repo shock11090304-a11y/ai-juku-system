@@ -701,3 +701,12 @@ jobs:
         run: |
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_playlist_save_api.py
+
+      # 📱 公式 LINE のリッチメニュー 3×3 (2026-10-23)。Manager は 6 ボタンまでなので Messaging API で登録する。
+      #   定義が LINE の制約を満たすこと・画像の大きさ・「やること」「質問」が bot のコマンドに当たること・
+      #   開くページが実在すること・登録の途中で失敗したら作りかけを消して既定を変えないことを見る (LINE は偽物)。
+      - name: LINE リッチメニュー 3×3 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_line_richmenu.py

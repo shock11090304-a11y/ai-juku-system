@@ -35055,9 +35055,15 @@ _LINE_NOT_LINKED_GUIDE = (
     "マイページにログイン → 「LINE連携」でコードを発行し、このトークに送ってください。"
 )
 _LINE_QUESTION_USAGE = (
-    "質問の内容を続けて送ってください。\n"
+    "「質問」に続けて、内容を1通で送ってください。\n"
     "例: 質問 仮定法の使い方がわかりません\n"
     "塾長に届き、LINE またはメールで返信があります。"
+)
+# 📱 2026-10-23: リッチメニュー「質問する」は保護者・体験を考えている方も押す。連携の案内だけだと行き止まりになる。
+#   チャットはオン (有人対応) なので、このトークに送れば塾長が Manager のチャットで読める。
+_LINE_QUESTION_NOT_LINKED = (
+    "塾生の方: マイページにログイン → 「LINE連携」でコードを発行し、このトークに送ると、質問を受け付けられます。\n"
+    "体験授業・入塾のご相談は、このトークにそのまま送ってください。塾長が確認してお返事します。"
 )
 
 
@@ -35328,7 +35334,7 @@ def _handle_line_event(event: dict):
                     if _cmd_row:
                         _line_handle_question(_cmd_row, _LINE_CMD_QUESTION.sub("", text, count=1), reply_token)
                     else:
-                        _line_reply_text(reply_token, _LINE_NOT_LINKED_GUIDE)
+                        _line_reply_text(reply_token, _LINE_QUESTION_NOT_LINKED)
                 # それ以外の通常トーク (挨拶・質問・チャット) には bot は沈黙する。
                 #   チャット:オン の有人対応・応答メッセージ運用と干渉しないため (2026-06-11 塾長指示)。
             return
@@ -35372,6 +35378,70 @@ def admin_line_link_token_status(token: str, authorization: Optional[str] = Head
     if not _authed:
         raise HTTPException(status_code=401, detail="未認証")
     return {"ok": True, **_line_link_token_status((token or "").strip())}
+
+
+# 📱 2026-10-23 塾長指示: 公式 LINE のリッチメニューを 3×3 (9 ボタン) にする。
+#   Manager で作れるのは 6 ボタンまでなので Messaging API で登録する。定義・画像・検証は server/line_richmenu.py。
+#   API の既定メニューは Manager のメニューより優先される → 戻すときは DELETE /api/admin/line/richmenu/default。
+def _load_line_richmenu():
+    """★関数内 import (_load_class_recording_assign と同じ理由: 欠けても壊すのはこの API だけ)。"""
+    try:
+        try:
+            import line_richmenu
+        except ImportError:
+            import sys   # ★main.py は sys を module-global で import していない
+            if str(ROOT) not in sys.path:
+                sys.path.insert(0, str(ROOT))
+            import line_richmenu
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"リッチメニューのモジュールを読み込めません ({type(e).__name__})")
+    return line_richmenu
+
+
+def _line_richmenu_token() -> str:
+    if not LINE_CHANNEL_ACCESS_TOKEN:
+        raise HTTPException(status_code=503, detail="LINE_CHANNEL_ACCESS_TOKEN が未設定です")
+    return LINE_CHANNEL_ACCESS_TOKEN
+
+
+@app.get("/api/admin/line/richmenu")
+def admin_line_richmenu_status(authorization: Optional[str] = Header(None),
+                               x_cron_secret: Optional[str] = Header(None)):
+    """今の既定メニューと、API で作ったメニューの一覧 (read-only)。認証: admin Bearer または X-Cron-Secret。"""
+    if not _admin_or_cron_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    m = _load_line_richmenu()
+    return {"ok": True, **m.status(_line_richmenu_token())}
+
+
+@app.post("/api/admin/line/richmenu/setup")
+def admin_line_richmenu_setup(dry_run: int = 0, authorization: Optional[str] = Header(None),
+                              x_cron_secret: Optional[str] = Header(None)):
+    """9 ボタンのメニューを作って全員の既定にする。dry_run=1 は定義の検査と今の状態だけ返す (LINE に書かない)。
+    途中で失敗したら作ったメニューを消す (既定は元のまま)。認証: admin Bearer または X-Cron-Secret。"""
+    if not _admin_or_cron_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    m = _load_line_richmenu()
+    token = _line_richmenu_token()
+    if dry_run:
+        defn = m.build_definition()
+        return {"ok": True, "dry_run": True, "errors": m.validate_definition(defn),
+                "image_bytes": os.path.getsize(m.IMAGE_PATH) if os.path.exists(m.IMAGE_PATH) else None,
+                "buttons": [a["action"].get("label") for a in defn["areas"]], "current": m.status(token)}
+    res = m.setup(token)
+    if not res.get("ok"):
+        log.warning("[line-richmenu] setup failed: %s", json.dumps(res, ensure_ascii=False)[:500])
+    return res
+
+
+@app.delete("/api/admin/line/richmenu/default")
+def admin_line_richmenu_unset_default(authorization: Optional[str] = Header(None),
+                                      x_cron_secret: Optional[str] = Header(None)):
+    """API の既定メニューを外して Manager のメニューに戻す (メニュー自体は消さない)。"""
+    if not _admin_or_cron_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    m = _load_line_richmenu()
+    return m.unset_default(_line_richmenu_token())
 
 
 @app.post("/api/admin/students/issue-line-link")
