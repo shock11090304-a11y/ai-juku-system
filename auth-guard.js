@@ -33,7 +33,7 @@
     localStorage.removeItem(SESSION_STUDENT_KEY);
     // 🔑 2026-06-14 [trust-identity] 表示ポインタも必ず消す。残すと、ログアウト後や
     //   別生徒が同端末でログインする前の一瞬に、古いポインタで別生徒の氏名/学習データを
-    //   表示してしまう (室坂海來さんの別生徒名表示事故の構造的原因)。再ログイン時は各経路が
+    //   表示してしまう (ある生徒の画面に別の生徒の氏名が出た事故の構造的原因)。再ログイン時は各経路が
     //   session_student から再構築するため削除して実害なし。
     localStorage.removeItem(CURRENT_STUDENT_KEY);
     localStorage.removeItem(STUDENTS_LIST_KEY);

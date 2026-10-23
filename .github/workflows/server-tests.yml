@@ -302,6 +302,14 @@ jobs:
         if: ${{ !cancelled() }}
         run: python3 scripts/health_check/test_card_update_link.py
 
+      # 📨 メール診断 (2026-10-23): Resend の送信専用キー (401 restricted_api_key) を「無効」と出さない・403 の「有効でない」を送信専用と出さない・
+      #   CEO 画面のテスト送信ボタンを送信専用キーでも出す。キーの状態は応答本文の name と status の組で決める。Resend は偽物。
+      - name: メール診断 送信専用キー 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_resend_key_diagnose.py
+
       # 🧹🗄️ events の保持期限 / /api/track のレート制限 / R2 バックアップの省メモリ dump (2026-09-07)
       - name: イベント掃除・計測制限・バックアップ dump 回帰テスト
         if: ${{ !cancelled() }}

@@ -4295,6 +4295,42 @@ def health():
     }
 
 
+def _resend_key_http_error(e) -> dict:
+    """Resend の読み取り API (GET /domains・/api-keys) が HTTPError を返したとき、キーの状態を応答本文の name / message で決める。
+    ★ステータスだけでは決まらない (2026-10-23 Resend 公式の errors 一覧と偽キーで実測):
+      送信専用キー (Sending access) = 401 restricted_api_key「This API key is restricted to only send emails.」
+      存在しない・削除済みのキー   = 400 validation_error「API key is invalid」(送信の経路では 401)
+      有効でないキー = 403 restricted_api_key「API key is not active」・停止 = 403 suspended_api_key
+    以前は 403 = 送信専用・401 = 無効と逆に見ていて、入れ替えたばかりの送信専用キーを「無効」と出し、
+    CEO 画面のテスト送信ボタンも消えていた (実送信は正常)。同じ restricted_api_key でも 403 は「有効でない」なので名前だけでも決めない。
+    戻り値: scope = "send_only" / "invalid" / None、valid = True / False / None、code、name、message、label (画面用の「HTTP 400 validation_error」)。
+    scope None = キーの状態を決められない失敗 (429 = チーム共有の毎秒上限・5xx・本文なし)。valid も None にして「無効」と出さない"""
+    code = getattr(e, "code", None)
+    try:
+        raw = e.read().decode("utf-8", errors="replace")
+    except Exception:
+        raw = ""
+    name = message = ""
+    try:
+        body = json.loads(raw) if raw else None
+        if isinstance(body, dict):
+            name = str(body.get("name") or "")
+            message = str(body.get("message") or "")
+    except Exception:
+        pass
+    msg_l = message.lower()
+    if name == "suspended_api_key" or "not active" in msg_l:
+        scope, valid = "invalid", False      # 「有効でない」「停止」は status や name が送信専用と同じでも無効
+    elif name == "restricted_api_key" and (code == 401 or "only send" in msg_l):
+        scope, valid = "send_only", True
+    elif name in ("missing_api_key", "invalid_api_key", "restricted_api_key") or "api key is invalid" in msg_l:
+        scope, valid = "invalid", False
+    else:
+        scope, valid = None, None
+    label = " ".join(x for x in (f"HTTP {code}" if code else "", name) if x)
+    return {"scope": scope, "valid": valid, "code": code, "name": name, "message": (message or raw)[:200], "label": label}
+
+
 @app.get("/api/email/diagnose-public")
 def email_diagnose_public(request: Request):
     """🔥 緊急診断用: 認証不要で Resend ドメイン状態 + 直近エラー要約を公開。
@@ -4340,22 +4376,22 @@ def email_diagnose_public(request: Request):
             if out["domain_status"] is None and target_domain:
                 out["domain_status"] = "not_registered"
     except urllib.error.HTTPError as e:
-        if e.code == 403:
-            # 403 on /domains = "send only" 権限のキー (本番送信は OK)
-            out["api_key_valid"] = True
+        # 送信専用か無効かは応答本文の name で決める (_resend_key_http_error・ステータスだけだと逆に判定していた)
+        k = _resend_key_http_error(e)
+        out["api_key_valid"] = k["valid"]   # 429・5xx は None (決められない) = 無効とは言わない
+        if k["scope"] == "send_only":
+            # 送信専用キー。ドメインの状態は読めない (送信できるかは実際の送信で分かる)
             out["api_key_scope"] = "send_only"
             out["domain_status"] = "unverifiable_via_send_only_key"
-        elif e.code == 401:
-            out["api_key_valid"] = False
+        elif k["scope"] == "invalid":
             out["api_key_scope"] = "invalid"
-            out["last_error_class"] = "HTTPError_401"
-            out["last_error_short"] = "API key revoked or invalid"
+            out["last_error_class"] = f"HTTPError_{k['code']}"
+            out["last_error_short"] = f"API key invalid, revoked or inactive ({k['label']})"[:80]
         else:
-            out["api_key_valid"] = False
-            out["last_error_class"] = f"HTTPError_{e.code}"
-            out["last_error_short"] = f"HTTP {e.code}"[:80]
+            out["last_error_class"] = f"HTTPError_{k['code']}"
+            out["last_error_short"] = k["label"][:80]
     except Exception as e:
-        out["api_key_valid"] = False
+        out["api_key_valid"] = None         # タイムアウト・通信の失敗はキーの状態を決められない
         out["last_error_class"] = type(e).__name__
         out["last_error_short"] = str(e)[:80]
     # 最近のメール送信エラー (1件のみ、先頭 150 文字)
@@ -11868,7 +11904,7 @@ def _create_otp(student_id: int, ttl_seconds: int = None) -> str:
     conn = db()
     c = conn.cursor()
     # 1) 同一 student の active OTP を最大 5件に制限。
-    # 🔑 2026-06-14 [otp-keep-old-codes] 室坂さん「番号が期限切れで使えない」の根治:
+    # 🔑 2026-06-14 [otp-keep-old-codes] 生徒の「番号が期限切れで使えない」の根治:
     #   従来は発行/再送のたびに旧コードを全無効化していたため、複数回送って受信箱に複数コードが
     #   届いた生徒が「先に届いた(=最新でない)古いメールのコード」を入力すると、コードは時間的に
     #   有効でも used 化済みで照合 0 行 → verify-code が generic 401「有効期限が切れています」と
@@ -25328,10 +25364,10 @@ def admin_send_magic_link_to_address(payload: dict, authorization: Optional[str]
 def admin_issue_otp_direct(payload: dict, authorization: Optional[str] = Header(None),
                             x_cron_secret: Optional[str] = Header(None)):
     """🔑 緊急エスケープハッチ: 指定生徒の OTP コードを admin 画面に直接表示する。
-    塾長指示 2026-05-11: 室坂さん等「どのメアドにしても届かない」生徒に対し、塾長が
+    塾長指示 2026-05-11: 「どのメアドにしても届かない」生徒に対し、塾長が
     LINE/電話/対面で OTP を口頭伝達できるようにするため。メール経路を一切経由しない。
 
-    payload: {"student_id": 123} または {"email": "..."} または {"name_query": "室坂"}
+    payload: {"student_id": 123} または {"email": "..."} または {"name_query": "氏名の一部"}
     成功時: { ok, otp, expires_at, student: {id, name, email, status} }
 
     監査ログ: events.admin_otp_direct_issue に記録 (誰の OTP を誰に発行したか追跡)。
@@ -30128,6 +30164,7 @@ def admin_email_diagnose(authorization: Optional[str] = Header(None), x_cron_sec
     }
 
     # 1. Resend /domains で送信ドメインの検証状態を取得
+    domain_probe = {}   # /domains から分かったキーの状態 (3. の /api-keys が 429・5xx で決まらないときに使う)
     if RESEND_API_KEY:
         try:
             req = urllib.request.Request(
@@ -30136,6 +30173,7 @@ def admin_email_diagnose(authorization: Optional[str] = Header(None), x_cron_sec
                 method="GET",
             )
             with urllib.request.urlopen(req, timeout=10) as resp:
+                domain_probe = {"scope": "full_access", "valid": True}
                 domains_data = json.loads(resp.read().decode())
                 domains_list = domains_data.get("data", []) if isinstance(domains_data, dict) else domains_data
                 for d in (domains_list if isinstance(domains_list, list) else []):
@@ -30158,15 +30196,19 @@ def admin_email_diagnose(authorization: Optional[str] = Header(None), x_cron_sec
                 else:
                     result["domain_status"] = f"not_found ({from_domain})"
         except urllib.error.HTTPError as e:
-            if e.code == 403:
-                # send-only restricted key (domains:read scope なし)。実送信は影響なし
-                result["domain_status"] = "send_only_key (domains:read scope なし — 実送信は影響なし)"
-                result["domain_status_remediation"] = "Resend ダッシュで API key を Full access に上げるか、新しい key で domains:read scope を追加してください"
-            elif e.code == 401:
-                result["domain_status"] = "unauthorized (API key が revoke 済みまたは無効)"
-                result["domain_status_remediation"] = "Resend ダッシュで新しい API key を発行し RESEND_API_KEY 環境変数を更新してください"
+            # 送信専用か無効かは応答本文の name で決める (_resend_key_http_error・ステータスだけだと逆に判定していた)
+            k = domain_probe = _resend_key_http_error(e)
+            if k["scope"] == "send_only":
+                # 送信専用キー (Sending access) はドメイン一覧を読めない。送信できるかは実際の送信 (📨 テスト送信) で分かる
+                result["domain_status"] = "send_only_key (送信専用キーなのでドメインの状態は読めない — 送信できるかは 📨 テスト送信で確認)"
+                result["domain_status_remediation"] = "ドメインの検証状態は Resend ダッシュの Domains で確認できます (診断のためだけにキーを Full access にしない)"
+            elif k["scope"] == "invalid":
+                result["domain_status"] = f"unauthorized (API key が無効・削除済み・停止中: {k['label']})"
+                result["domain_status_remediation"] = (
+                    "Resend サポートに問い合わせてください (キーが停止されています)" if k["name"] == "suspended_api_key"
+                    else "Resend ダッシュで新しい API key を発行し RESEND_API_KEY 環境変数を更新してください")
             else:
-                result["domain_status"] = f"api_error: HTTPError {e.code}"
+                result["domain_status"] = f"api_error: HTTPError {k['code']} {k['name']}".strip()
         except Exception as e:
             result["domain_status"] = f"api_error: {type(e).__name__}: {str(e)[:200]}"
 
@@ -30217,7 +30259,9 @@ def admin_email_diagnose(authorization: Optional[str] = Header(None), x_cron_sec
         result["recent_errors"] = [{"error": f"db_query_failed: {e}"}]
 
     # 3. Resend API キーが生きているか: /api-keys で軽量確認
+    #    api_key_scope = full_access / send_only / invalid / unknown、api_key_valid = true / false / null (決められない)
     if RESEND_API_KEY:
+        unknown_why = ""
         try:
             req = urllib.request.Request(
                 "https://api.resend.com/api-keys",
@@ -30225,23 +30269,29 @@ def admin_email_diagnose(authorization: Optional[str] = Header(None), x_cron_sec
                 method="GET",
             )
             with urllib.request.urlopen(req, timeout=10) as resp:
-                result["api_key_valid"] = True
+                k = {"scope": "full_access", "valid": True}
         except urllib.error.HTTPError as e:
-            if e.code == 403:
-                # send-only restricted key (api-keys:read scope なし)。実送信は影響なし
-                result["api_key_valid"] = True
-                result["api_key_scope"] = "send_only"
-                result["api_key_error"] = "send_only key (api-keys:read scope なし — 実送信は影響なし)"
-            elif e.code == 401:
-                result["api_key_valid"] = False
-                result["api_key_scope"] = "invalid"
-                result["api_key_error"] = "HTTP 401: API key が revoke 済みまたは無効"
-            else:
-                result["api_key_valid"] = False
-                result["api_key_error"] = f"HTTP {e.code}: {e.read().decode('utf-8', errors='replace')[:200]}"
+            # 送信専用か無効かは応答本文の name で決める (_resend_key_http_error・ステータスだけだと逆に判定していた)
+            k = _resend_key_http_error(e)
+            unknown_why = f"{k['label']}: {k['message']}"
         except Exception as e:
-            result["api_key_valid"] = False
-            result["api_key_error"] = f"{type(e).__name__}: {str(e)[:200]}"
+            k = {"scope": None, "valid": None}
+            unknown_why = f"{type(e).__name__}: {str(e)[:200]}"
+        if k["scope"] is None and domain_probe.get("scope"):
+            # 429 (チーム共有の毎秒上限)・5xx・タイムアウトで決まらなかったら 1. の /domains の答えを使う
+            # (2 本の結果を食い違わせると「キーは無効・ドメインは送信専用」のような矛盾した画面になる)
+            k = domain_probe
+        result["api_key_valid"] = k["valid"]
+        result["api_key_scope"] = k["scope"] or "unknown"
+        if k["scope"] == "send_only":
+            # 送信専用キー (Sending access) は鍵とドメインの一覧を読めないだけ = エラーではないので api_key_error には入れない
+            result["api_key_note"] = "送信だけ許可・ドメインと鍵の一覧は読めない (送信できるかは 📨 テスト送信で確認)"
+        elif k["scope"] == "invalid":
+            result["api_key_error"] = (
+                f"{k['label']}: API key が停止されています — Resend サポートに問い合わせ ({k['message']})" if k["name"] == "suspended_api_key"
+                else f"{k['label']}: API key が無効・削除済み・有効でない ({k['message']})")
+        elif k["scope"] is None:
+            result["api_key_error"] = f"判定できず — Resend 側の一時的な失敗の可能性。少し待って再診断 ({unknown_why})"
 
     return result
 

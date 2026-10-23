@@ -8953,15 +8953,31 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         try {
           const r = await AdminAuth.fetch('/api/admin/email/diagnose', { method: 'POST' });
           const d = await r.json();
+          // ログイン切れ (401) などで診断の応答でないものを「キーが無効」と描かない
+          if (!r.ok) throw new Error((d && d.detail) || ('HTTP ' + r.status));
           let html = '';
           // API キー状態
-          html += `<div style="margin-bottom:0.4rem;">🔑 API キー: ${d.api_key_valid ? '<span style="color:#34d399;">✅ 有効</span>' : '<span style="color:#f87171;">❌ 無効</span>'}${d.api_key_error ? ' — ' + lineEsc(d.api_key_error) : ''}</div>`;
+          // 🔑 2026-10-23 キーの状態は 4 つ (server の _resend_key_http_error): 有効 (Full access / 送信専用) / 無効 / 未設定 /
+          //   判定できず (429 = Resend のチーム共有の毎秒上限・5xx・タイムアウト = api_key_valid が null)。送信専用キーは鍵とドメインの一覧を読めないだけ。
+          const sendOnly = d.api_key_scope === 'send_only';
+          const keyState = d.resend_api_key_set === false ? 'unset' : d.api_key_valid === true ? 'ok' : d.api_key_valid === false ? 'invalid' : 'unknown';
+          const keyBadge = {
+            ok: '<span style="color:#34d399;">✅ 有効' + (sendOnly ? '（送信専用キー）' : '') + '</span>',
+            invalid: '<span style="color:#f87171;">❌ 無効</span>',
+            unset: '<span style="color:#f87171;">❌ 未設定 (RESEND_API_KEY が空)</span>',
+            unknown: '<span style="color:#fbbf24;">⚠️ 判定できず</span>',
+          }[keyState];
+          html += `<div style="margin-bottom:0.4rem;">🔑 API キー: ${keyBadge}${d.api_key_error ? ' — ' + lineEsc(d.api_key_error) : ''}${d.api_key_note ? ' <span style="color:#a3a3a3;">— ' + lineEsc(d.api_key_note) + '</span>' : ''}</div>`;
           html += `<div style="margin-bottom:0.4rem;">📧 FROM: <code style="background:rgba(255,255,255,0.1);padding:0.15rem 0.3rem;border-radius:3px;">${lineEsc(d.from_email) || '未設定'}</code></div>`;
           // ドメイン状態
           const ds = d.domain_status || 'unknown';
           const domainOk = ds === 'verified' || ds === 'active';
-          const domainColor = domainOk ? '#34d399' : ds === 'resend_default_sender' ? '#fbbf24' : '#f87171';
-          html += `<div style="margin-bottom:0.4rem;">🌐 ドメイン: <span style="color:${domainColor};font-weight:700;">${lineEsc(ds)}</span></div>`;
+          // 送信専用キーではドメインの状態を読めない = 異常ではない (赤にも修復手順にもしない)。/domains 自身の答えだけで決める
+          const domainUnreadable = ds.startsWith('send_only_key');
+          // キーが無効・未設定・Resend の一時的な失敗でドメインを読めなかっただけのときも DNS の手順は出さない
+          const domainNotRead = domainUnreadable || ds === 'unknown' || ds.startsWith('unauthorized') || ds.startsWith('api_error');
+          const domainColor = domainOk ? '#34d399' : domainUnreadable ? '#a3a3a3' : (ds === 'resend_default_sender' || ds.startsWith('api_error')) ? '#fbbf24' : '#f87171';
+          html += `<div style="margin-bottom:0.4rem;">🌐 ドメイン: <span style="color:${domainColor};font-weight:700;">${domainUnreadable ? '送信専用キーのため読めません（送信できるかは下の 📨 テスト送信で確認）' : lineEsc(ds)}</span></div>`;
           if (d.domains && d.domains.length) {
             html += '<div style="margin-bottom:0.4rem;padding-left:1rem;">';
             d.domains.forEach(dm => {
@@ -9002,28 +9018,34 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
               errs.forEach(e => {
                 const eventLabel = e.event === 'magic_link_email_status' ? '🔐 再ログイン' : '📝 新規申込';
                 const hint = e.email_hint ? ` ${e.email_hint}` : '';
-                const sid = e.student_id ? ` student#${e.student_id}` : '';
+                // events の props はだれでも /api/track で書けるので、数字の欄でも必ずエスケープする
+                const sid = e.student_id ? ` student#${lineEsc(e.student_id)}` : '';
                 const errTxt = e.error || e.reason || 'unknown';
                 html += `<div style="padding-left:1rem;color:#fca5a5;font-size:0.72rem;word-break:break-all;">• ${eventLabel}${sid}${lineEsc(hint)}: ${lineEsc(errTxt)} <span style="color:#71717a;">(${lineEsc(e.created_at)})</span></div>`;
               });
             }
           }
           // 修復ガイド
-          if (!domainOk || !d.api_key_valid) {
+          const domainNeedsFix = !domainOk && !domainNotRead;
+          const keyNeedsFix = keyState === 'invalid' || keyState === 'unset';
+          if (domainNeedsFix || keyNeedsFix) {
             html += '<div style="margin-top:0.6rem;padding:0.5rem;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.3);border-radius:6px;">';
             html += '<div style="font-weight:700;color:#fbbf24;">🔧 修復手順:</div>';
-            if (!d.api_key_valid) html += '<div>1. <a href="https://resend.com/api-keys" target="_blank" style="color:#a5b4fc;">Resend ダッシュボード</a>で API キーを再生成</div>';
-            if (!d.api_key_valid) html += '<div>2. Vercel → Settings → Environment Variables → RESEND_API_KEY を更新</div>';
-            if (!domainOk && ds !== 'resend_default_sender') html += '<div>3. <a href="https://resend.com/domains" target="_blank" style="color:#a5b4fc;">Resend ドメイン設定</a>で DNS レコードを確認・再検証</div>';
+            let step = 0;
+            const addStep = (s) => { html += `<div>${++step}. ${s}</div>`; };
+            // 診断は Railway (API サーバ) のキーを見る。Vercel (申込・決済のメール) も同じ名前の環境変数を持つ
+            if (keyNeedsFix) addStep('<a href="https://resend.com/api-keys" target="_blank" style="color:#a5b4fc;">Resend ダッシュボード</a>で API キーを' + (keyState === 'unset' ? '発行' : '再生成') + '（「停止されています」と出たときは Resend サポートに問い合わせ）');
+            if (keyNeedsFix) addStep('Railway (API サーバ) と Vercel (申込・決済のメール) の RESEND_API_KEY を更新');
+            if (domainNeedsFix && ds !== 'resend_default_sender') addStep('<a href="https://resend.com/domains" target="_blank" style="color:#a5b4fc;">Resend ドメイン設定</a>で DNS レコードを確認・再検証');
             if (ds === 'resend_default_sender') {
-              html += '<div>1. <a href="https://resend.com/domains" target="_blank" style="color:#a5b4fc;">Resend ドメイン設定</a>で trillion-ai-juku.com を追加・検証</div>';
-              html += '<div>2. Vercel → Environment Variables → FROM_EMAIL を <code>AIコーチング &lt;noreply@trillion-ai-juku.com&gt;</code> に設定</div>';
-              html += '<div>3. Redeploy</div>';
+              addStep('<a href="https://resend.com/domains" target="_blank" style="color:#a5b4fc;">Resend ドメイン設定</a>で trillion-ai-juku.com を追加・検証');
+              addStep('Railway と Vercel の FROM_EMAIL を <code>AIコーチング &lt;noreply@trillion-ai-juku.com&gt;</code> に設定');
+              addStep('Redeploy');
             }
             html += '</div>';
           }
-          // テスト送信ボタン
-          if (d.api_key_valid) {
+          // テスト送信ボタン: 送信専用キー・判定できないときも出す (実際に送るのがいちばん確かな確認)。無効・未設定のときだけ出さない
+          if (!keyNeedsFix) {
             html += `<div style="margin-top:0.6rem;"><button id="emailTestSendBtn" style="background:rgba(52,211,153,0.2);color:#34d399;border:1px solid rgba(52,211,153,0.4);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.72rem;font-weight:700;cursor:pointer;">📨 テスト送信 (自分宛)</button> <span id="emailTestResult" style="font-size:0.72rem;"></span></div>`;
             setTimeout(() => {
               const tsBtn = document.getElementById('emailTestSendBtn');
