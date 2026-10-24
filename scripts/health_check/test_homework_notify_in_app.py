@@ -188,7 +188,7 @@ def main():
         r = mod._notify_grammar_drill_assigned(one * 3, "時制", 10, "english", "auto")
         check("source='auto': LINE 0・メール 0", f.lines == [] and f.mails == [], (f.lines, f.mails))
         check("source='auto': 待ち (sleep) もリンクの照会もせずすぐ返る", f.sleeps == [] and f.lookups == [], (f.sleeps, f.lookups))
-        check("返り値に経路と件数", r == {"line_ok": 0, "mail_ok": 0, "mail_fail": 0, "channels": r["channels"]}
+        check("返り値に経路と件数", r == {"line_ok": 0, "mail_ok": 0, "mail_fail": 0, "child_mail_ok": 0, "channels": r["channels"]}
               and r["channels"]["source"] == "auto", r)
         r = mod._notify_grammar_drill_assigned(one, "時制", 10, "english")
         check("source を渡し忘れると 'auto' (メールを増やさない側)", f.mails == [] and r["channels"]["source"] == "auto", r)

@@ -6218,6 +6218,8 @@ def _run_weekly_worksheet_generation() -> dict:
             (login_cutoff, _utc_naive_iso())
         )
         students = c.fetchall() or []
+        # 🧒 2026-10-24: お知らせメールは確認済みの子メールにも送る (_homework_child_emails・宿題のお知らせと同じ条件)
+        _ws_children = _homework_child_emails([(st["id"] if hasattr(st, "keys") else st[0]) for st in students])
 
         worksheets_created = 0
         notifications_sent = 0
@@ -6518,6 +6520,20 @@ def _run_weekly_worksheet_generation() -> dict:
                             if isinstance(mail_resp, dict) and mail_resp.get("sent"):
                                 delivered_via.append("email")
                                 notifications_sent += 1
+                            _child_to = _ws_children.get(sid) if isinstance(sid, int) else None
+                            if _child_to and _child_to.lower() != semail.lower():
+                                try:
+                                    time.sleep(1.5)  # Resend の上限 (宿題のお知らせ・週次レポートと同じ 1.5 秒)
+                                    child_resp = _send_monitor_email(subj, body_html, to_email=_child_to)
+                                    if isinstance(child_resp, dict) and child_resp.get("sent"):
+                                        notifications_sent += 1
+                                        if "email" not in delivered_via:
+                                            delivered_via.append("email")
+                                    else:
+                                        log.warning(f"[WeeklyWorksheet] child email not sent sid={sid}: "
+                                                    f"{(child_resp or {}).get('error') if isinstance(child_resp, dict) else child_resp}")
+                                except Exception as e:
+                                    log.warning(f"[WeeklyWorksheet] child email failed for sid={sid}: {e}")
                 except Exception as e:
                     log.warning(f"[WeeklyWorksheet] email failed for sid={sid}: {e}")
 
@@ -49089,6 +49105,56 @@ def _homework_notify_link_paths(student_ids: list) -> dict:
     return out
 
 
+def _homework_child_emails(student_ids: list) -> dict:
+    """🧒 2026-10-24 塾長「はい」(保護者「弱点プリントが子供に届いていなかった」): 宿題・プリントのお知らせメールを
+    子のアドレス (student_email) にも送る。{sid: 子のアドレス} を 1 回の SELECT で返す。
+    送るのはログインコードと同じ条件の子メールだけ (週次レポートの生徒コピー _weekly_report_recipients の条件に、
+    3 つ目の衝突除外を足したもの):
+      - 確認済み (student_email_verified)。未確認の子メールには送らない (他人のアドレスへの踏み台にしない・2026-06-12)
+      - email (保護者) と別のアドレス (同じなら 1 通で足りる)
+      - 他の生徒の保護者メール (email) と一致しない (ログインコードと同じ最終防壁。他家庭の保護者に届けない)
+    読めないとき (列が無い・DB 障害) は {} = 今までどおり保護者宛だけ (子宛を増やさない側に倒す)。"""
+    ids = sorted({int(x) for x in (student_ids or []) if x})
+    if not ids:
+        return {}
+    out = {}
+    conn = None
+    try:
+        conn = db()
+        c = conn.cursor()
+        ph = ",".join(["?"] * len(ids))
+        c.execute(f"SELECT id, email, student_email, student_email_verified FROM students WHERE id IN ({ph})", tuple(ids))
+        for r in c.fetchall() or []:
+            child = (r["student_email"] or "").strip()
+            parent = (r["email"] or "").strip()
+            if not child or "@" not in child or child.lower() == parent.lower():
+                continue
+            if str(r["student_email_verified"]) not in ("1", "True", "true"):
+                continue
+            out[int(r["id"])] = child
+        if out:
+            lows = sorted({v.lower() for v in out.values()})
+            ph2 = ",".join(["?"] * len(lows))
+            c.execute(f"SELECT id, LOWER(email) AS em FROM students WHERE LOWER(email) IN ({ph2})", tuple(lows))
+            taken = {}
+            for r in c.fetchall() or []:
+                taken.setdefault(r["em"], set()).add(int(r["id"]))
+            for sid, child in list(out.items()):
+                if taken.get(child.lower(), set()) - {sid}:
+                    log.info(f"[HomeworkChildMail] 子メールが他の生徒の保護者メールと同じ → 送らない student_id={sid}")
+                    out.pop(sid, None)
+    except Exception as e:
+        log.warning(f"[HomeworkChildMail] child email lookup failed (保護者宛だけにする): {type(e).__name__}: {e}")
+        return {}
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+    return out
+
+
 def _notify_grammar_drill_assigned(notify_list: list, unit: str, question_count: int, subject: str = "english",
                                    source: str = "auto") -> dict:
     """BackgroundTasks: 配信されたドリルのお知らせ (best-effort)。
@@ -49106,19 +49172,22 @@ def _notify_grammar_drill_assigned(notify_list: list, unit: str, question_count:
     - 同期 def なので FastAPI は threadpool で実行 = event loop を塞がない (admin_send_message と同方式)。
     - Resend 無料枠 (1通/秒) 回避: email は 2通目以降 1.5秒間隔 + 429 は指数バックオフ
       (_dispatch_message_emails と同方針)。「全選択」で 100名超でも 429 silent fail しない。
-    返却: {line_ok, mail_ok, mail_fail, channels}"""
+    - 🧒 2026-10-24: メールは保護者 (email) に加えて、確認済みの子メール (student_email) にも同じ文面で送る
+      (_homework_child_emails の条件)。子メールが無い家庭は今までと 1 通も変わらない。mail_ok / mail_fail は通数で数える。
+    返却: {line_ok, mail_ok, mail_fail, child_mail_ok, channels}"""
     import time as _t
     ch = _homework_notify_channels(source)
-    result = {"line_ok": 0, "mail_ok": 0, "mail_fail": 0, "channels": ch}
+    result = {"line_ok": 0, "mail_ok": 0, "mail_fail": 0, "child_mail_ok": 0, "channels": ch}
     if not notify_list or not (ch["line"] or ch["email"]):
         log.info(f"[GrammarDrillNotify] アプリ内表示のみ (LINE・メールは送らない): source={ch['source']} "
                  f"email_mode={ch['email_mode']} line={ch['line']} n={len(notify_list or [])}")
         return result
     subj_label = _grammar_subject_label_ja(subject)  # 🧩 科目別ラベル(数学/国語… ・既定 英文法)
     is_ptest = _canon_grammar_subject(subject) == _PTEST_SUBJECT
-    line_ok = mail_ok = mail_fail = 0
+    line_ok = mail_ok = mail_fail = child_mail_ok = 0
     email_idx = 0
     paths = _homework_notify_link_paths([s.get("id") for s in notify_list]) if ch["email"] else {}
+    children = _homework_child_emails([s.get("id") for s in notify_list]) if ch["email"] else {}
     for s in notify_list:
         sid = s.get("id")
         if not sid:
@@ -49135,13 +49204,17 @@ def _notify_grammar_drill_assigned(notify_list: list, unit: str, question_count:
                 log.warning(f"[GrammarDrillNotify] LINE failed sid={sid}: {e}")
         if not ch["email"]:
             continue
-        # メール (有効アドレスのみ・synthetic は _send_message_email 側で skip)
+        # メール (有効アドレスのみ・synthetic は _send_message_email 側で skip)。保護者 → 確認済みの子メール の順
         email = (s.get("email") or "").strip()
-        if not (email and "@" in email):
+        try:
+            child = children.get(int(sid), "")
+        except (TypeError, ValueError):
+            child = ""
+        targets = [(email, False)] if (email and "@" in email) else []
+        if child and "@" in child and child.lower() != email.lower():
+            targets.append((child, True))
+        if not targets:
             continue
-        if email_idx > 0:
-            _t.sleep(1.5)  # Resend rate limit 回避
-        email_idx += 1
         try:
             _path = paths.get(int(sid), "mypage")
         except (TypeError, ValueError):
@@ -49165,24 +49238,31 @@ def _notify_grammar_drill_assigned(notify_list: list, unit: str, question_count:
                 f"{where}\n\n"
                 f"※ 解いて提出すると、間違えた問題の解説がその場で表示されます。"
             )
-        res = None
-        for attempt in range(3):  # 429 リトライ (最大3回・指数バックオフ)
-            try:
-                res = _send_message_email(email, subj, body, student_name=s.get("name"))
-            except Exception as e:
-                log.warning(f"[GrammarDrillNotify] email raised sid={sid}: {e}")
-                res = {"sent": False, "error": str(e)}
-            if res.get("sent") or "429" not in str(res.get("error", "")):
-                break
-            if attempt < 2:  # 最終試行後は待たない (無駄な backoff を省く)
-                _t.sleep(3 * (2 ** attempt))
-        if res and res.get("sent"):
-            mail_ok += 1
-        else:
-            mail_fail += 1
-            log.warning(f"[GrammarDrillNotify] email not sent sid={sid}: {(res or {}).get('error')}")
-    log.info(f"[GrammarDrillNotify] done: source={ch['source']} line_ok={line_ok} mail_ok={mail_ok} mail_fail={mail_fail}")
-    result.update({"line_ok": line_ok, "mail_ok": mail_ok, "mail_fail": mail_fail})
+        for to_addr, is_child in targets:
+            if email_idx > 0:
+                _t.sleep(1.5)  # Resend rate limit 回避
+            email_idx += 1
+            res = None
+            for attempt in range(3):  # 429 リトライ (最大3回・指数バックオフ)
+                try:
+                    res = _send_message_email(to_addr, subj, body, student_name=s.get("name"))
+                except Exception as e:
+                    log.warning(f"[GrammarDrillNotify] email raised sid={sid} child={is_child}: {e}")
+                    res = {"sent": False, "error": str(e)}
+                if res.get("sent") or "429" not in str(res.get("error", "")):
+                    break
+                if attempt < 2:  # 最終試行後は待たない (無駄な backoff を省く)
+                    _t.sleep(3 * (2 ** attempt))
+            if res and res.get("sent"):
+                mail_ok += 1
+                if is_child:
+                    child_mail_ok += 1
+            else:
+                mail_fail += 1
+                log.warning(f"[GrammarDrillNotify] email not sent sid={sid} child={is_child}: {(res or {}).get('error')}")
+    log.info(f"[GrammarDrillNotify] done: source={ch['source']} line_ok={line_ok} mail_ok={mail_ok} "
+             f"mail_fail={mail_fail} child_mail_ok={child_mail_ok}")
+    result.update({"line_ok": line_ok, "mail_ok": mail_ok, "mail_fail": mail_fail, "child_mail_ok": child_mail_ok})
     return result
 
 

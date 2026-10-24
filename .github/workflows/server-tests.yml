@@ -543,6 +543,15 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_homework_notify_in_app.py
 
+      # 🧒 宿題・プリントのお知らせメールを確認済みの子メール (student_email) にも送る (2026-10-24)。
+      #   子メールが無い・未確認・保護者と同じ・他家庭の保護者メールと同じ家庭は今までどおり保護者 1 通だけ。
+      #   自動配信 (既定) は 0 通のまま・子メールを読めないときは保護者宛だけ・週次弱点プリントも同じ照会。
+      - name: 宿題のお知らせ 子メールにも 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_homework_notify_child_email.py
+
       # 🆕 新しい宿題のお知らせ (アプリ内表示・2026-10-15): hw-notice.js の数え方と「見た」の記録・塾生アプリ (class.html) の帯と
       #   ?tab=homework・'assigned' のドリルも未提出・mypage の「🆕 新しい宿題 N 件」を node で実際に動かす (JS エンジンが無ければ FAIL)。
       - name: 宿題のお知らせ JS (hw-notice.js・class.html・mypage) 回帰テスト
