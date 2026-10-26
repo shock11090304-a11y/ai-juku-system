@@ -2,9 +2,11 @@
 """🤝 生徒アカウント統合 API (POST /api/admin/students/{keep}/merge・2026-09-08) の回帰テスト (in-process・一時 SQLite)。
 
   1. dry_run: 件数と予定の変更だけ返し、何も書かない
-  2. 実行: student_id を持つ表の行が keep に付け替わる。同じキーで衝突する行は keep 優先 (student_json_state は新しい方)
+  2. 実行: student_id を持つ表の行が keep に付け替わる。同じキーで衝突する行は keep 優先 (student_json_state は新しい方。
+     出欠 class_attend の食い違いは「塾長の記録 → 新しい申告」= test_repeat_trial_compare.py)
   3. messages / events(session_id) / course_applications も付け替え
-  4. students 本体: 空欄を drop 側で埋める・受講クラスは和集合・AI は片方で使えれば使える・drop のメールは student_email (確認済)
+  4. students 本体: 空欄を drop 側で埋める・受講クラスは和集合・AI は片方で使えれば使える (体験終了・解約・7 日体験の側は数えない = test_repeat_trial_compare.py)・
+     drop のメールは student_email (確認済)
   5. drop 側は削除され、監査 event が残る。もう一度呼ぶと 404
   6. 同じ生徒を指定すると 400
 """

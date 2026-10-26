@@ -722,6 +722,30 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   引き継ぎ通知 (`renderInheritNoticeBanner`) は**実際に画面に入った回数** (`aj_inherit_notice_seen:<id>`) を数え、2 回見せたら
   了承扱い。挿入しただけでは数えない (スクロールせず離脱した生徒の「取り消し」の機会を奪わないため)。
 
+## 🤝 「体験の重複再取得」の赤枠と生徒の統合 (2026-10-27 塾長「赤い枠の通塾生には『本契約へ切替』を出さず、見比べて統合できるボタンを」)
+- ★本科生 (course=kokuritsu_nankan) は承認時に status='trial'・trial_end +10 年で在籍する。塾生アプリに別メールで登録し直した在籍生は
+  承認の同名ガードで赤枠に出る (2026-10-26 に 2 名)。**trial を expired にする管理操作を通塾生に使わない** — 「本契約へ切替」
+  (`repeat-trial-convert`) は通塾生 (`_repeat_is_enrolled` = `_tsujuku_roster` の条件＋在籍中の status) と、比べる相手が通塾生の生徒を 409 で止める。
+- 一覧 API は理由文の最後の `#ID)` を比べる相手 (`prior_id`) とし、両方の要約 (`account` / `prior`: 登録日・最終ログイン・受講クラス・
+  学習の量・カード登録) と `can_convert` を返す。画面の統合ボタンは「どちらかが通塾生」のときだけ。氏名違いの同一カード (兄弟の可能性) には
+  出さず、氏名違いのそれ以外 (生徒メール一致・影アカウント疑い) は警告つきの控えめなボタンだけ。通塾生 = 在籍中の status (trial/paid/past_due) に限る。
+- 統合 API (`POST /api/admin/students/{keep}/merge`) の決まり:
+  - `from_repeat_trial: true` (赤枠から) でどちらも通塾生でなければ 409 (status は在籍度の高い方・trial_end は遅い方を採るので、統合 = 体験の付け直し)。
+    残す側の疑いが消す側を指すときだけ疑いフラグを外す (理由文は残す = 遡及スキャンが立て直さない)。
+  - 💳 両方に別々の `stripe_subscription_id` があれば 409 (消す側のサブスクが名簿から外れ、Stripe で生きたまま課金される)。
+    片方だけが通塾生で、もう片方に sub ID が残っているときも 409 (その sub の解約 webhook が `WHERE stripe_subscription_id=?` で
+    通塾生の行を canceled にする)。先に Stripe で解約してもらう。顧客 ID とサブスク ID は組で引き継ぐ (消す側に sub が無いときは、
+    残す側の顧客 ID が空なら顧客 ID だけ埋める = 従来どおり。顧客 ID だけで照合する webhook は status='paid' の行しか変えない)。
+    ★sub が生きているかは status でなく **sub ID の有無**で見る: Stripe の解約は必ず ID を NULL にするが、支払い遅延 30 日の降格は
+    status を canceled にするだけで ID も Stripe のサブスクも残す。
+    ★Stripe 側では止まっているのに DB に sub ID が残っていて 409 が解けないときは、Stripe で状態を確かめてから DB の ID を消す (CEO に手段は無い)。
+  - 出欠 `class_attend` だけは衝突時に「塾長の記録 (source=admin) → 新しい申告 (updated_at)」を残す (他の表は残す側優先のまま)。
+    食い違う日は `attend_diffs`、下見と実行の件数は同じ数え方。
+  - AI (`_merge_ai_usable`): 体験終了・解約・公開ページの 7 日体験の側の「AI 可」は数えない。逆向き (残す側の AI 可が体験の名残で、
+    消す側が AIなし枠) は AIなし枠のまま。
+  - 応答の `from_email_login` / `from_email_saved_as`: 残す側に子メールが既にあると、消す側のメールは保護者メール欄に入るか残らない (ログイン不可)。
+- 回帰テスト `scripts/health_check/test_repeat_trial_compare.py`。
+
 ## 🔁 生徒ログインの自動延長と LINE「やること」のリンク (2026-10-18 塾長「②の残りも作っておいて」)
 - 生徒トークン (`_sign_session_token`・30 日) は、**在籍中の生徒が使っているあいだ自動で延長**する。`GET /api/auth/me` が、残りが
   `STUDENT_SESSION_RENEW_WINDOW_SECONDS` (15 日 = TTL の半分) を切った種別 `session` のトークン (旧 3 パートも) にだけ

@@ -24321,6 +24321,8 @@ def admin_students_ai_usage(
 #   ・自動で確実な分 (同一カード＋同一氏名) は webhook が即課金化する。
 #   ・氏名だけ一致 / 同一カード別氏名 (兄弟の可能性) は誤検知し得るので、ここで塾長が確認して
 #     「本契約へ切替(体験打切)」or「誤検知(無視)」をワンクリックで選ぶ。
+#   ・🤝 [2026-10-27] 通塾生 (本科生は trial 10 年で在籍) がかかわる組は切替を 409 で止め、2 つのアカウントを見比べて統合する
+#     (一覧の account / prior / can_convert と、統合 API の from_repeat_trial)。
 # =====================================================================
 def _repeat_admin_authed(authorization: Optional[str]) -> bool:
     return bool(authorization and authorization.startswith("Bearer ")
@@ -24382,6 +24384,67 @@ def _backfill_repeat_suspects(limit: int = 2000) -> int:
     return flagged
 
 
+# 🤝 [2026-10-27 塾長指示] 赤枠で「2 つのアカウントを見比べて統合」するための材料。
+#   ★通塾生 (国公立難関大コース / 塾生アドオン) も status='trial' (trial_end 10 年後) で作られるので、塾生アプリに
+#     別メールで登録し直しただけの在籍生がこの枠に出る (2026-10-26 に 2 名)。その生徒に「本契約へ切替」を押すと
+#     status='expired' になりアプリから締め出されるため、通塾生には切替を出さず (API も 409)、統合に回す。
+_REPEAT_PRIOR_ID_RE = re.compile(r"#(\d+)\)")
+
+
+def _repeat_is_enrolled(d) -> bool:
+    """通塾生 (在籍生) か = course が国公立難関大コース or plan が塾生アドオン (_tsujuku_roster と同じ) で、status が在籍中
+    (trial / paid / past_due・_enrolled_sql と同じ並び)。退塾して course だけ残った元塾生の体験の取り直しは従来どおり切替できる。"""
+    d = dict(d)
+    return ((d.get("course") or "") == _STUDY_LOG_TARGET_COURSE or (d.get("plan") or "") == "student_addon") \
+        and (d.get("status") or "") in ("trial", "paid", "past_due")
+
+
+def _repeat_prior_id(reason) -> Optional[int]:
+    """理由文の「…#12345)」から比べる相手の生徒 ID を取り出す (_repeat_reason_text と影アカウント疑いの両方の書式)。
+    ★最後の一致を使う: どちらの書式も利用者が入力した氏名が #ID より前に来るので、氏名に「#5)」があっても取り違えない。"""
+    m = _REPEAT_PRIOR_ID_RE.findall(str(reason or ""))
+    return int(m[-1]) if m else None
+
+
+def _repeat_account_cards(conn, c, ids) -> dict:
+    """生徒 ID → 見比べ用の要約 (登録日・最終ログイン・受講クラス・学習の量)。件数は表ごとに 1 クエリ (人数によらない)。"""
+    ids = sorted({int(i) for i in ids if i})
+    if not ids:
+        return {}
+    ph = ",".join("?" * len(ids))
+    c.execute("SELECT id, name, email, student_email, grade, status, course, plan, class_labels, ai_disabled, "
+              f"line_user_id, stripe_subscription_id, created_at, last_login_at FROM students WHERE id IN ({ph})", tuple(ids))
+    cards = {}
+    for r in c.fetchall():
+        d = dict(r)
+        cards[int(d["id"])] = {
+            "id": d["id"], "name": d.get("name"), "email": d.get("email"), "student_email": d.get("student_email") or None,
+            "grade": d.get("grade"), "status": d.get("status"), "enrolled": _repeat_is_enrolled(d),
+            "classes": _parse_labels(d.get("class_labels")), "ai": not int(d.get("ai_disabled") or 0),
+            "line": bool(d.get("line_user_id")), "card": bool((d.get("stripe_subscription_id") or "").strip()),
+            "created_at": str(d["created_at"]) if d.get("created_at") else None,
+            "last_login_at": str(d["last_login_at"]) if d.get("last_login_at") else None,
+            "study_logs": 0, "study_logs_last": None, "attempts": 0, "homework": 0, "attend": 0,
+        }
+    for key, tbl, extra in (("study_logs", "study_logs", ", MAX(studied_date) AS last"), ("attempts", "question_attempts", ""),
+                            ("homework", "homework_assignments", ""), ("attend", "class_attend", "")):
+        try:
+            c.execute(f"SELECT student_id, COUNT(*) AS n{extra} FROM {tbl} WHERE student_id IN ({ph}) GROUP BY student_id", tuple(ids))
+            for r in c.fetchall():
+                card = cards.get(int(r["student_id"]))
+                if card is None:
+                    continue
+                card[key] = int(r["n"] or 0)
+                if extra and r["last"]:
+                    card["study_logs_last"] = str(r["last"])[:10]
+        except Exception as _e:
+            # 件数は見比べの補助なので、1 表が読めなくても一覧は出す (PG の abort を次の表へ引きずらない)
+            try: conn.rollback()
+            except Exception: pass
+            log.warning(f"[repeat-trial] {tbl} の件数を取れませんでした: {type(_e).__name__}")
+    return cards
+
+
 @app.get("/api/admin/students/repeat-trial-suspects")
 def admin_repeat_trial_suspects(authorization: Optional[str] = Header(None)):
     """⚠️ 体験の重複再取得の疑いがある生徒一覧 (別メール再登録・氏名/子メール/同一カード一致)。
@@ -24421,7 +24484,16 @@ def admin_repeat_trial_suspects(authorization: Optional[str] = Header(None)):
                 "trial_end": str(d.get("trial_end")) if d.get("trial_end") else None,
                 "created_at": str(d.get("created_at")) if d.get("created_at") else None,
                 "reason": d.get("repeat_trial_reason"),
+                "prior_id": _repeat_prior_id(d.get("repeat_trial_reason")),
             })
+        # 🤝 見比べの材料: 疑いの生徒と比べる相手 (理由文の #ID) の要約。相手が統合・削除済みなら prior は None。
+        cards = _repeat_account_cards(conn, c, [s["id"] for s in out] + [s["prior_id"] for s in out])
+        for s in out:
+            s["account"] = cards.get(int(s["id"]))
+            s["prior"] = cards.get(s["prior_id"]) if s["prior_id"] and s["prior_id"] != s["id"] else None
+            # 通塾生に「本契約へ切替」を押すと締め出される → 画面は切替ボタンを出さない (API も 409 で止める)。
+            #   前からある方が通塾生 (= 在籍生が公開ページの体験で作り直した) も同じ扱い: 即課金ではなく統合で片づける。
+            s["can_convert"] = not ((s["account"] or {}).get("enrolled") or (s["prior"] or {}).get("enrolled"))
     finally:
         conn.close()
     return {"ok": True, "count": len(out), "suspects": out}
@@ -24437,11 +24509,22 @@ def admin_repeat_trial_convert(student_id: int, authorization: Optional[str] = H
         raise HTTPException(status_code=401, detail="未認証")
     conn = db(); c = conn.cursor()
     try:
-        c.execute("SELECT id, status, stripe_subscription_id FROM students WHERE id=?", (student_id,))
+        c.execute("SELECT id, status, stripe_subscription_id, course, plan, repeat_trial_reason FROM students WHERE id=?", (student_id,))
         row = c.fetchone()
         if not row:
             conn.close()
             raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        # 🤝 [2026-10-27] 通塾生は trial (10 年) で在籍している。ここで expired にするとアプリから締め出される。
+        #   比べる相手 (理由文の #ID) が通塾生のときも止める = 在籍生の作り直しを即課金しない (一覧の can_convert と同じ判定)。
+        _enrolled = _repeat_is_enrolled(row)
+        _pid = _repeat_prior_id(row["repeat_trial_reason"])
+        if not _enrolled and _pid and _pid != student_id:
+            c.execute("SELECT course, plan, status FROM students WHERE id=?", (_pid,))
+            _pr = c.fetchone()
+            _enrolled = bool(_pr) and _repeat_is_enrolled(_pr)
+        if _enrolled:
+            conn.close()
+            raise HTTPException(status_code=409, detail="この生徒 (または比べる相手) は通塾生です。体験を打ち切るとアプリに入れなくなるため、本契約への切替はできません。同じ生徒の別アカウントなら「統合」を、別人なら「誤検知」を押してください。")
         st = (row["status"] or "").strip()
         sub_id = (row["stripe_subscription_id"] or "").strip()
         conn.close()
@@ -30426,6 +30509,7 @@ def _sweep_student_orphans(conn, c, dry_run: bool) -> dict:
 _MERGE_STUDENT_TABLES = (
     # (table, unique_key_cols)  unique_key_cols: keep 側に同じキーの行があれば drop 側の行は捨てる (keep 優先)。
     #   None = 制約なし (全部付け替え)、() = student_id 単独 UNIQUE。student_json_state だけ updated_at の新しい方を残す。
+    #   class_attend は admin_student_merge の中で「塾長の記録 → 新しい申告」の方を残してから汎用処理に渡す (2026-10-27)。
     ("study_logs", None), ("study_plans", None), ("exam_results", None), ("curricula", None), ("notifications", None),
     ("otp_codes", None), ("usage_monthly", ("feature", "year_month")), ("mock_exam_sessions", None), ("vocab_progress", None),
     ("payments", None), ("ai_tutor_messages", None), ("homework_assignments", None), ("question_attempts", None),
@@ -30446,7 +30530,9 @@ _MERGE_FILL_FIELDS = ("grade", "goal", "plan", "course", "stripe_customer_id", "
                       # 🎬 [2026-09-24] 全期間視聴の印 (2 万円) は keep 側が 0/NULL なら drop 側から埋める (落とすと 2 万円分が消える)。
                       #   ★start_month は埋めない: keep が在籍生 (NULL=制限なし) のとき drop 側の月を入れると、その生徒の
                       #     出欠が 400・クラス宿題の対象外・入塾前の録画が消える (承認の合流で入れないのと同じ理由)。必要なら CEO で手で入れる。
-                      "archive_full_paid")
+                      "archive_full_paid",
+                      # 🔁 [2026-10-27] カード指紋。落とすと同じカードでの体験の取り直しを webhook が自動で見つけられなくなる。
+                      "payment_fingerprint")
 _MERGE_STATUS_RANK = {"paid": 5, "trial": 4, "past_due": 3, "expired": 2, "canceled": 1}
 
 
@@ -30461,15 +30547,56 @@ def _merge_n(row) -> int:
 class StudentMergeRequest(BaseModel):
     from_id: int           # 消す側 (この生徒のデータを student_id 側へ移す)
     dry_run: bool = True   # 既定は下見 (何も書かない)。false で実行
+    # 🤝 [2026-10-27] CEO の「体験の重複再取得」枠からの統合なら true:
+    #   ・どちらも通塾生でなければ 409 (体験の取り直し組を統合すると、古いアカウントに新しい体験期間が付く)
+    #   ・残す側の疑いが消す側を指しているときだけ、その疑いフラグも同じトランザクションで外す
+    from_repeat_trial: bool = False
+
+
+def _attend_keep_rank(r):
+    """同じクラス・同じ日の出欠が両方にあるとき、どちらを残すかの順位: 塾長の記録 (admin) → 新しい申告 (updated_at)。"""
+    return (1 if (r["source"] or "") == "admin" else 0, str(r["updated_at"] or "").replace("T", " ")[:19])
+
+
+def _merge_ai_usable(d) -> bool:
+    """統合後の AI 可否に数えるか = 実際に AI を使えている在籍のアカウントか (2026-10-27 レビュー: 古い体験アカウントとの統合で
+    AIなし枠の通塾生に AI が無料で開いた)。
+    ・ai_disabled=1 (AIなし枠) は数えない。有料 (paid / past_due) は数える
+    ・trial は通塾生 (本科 10 年) で期限内のときだけ。公開ページの 7 日体験は数えない = 統合で 7 日の体験が在籍中ずっとの AI に
+      化けない (必要なら CEO の期限付き AI 体験で開ける)
+    ・体験終了・解約 (expired / canceled) は AI 可のまま残っていても数えない。日時が読めなければ数えない (安全側)"""
+    if int(d.get("ai_disabled") or 0) == 1:
+        return False
+    st = (d.get("status") or "").strip()
+    if st in ("paid", "past_due"):
+        return True
+    if st != "trial" or not _repeat_is_enrolled(d):
+        return False
+    te = d.get("trial_end")
+    if not te:
+        return True
+    try:
+        dt = te if isinstance(te, datetime) else datetime.fromisoformat(str(te).strip().replace(" ", "T").replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt > datetime.now(timezone.utc)
+    except Exception:
+        return False
 
 
 @app.post("/api/admin/students/{student_id}/merge")
 def admin_student_merge(student_id: int, payload: StudentMergeRequest, authorization: Optional[str] = Header(None)):
     """塾長: 生徒 from_id を student_id (残す側) に統合する。
-    - student_id を持つ全表の行を残す側へ付け替え (同じキーで衝突する行は残す側を優先して drop 側を捨てる)
+    - student_id を持つ全表の行を残す側へ付け替え (同じキーで衝突する行は残す側を優先して drop 側を捨てる。
+      出欠 class_attend だけは食い違う日に「塾長の記録 → 新しい申告」を残し、attend_diffs で返す)
+    - from_repeat_trial=true (CEO の「体験の重複再取得」枠から): どちらも通塾生でなければ 409。残す側の疑いが消す側を
+      指していればその疑いフラグも外す
+    - 両方に別々の Stripe サブスク ID があれば 409 (消す側のサブスクが名簿から外れ、宙に浮いたまま課金されるため)。
+      片方だけが通塾生で、もう片方にサブスク ID が残っているときも 409 (その解約の webhook で通塾生が canceled になるため)。
+      サブスクが生きているかは status でなく ID の有無で見る (解約は ID を消す・支払い遅延の降格は残す)。顧客 ID とサブスク ID は組で引き継ぐ
     - messages / referrals / invite_codes / events (session_id=生徒ID) も付け替え
     - 残す側の空欄 (学年・志望校・保護者メール・LINE 等) は drop 側で埋め、受講クラスは和集合、
-      status は在籍度の高い方、trial_end/last_login は遅い方、created_at は早い方、AI は片方でも使えるなら使える
+      status は在籍度の高い方、trial_end/last_login は遅い方、created_at は早い方、AI は片方でも使えるなら使える (体験終了・解約の側は数えない)
     - drop 側のログイン用メールは student_email (確認済) として残し、そのメールでもログインできるようにする
     - 最後に drop 側の students 行を削除し、events に admin_student_merge を記録
     1 トランザクション (途中で失敗したら何も変わらない)。dry_run=true なら件数と予定の変更だけ返す。"""
@@ -30489,6 +30616,27 @@ def admin_student_merge(student_id: int, payload: StudentMergeRequest, authoriza
         keep = dict(keep); drop = dict(drop)
         dry = bool(payload.dry_run)
         moved, conflicts = {}, {}
+        attend_diffs = []   # 出欠が食い違う日 (画面の確認文に出す)
+        _att_from_wins = 0  # 消す側の出欠を残す日数 (下見の件数を実行と同じ数え方にそろえる)
+        # 🛡️ [2026-10-27] 統合の前に止める 2 つ (下見でも止める = 確認文を出さない)
+        _ksub = (keep.get("stripe_subscription_id") or "").strip()
+        _dsub = (drop.get("stripe_subscription_id") or "").strip()
+        # ★sub が生きているかは status ではなく「sub ID が残っているか」で見る。Stripe の解約 (subscription.deleted ほか) は
+        #   必ず stripe_subscription_id を NULL にするが、支払い遅延 30 日の降格は status を canceled にするだけで ID も
+        #   Stripe のサブスクも残す = status が canceled でも sub は生きていることがある (2026-10-27 レビュー)。
+        if _ksub and _dsub and _ksub != _dsub:
+            # 残す側の sub が勝ち、消す側の sub は名簿から外れて Stripe では生きたまま = 生徒に結び付かない課金になる
+            raise HTTPException(status_code=409, detail="両方のアカウントに別々のカード登録 (Stripe の定期課金) があります。消す側の定期課金が名簿から外れて請求だけ続くため、統合できません。先に Stripe でどちらかを解約・確認してください。")
+        _ke, _de = _repeat_is_enrolled(keep), _repeat_is_enrolled(drop)
+        _other = (drop if _ke else keep) if _ke != _de else None
+        if _other is not None and (_other.get("stripe_subscription_id") or "").strip():
+            # 通塾生の行に公開ページの体験の sub が乗る (または残る) と、その sub の解約 (家庭の解約・支払い失敗・整理) で webhook が
+            #   WHERE stripe_subscription_id=? の行を canceled にする = 通塾生がアプリから締め出される。先に解約してもらう
+            #   (解約の webhook が sub ID を消せば、ここは通る)。
+            raise HTTPException(status_code=409, detail="通塾生でない方のアカウントにカード登録 (Stripe の定期課金) が残っています。統合すると、その定期課金が解約されたときに通塾生のアカウントまで解約扱いになり、アプリに入れなくなります。先に Stripe でその定期課金を解約してから統合してください。")
+        if payload.from_repeat_trial and not (_repeat_is_enrolled(keep) or _repeat_is_enrolled(drop)):
+            # 体験の取り直し組: status は在籍度の高い方 (trial > expired)・trial_end は遅い方を採るので、統合 = 体験の付け直し
+            raise HTTPException(status_code=409, detail="どちらも通塾生ではないため、ここからは統合できません (統合すると古いアカウントに新しい体験期間が付きます)。体験の取り直しなら「本契約へ切替」、別人なら「誤検知」を押してください。")
 
         # 1) student_id を持つ表
         for tbl, ukey in _MERGE_STUDENT_TABLES:
@@ -30506,6 +30654,27 @@ def admin_student_merge(student_id: int, payload: StudentMergeRequest, authoriza
                           "WHERE student_id = ? AND EXISTS (SELECT 1 FROM sapuri_lesson_progress d WHERE d.student_id = ? "
                           "AND d.lesson_key = sapuri_lesson_progress.lesson_key AND d.watched_at < sapuri_lesson_progress.watched_at)",
                           (drop_id, keep_id, drop_id))
+            if tbl == "class_attend":
+                # 📅 [2026-10-27] 同じクラス・同じ日の出欠が両方にあって食い違うときは「塾長の記録 → 新しい申告」を残す。
+                #   従来は残す側が無条件に勝ち、消す側で後から申告した「欠席」が消えて古い「出席」が残った (2026-10-26)。
+                #   消す側を勝たせる日は残す側の行を先に消す → この後の汎用処理が消す側の行を付け替える。同点は残す側。
+                #   出欠が同じでも、消す側だけが塾長の記録なら塾長の記録を残す (残すと生徒が上書きできなくなる印)。
+                c.execute("SELECT class_label, att_date, status, source, updated_at FROM class_attend WHERE student_id = ?", (keep_id,))
+                _keep_att = {(r["class_label"], str(r["att_date"])[:10]): r for r in c.fetchall()}
+                c.execute("SELECT class_label, att_date, status, source, updated_at FROM class_attend WHERE student_id = ?", (drop_id,))
+                for r in c.fetchall():
+                    k = _keep_att.get((r["class_label"], str(r["att_date"])[:10]))
+                    if k is None or ((k["status"] or ""), (k["source"] or "")) == ((r["status"] or ""), (r["source"] or "")):
+                        continue
+                    drop_wins = _attend_keep_rank(r) > _attend_keep_rank(k)
+                    if (k["status"] or "") != (r["status"] or ""):
+                        attend_diffs.append({"class_label": r["class_label"], "att_date": str(r["att_date"])[:10],
+                                             "keep_status": k["status"], "drop_status": r["status"], "kept": "from" if drop_wins else "keep"})
+                    if drop_wins:
+                        _att_from_wins += 1
+                        if not dry:
+                            c.execute("DELETE FROM class_attend WHERE student_id = ? AND class_label = ? AND att_date = ?",
+                                      (keep_id, k["class_label"], k["att_date"]))
             dup = 0
             if ukey is not None:
                 if tbl == "student_json_state":
@@ -30527,6 +30696,8 @@ def admin_student_merge(student_id: int, payload: StudentMergeRequest, authoriza
                         exists = f"EXISTS (SELECT 1 FROM {tbl} k WHERE k.student_id = ?)"
                     c.execute(f"SELECT COUNT(*) AS n FROM {tbl} WHERE student_id = ? AND {exists}", (drop_id, keep_id))
                     dup = _merge_n(c.fetchone())
+                    if tbl == "class_attend" and dry:
+                        dup -= _att_from_wins   # 実行では残す側の行を先に消すので、消す側が勝つ日は「移る」に入る
                     if dup and not dry:
                         c.execute(f"DELETE FROM {tbl} WHERE student_id = ? AND {exists}", (drop_id, keep_id))
             if dup:
@@ -30564,8 +30735,19 @@ def admin_student_merge(student_id: int, payload: StudentMergeRequest, authoriza
         # 3) students 本体の項目を統合
         changes = {}
         for f in _MERGE_FILL_FIELDS:
+            if f in ("stripe_customer_id", "stripe_subscription_id"):
+                continue   # 下で組として扱う
             if f in keep and not keep.get(f) and drop.get(f):
                 changes[f] = drop[f]
+        # 💳 [2026-10-27] Stripe の顧客とサブスクは組で引き継ぐ。別々に埋めると「顧客 A + B のサブスク」になり、カード変更・支払いの
+        #   画面が別の顧客を開く。消す側だけがサブスクを持つなら消す側の組にする (両方なら上で 409)。
+        #   サブスクの無い顧客 ID だけは、残す側が空なら埋める (従来どおり)。
+        if _dsub and not _ksub:
+            for f in ("stripe_customer_id", "stripe_subscription_id"):
+                if f in keep and drop.get(f) and drop.get(f) != keep.get(f):
+                    changes[f] = drop[f]
+        elif not _dsub and "stripe_customer_id" in keep and not keep.get("stripe_customer_id") and drop.get("stripe_customer_id"):
+            changes["stripe_customer_id"] = drop["stripe_customer_id"]
         ks, ds = _MERGE_STATUS_RANK.get(keep.get("status") or "", 0), _MERGE_STATUS_RANK.get(drop.get("status") or "", 0)
         if ds > ks:
             changes["status"] = drop["status"]
@@ -30574,8 +30756,13 @@ def admin_student_merge(student_id: int, payload: StudentMergeRequest, authoriza
                 changes[f] = drop[f]
         if "created_at" in keep and drop.get("created_at") and keep.get("created_at") and str(drop["created_at"]) < str(keep["created_at"]):
             changes["created_at"] = drop["created_at"]
-        if "ai_disabled" in keep and int(keep.get("ai_disabled") or 0) == 1 and int(drop.get("ai_disabled") or 0) == 0:
-            changes["ai_disabled"] = 0   # 片方で AI が使えていたなら統合後も使える
+        if "ai_disabled" in keep:
+            _k_dis = int(keep.get("ai_disabled") or 0)
+            if _k_dis == 1 and _merge_ai_usable(drop):
+                changes["ai_disabled"] = 0   # 片方で AI が使えていたなら統合後も使える (体験終了・7 日体験の側は数えない)
+            elif _k_dis == 0 and int(drop.get("ai_disabled") or 0) == 1 and not _merge_ai_usable(keep):
+                # 逆向き: 残す側の「AI 可」は体験終了・7 日体験の名残で、消す側は AIなし枠の通塾生 → AIなし枠のまま
+                changes["ai_disabled"] = 1
         if "ai_trial_until" in keep and drop.get("ai_trial_until") and (not keep.get("ai_trial_until") or str(drop["ai_trial_until"]) > str(keep["ai_trial_until"])):
             changes["ai_trial_until"] = drop["ai_trial_until"]
         if "class_labels" in keep:
@@ -30597,17 +30784,32 @@ def admin_student_merge(student_id: int, payload: StudentMergeRequest, authoriza
             changes["student_email_verified"] = 1
         elif second and keep.get("student_email") and _normalize_email(keep["student_email"]) != second and not keep.get("parent_email") and "parent_email" not in changes:
             changes["parent_email"] = second
+        # 📧 [2026-10-27] 消す側のログイン用メールが統合後もログインに使えるか (画面の確認文が「ログインできます」と言い切らないため)。
+        #   ログインリンクは email と「確認済みの」student_email に届く。子メールが既にある残す側では保護者メール欄に入るか、どこにも残らない。
+        _final_se = _normalize_email(changes.get("student_email") or keep.get("student_email"))
+        _final_sev = bool(changes.get("student_email_verified") or keep.get("student_email_verified"))
+        from_email_login = bool(drop_email) and (drop_email == keep_email or (drop_email == _final_se and _final_sev))
+        from_email_saved_as = ("email" if drop_email == keep_email else "student_email" if drop_email == _final_se
+                               else "parent_email" if drop_email and drop_email == _normalize_email(changes.get("parent_email") or keep.get("parent_email"))
+                               else None)
+        # 疑いフラグを外すのは、残す側の疑いが消す側を指しているときだけ (3 重登録などで別の相手を指す疑いは残す)
+        cleared_flag = bool(payload.from_repeat_trial) and int(keep.get("repeat_trial_suspect") or 0) == 1 \
+            and _repeat_prior_id(keep.get("repeat_trial_reason")) == drop_id
         if changes and not dry:
             sets = ", ".join(f"{k} = ?" for k in changes)
             c.execute(f"UPDATE students SET {sets}, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (*changes.values(), keep_id))
 
         # 4) drop 側の生徒行を消し、監査記録
         if not dry:
+            if cleared_flag:
+                # repeat_trial_reason は残す = 遡及スキャン (reason IS NULL だけを見る) が同じ行を立て直さない
+                c.execute("UPDATE students SET repeat_trial_suspect = 0 WHERE id = ?", (keep_id,))
             c.execute("DELETE FROM students WHERE id = ?", (drop_id,))
             try:
                 c.execute("INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
                           ("admin_student_merge", json.dumps({"keep_id": keep_id, "from_id": drop_id, "moved": moved, "conflicts": conflicts,
-                                                              "fields": sorted(changes.keys()), "from_email_hash": _student_email_hash(drop_email)[:12]},
+                                                              "fields": sorted(changes.keys()), "from_email_hash": _student_email_hash(drop_email)[:12],
+                                                              "attend_diffs": len(attend_diffs), "cleared_repeat_flag": cleared_flag},
                                                              ensure_ascii=False), "admin"))
             except Exception:
                 pass
@@ -30623,7 +30825,8 @@ def admin_student_merge(student_id: int, payload: StudentMergeRequest, authoriza
     _mask = lambda e: (e[:2] + "…@" + e.split("@")[-1]) if e and "@" in e else e
     shown = {k: (_mask(v) if k in ("student_email", "parent_email") else v) for k, v in changes.items()}
     return {"ok": True, "dry_run": dry, "keep_id": keep_id, "from_id": drop_id, "moved": moved, "conflicts": conflicts,
-            "field_changes": shown, "keep_email": _mask(keep_email), "from_email": _mask(drop_email)}
+            "field_changes": shown, "keep_email": _mask(keep_email), "from_email": _mask(drop_email), "attend_diffs": attend_diffs,
+            "from_email_login": from_email_login, "from_email_saved_as": from_email_saved_as}
 
 
 @app.post("/api/admin/students/purge-stale-data")

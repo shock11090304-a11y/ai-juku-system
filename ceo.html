@@ -2495,7 +2495,7 @@
         <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
           <div style="flex:1;min-width:240px;">
             <div style="color:#fca5a5;font-weight:700;font-size:0.95rem;">🔁 <span id="repeatTrialCount">0</span>名 が「体験の重複再取得」の疑い <span style="color:#f87171;font-weight:400;font-size:0.78rem;">(別メールで再登録した既体験者)</span></div>
-            <div style="color:#fecaca;font-size:0.78rem;margin-top:0.25rem;">氏名 / 生徒メール / 同一カードが過去の体験者と一致。「本契約へ切替」＝体験を打ち切り即課金導線へ。「誤検知」＝フラグ解除して体験継続。<br>※「同一カード＋同一氏名」のケースは自動で即課金済み (ここには出ません)。</div>
+            <div style="color:#fecaca;font-size:0.78rem;margin-top:0.25rem;">氏名 / 生徒メール / 同一カードが過去の体験者と一致。通塾生が別メールで作った 2 つ目のアカウントなら「統合」(2 つを見比べて残す方を選ぶ)。「本契約へ切替」＝体験を打ち切り即課金導線へ (通塾生がかかわるときは出しません)。「誤検知」＝別人なのでフラグだけ外す。<br>※「同一カード＋同一氏名」のケースは自動で即課金済み (ここには出ません)。</div>
           </div>
           <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
             <button type="button" id="repeatTrialRefresh" style="background:rgba(255,255,255,0.08);color:#e4e4e7;border:1px solid rgba(255,255,255,0.2);padding:0.55rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.82rem;">🔄 再取得</button>
@@ -7302,6 +7302,128 @@
       if (refreshTbReqBtn) refreshTbReqBtn.addEventListener('click', loadTextbookMissingRequests);
 
       // 🔁 体験の重複再取得の疑い (2026-07-06 塾長指示): 別メール再登録の既体験者を一覧 + ワンクリック操作
+      // 🤝 [2026-10-27 塾長指示] 2 つのアカウントを見比べて統合する。通塾生も status='trial' (10 年) で作られるので、
+      //   塾生アプリに別メールで登録し直した在籍生がこの枠に出る (2026-10-26 に 2 名)。通塾生に「本契約へ切替」を押すと
+      //   体験終了になりアプリに入れなくなるため、サーバの can_convert=false の生徒には切替ボタンを出さない (API も 409)。
+      //   ★統合ボタンは「どちらかが通塾生」のときだけ出す。体験の取り直し組を統合すると古いアカウントに新しい体験期間が付く
+      //     (API も from_repeat_trial で 409)。氏名違いの同一カードは兄弟の可能性があるので出さず、氏名違いのそれ以外
+      //     (生徒メール一致・影アカウント疑い) は警告つきの控えめなボタンだけ出す。
+      //   ★下の const は loadRepeatTrialSuspects() の初回呼び出しより前に置く (宣言前に触ると例外で枠が黙って消える)。
+      const _rtEsc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+      const _RT_TABLE_LABELS = {
+        study_logs: '学習記録', study_plans: '学習計画', exam_results: 'テスト結果', curricula: 'カリキュラム', notifications: 'お知らせ',
+        otp_codes: 'ログインコード', usage_monthly: '利用回数', mock_exam_sessions: '模試', vocab_progress: '単語', payments: '支払い',
+        ai_tutor_messages: 'AIチューター', homework_assignments: '宿題', question_attempts: '演習の解答', student_weakness: '弱点',
+        student_weakness_history: '弱点の履歴', grammar_drill_assignments: 'ドリル配信', admission_likelihood: '合格可能性',
+        worksheet_archives: '週次プリント', class_attend: '出欠', class_attendance: '出欠連絡', lesson_print_downloads: 'プリントDL',
+        student_materials: '教材', ai_tutor_solve_log: 'AI解説', line_link_tokens: 'LINE連携コード', student_json_state: '保存データ',
+        anthropic_usage_log: 'AI利用記録', course_applications: '申込', sapuri_lesson_progress: 'スタサプ視聴', homework_sheets: '解答用紙',
+        'messages(sender)': 'メッセージ(送信)', 'messages(recipient)': 'メッセージ(受信)', 'referrals(referrer)': '紹介(した)',
+        'referrals(referred)': '紹介(された)', 'invite_codes(used_by)': '招待コード', events: '活動ログ',
+      };
+      const _RT_ATTEND_LABELS = { present: '出席', absent: '欠席', late: '遅刻' };
+      const _RT_STATUS_LABELS = { trial: '体験中', expired: '体験終了', paid: '有料', past_due: '支払い遅延', canceled: '解約' };
+      const _rtCounts = obj => Object.entries(obj || {}).map(([k, n]) => `${_RT_TABLE_LABELS[k] || k} ${n}件`).join(' / ');
+      const _rtActivity = a => a ? (a.study_logs || 0) + (a.attempts || 0) + (a.homework || 0) + (a.attend || 0) : -1;
+      // サーバの _normalize_person_name と同じ正規化 (全角/半角・空白・中黒の揺れを吸収)
+      const _rtNameKey = s => String(s || '').normalize('NFKC').replace(/[\s　・,.、。]/g, '').toLowerCase();
+      // busy: 統合の最中は自動更新で描き直さない / seq・shown: 画面に出ている応答より古い応答は描かない (追い越されても飢えない)
+      // accounts: 確認文に氏名とメールを出す (60 秒の自動更新でカードがずれても、押した相手を目で確かめられる)
+      const _rtState = { busy: false, seq: 0, shown: 0, accounts: new Map() };
+
+      function _rtAcctBox(a, title, recommended) {
+        if (!a) return '';
+        const fmt = v => (v && typeof _fmtJst === 'function' && _fmtJst(v)) || (v ? String(v).slice(0, 16) : 'なし');
+        const kind = a.enrolled ? '通塾生' : (_RT_STATUS_LABELS[a.status] || a.status || '?');
+        const row = (k, v) => `<div style="display:flex;gap:0.5rem;"><span style="color:#94a3b8;min-width:5.5em;flex-shrink:0;">${k}</span><span style="color:#e4e4e7;overflow-wrap:anywhere;min-width:0;">${v}</span></div>`;
+        return `<div style="flex:1 1 240px;min-width:0;padding:0.55rem 0.7rem;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid ${recommended ? 'rgba(74,222,128,0.6)' : 'rgba(255,255,255,0.12)'};font-size:0.76rem;line-height:1.55;">
+          <div style="font-weight:700;color:#f1f5f9;margin-bottom:0.25rem;">${_rtEsc(title)} <span style="color:#94a3b8;font-weight:400;">#${_rtEsc(a.id)}</span>${recommended ? ' <span style="color:#4ade80;">おすすめ: こちらを残す</span>' : ''}</div>
+          ${row('メール', _rtEsc(a.email || '') + (a.student_email ? `<br><span style="color:#94a3b8;">子メール ${_rtEsc(a.student_email)}</span>` : ''))}
+          ${row('登録', _rtEsc(a.created_at ? fmt(a.created_at).slice(0, 10) : 'なし'))}
+          ${row('最終ログイン', _rtEsc(a.last_login_at ? fmt(a.last_login_at) : 'なし'))}
+          ${row('受講クラス', _rtEsc((a.classes || []).join('・') || 'なし'))}
+          ${row('学習記録', _rtEsc(`${a.study_logs || 0}件` + (a.study_logs_last ? `（最終 ${a.study_logs_last}）` : '')))}
+          ${row('演習・宿題', _rtEsc(`解答 ${a.attempts || 0}問 / 宿題 ${a.homework || 0}件 / 出欠 ${a.attend || 0}件`))}
+          ${row('区分', _rtEsc(`${kind} / AI ${a.ai ? 'あり' : 'なし'} / LINE ${a.line ? '連携済み' : 'なし'} / カード登録 ${a.card ? 'あり' : 'なし'}`))}
+        </div>`;
+      }
+
+      function _rtNetErr(e, afterWrite) {
+        const timeout = e && (e.name === 'TimeoutError' || /abort/i.test(String(e.name)));
+        return (timeout ? '⚠️ サーバから応答がありません。' : '通信エラー: ' + (e && e.message) + '\n')
+          + (afterWrite ? '統合できたかは「🔄 再取得」で確かめてください。' : 'もう一度押してください。');
+      }
+
+      // 下見 (dry_run) で「移る記録・片方だけ残る記録・出欠の食い違い・変わる項目・メール」を確認文に出してから実行する
+      async function _rtMerge(keepId, fromId, btn) {
+        if (_rtState.busy) return;
+        const card = btn.closest('[data-rt-card]');
+        const btns = card ? Array.from(card.querySelectorAll('button')) : [btn];
+        const setBusy = on => { _rtState.busy = on; btns.forEach(b => { b.disabled = on; }); };
+        const overlay = text => (typeof ceoBusyOverlay === 'function' ? ceoBusyOverlay(text) : () => {});
+        const url = `/api/admin/students/${encodeURIComponent(keepId)}/merge`;
+        // 生徒削除と同じく時間切れを付ける (students の行ロックで止まっても、キー入力を塞ぐ処理中画面が閉じなくならない)
+        const post = body => AdminAuth.fetch(url, Object.assign({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+          typeof _ceoTimeoutSignal === 'function' ? { signal: _ceoTimeoutSignal(typeof _CEO_DELETE_TIMEOUT_MS === 'number' ? _CEO_DELETE_TIMEOUT_MS : 30000) } : {}));
+        setBusy(true);
+        let close = overlay('⏳ 統合の中身を確認しています…');
+        let p;
+        try {
+          const r = await post({ from_id: Number(fromId), dry_run: true, from_repeat_trial: true });
+          p = await r.json().catch(() => ({}));
+          if (!r.ok) { alert('下見に失敗しました: ' + (p.detail || r.status)); return; }
+        } catch (e) {
+          alert(_rtNetErr(e, false));
+          return;
+        } finally { close(); setBusy(false); }
+        const ka = _rtState.accounts.get(String(keepId)) || {}, fa = _rtState.accounts.get(String(fromId)) || {};
+        const who = a => `${a.name || '(名前未登録)'} / ${a.email || ''}`;
+        const lab = s => _RT_ATTEND_LABELS[s] || s || '記録なし';
+        const lines = [`残す: #${keepId} ${who(ka)}`, `消す: #${fromId} ${who(fa)}`, '',
+          `#${fromId} の記録を #${keepId} に移してから、#${fromId} を消します。`,
+          '移る記録: ' + (_rtCounts(p.moved) || 'なし')];
+        if (_rtCounts(p.conflicts)) lines.push('両方にあって片方だけ残す: ' + _rtCounts(p.conflicts) + '（基本は残す側。出欠は下の決め方）');
+        const fc = p.field_changes || {};
+        if (fc.class_labels) lines.push('受講クラスは両方を合わせます。');
+        if (fc.ai_disabled === 0) lines.push('⚠️ AI が使えるようになります（消す側で AI が使えていたため）。');
+        if (fc.ai_disabled === 1) lines.push('AI は使えない設定のままにします（残す側の「AI あり」は体験の名残で、消す側は AIなし枠のため）。');
+        if (fc.status) lines.push(`状態が「${_RT_STATUS_LABELS[fc.status] || fc.status}」になります。`);
+        if (fc.course) lines.push(`コースが「${fc.course === 'kokuritsu_nankan' ? '国公立難関大コース (通塾生)' : fc.course}」になります。`);
+        if (fc.stripe_subscription_id) lines.push('消す側のカード登録 (Stripe の定期課金) を残す側に引き継ぎます。課金も続きます。');
+        const diffs = p.attend_diffs || [];
+        if (diffs.length) {
+          lines.push('', '出欠が食い違う日（塾長の記録 → 新しい申告 の順で残します）:');
+          diffs.forEach(d => lines.push(`・${d.att_date} ${d.class_label}: 残す側=${lab(d.keep_status)} / 消す側=${lab(d.drop_status)} → ${lab(d.kept === 'from' ? d.drop_status : d.keep_status)}`));
+        }
+        if (p.from_email) {
+          lines.push('', p.from_email_login ? `消す側のメール (${p.from_email}) でも、統合後のアカウントにログインできます。`
+            : p.from_email_saved_as === 'parent_email' ? `⚠️ 消す側のメール (${p.from_email}) は保護者メールとして残り、そのメールではログインできなくなります。`
+            : p.from_email_saved_as === 'student_email' ? `⚠️ 消す側のメール (${p.from_email}) は未確認の子メールとして残り、確認が済むまでそのメールではログインできません。`
+            : `⚠️ 消す側のメール (${p.from_email}) はどこにも残らず、そのメールではログインできなくなります。`);
+        }
+        lines.push('', 'この操作は元に戻せません。統合しますか？');
+        if (!confirm(lines.join('\n'))) return;
+        setBusy(true);
+        close = overlay('🤝 統合しています…');
+        let done = false;
+        try {
+          const r2 = await post({ from_id: Number(fromId), dry_run: false, from_repeat_trial: true });
+          const j2 = await r2.json().catch(() => ({}));
+          if (!r2.ok) { alert('統合に失敗しました: ' + (j2.detail || r2.status)); return; }
+          done = true;
+          alert(`✅ 統合しました。#${keepId} だけが残りました。` + (j2.from_email_login ? 'どちらのメールでもログインできます。' : ''));
+        } catch (e) {
+          alert(_rtNetErr(e, true));
+        } finally {
+          close();
+          // 成功したカードのボタンは押せないまま残す (取り直しが終わるまで、消えた生徒のボタンを押させない)
+          if (done) _rtState.busy = false; else setBusy(false);
+          await loadRepeatTrialSuspects({ force: true });
+          // 消えた生徒を名簿・生徒詳細からも外す (保存・削除の直後と同じく、統合前に出た応答は描かない)
+          if (typeof window.loadLiveMetrics === 'function') Promise.resolve(window.loadLiveMetrics({ dropOlder: true })).catch(() => {});
+        }
+      }
+
       loadRepeatTrialSuspects();
       setInterval(loadRepeatTrialSuspects, 60000);
       const _rtRefresh = document.getElementById('repeatTrialRefresh');
@@ -7323,13 +7445,18 @@
           _rtRescan.disabled = false; _rtRescan.textContent = _label;
         }
       });
-      // 動的に描画されるボタンは event delegation で処理 (本契約へ切替 / 誤検知)
+      // 動的に描画されるボタンは event delegation で処理 (統合 / 本契約へ切替 / 誤検知)
       const _rtList = document.getElementById('repeatTrialList');
       if (_rtList) _rtList.addEventListener('click', async (ev) => {
         const btn = ev.target.closest('button[data-rt-action]');
-        if (!btn) return;
-        const sid = btn.getAttribute('data-rt-id');
+        if (!btn || btn.disabled) return;
         const action = btn.getAttribute('data-rt-action');
+        if (action === 'merge') {
+          const keepId = btn.getAttribute('data-rt-keep'), fromId = btn.getAttribute('data-rt-from');
+          if (keepId && fromId) await _rtMerge(keepId, fromId, btn);
+          return;
+        }
+        const sid = btn.getAttribute('data-rt-id');
         if (!sid) return;
         if (action === 'convert' && !confirm('この生徒の無料体験を打ち切り、本契約(即時課金)の導線へ切り替えます。よろしいですか？')) return;
         btn.disabled = true;
@@ -7347,8 +7474,13 @@
         }
       });
 
-      async function loadRepeatTrialSuspects() {
+      async function loadRepeatTrialSuspects(opts) {
         if (!window.AdminAuth || !AdminAuth.getToken()) return;  // 未ログインならスキップ (gate を誤発火させない)
+        // 統合の最中は自動更新・再取得で描き直さない (統合のあと force で取り直す)
+        const force = !!(opts && opts.force === true);
+        if (_rtState.busy && !force) return;
+        const mySeq = ++_rtState.seq;
+        const stale = () => mySeq < _rtState.shown || (_rtState.busy && !force);
         const alertEl = document.getElementById('repeatTrialAlert');
         const countEl = document.getElementById('repeatTrialCount');
         const listEl = document.getElementById('repeatTrialList');
@@ -7356,29 +7488,58 @@
         if (!alertEl || !listEl) return;
         try {
           const r = await AdminAuth.fetch('/api/admin/students/repeat-trial-suspects');
+          if (stale()) return;
           if (!r.ok) { alertEl.style.display = 'none'; return; }
           const j = await r.json();
+          if (stale()) return;
+          _rtState.shown = mySeq;
           const rows = j.suspects || [];
+          _rtState.accounts = new Map();
+          rows.forEach(s => [s.account, s.prior].forEach(a => { if (a && a.id != null) _rtState.accounts.set(String(a.id), a); }));
           if (countEl) countEl.textContent = rows.length;
           if (statusEl) statusEl.textContent = rows.length
             ? `（別メール再登録の疑い ${rows.length}名 — 下で対応してください）`
             : '（別メール再登録の既体験者を検知 — 現在該当なし）';
           if (rows.length === 0) { alertEl.style.display = 'none'; listEl.innerHTML = ''; return; }
-          const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-          listEl.innerHTML = rows.map(s => `
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap;padding:0.6rem 0.75rem;background:rgba(15,23,42,0.5);border-radius:8px;">
-              <div style="flex:1;min-width:220px;">
-                <div style="color:#fecaca;font-weight:700;font-size:0.88rem;">${esc(s.name || '(名前未登録)')} <span style="color:#94a3b8;font-weight:400;font-size:0.76rem;">${esc(s.grade || '')} / ${esc(s.email || '')}</span></div>
-                <div style="color:#fca5a5;font-size:0.76rem;margin-top:0.2rem;">${esc(s.reason || '')}</div>
+          const esc = _rtEsc;
+          const btnCss = 'padding:0.45rem 0.85rem;border-radius:7px;cursor:pointer;font-size:0.78rem;';
+          const note = t => `<div style="color:#fde68a;font-size:0.74rem;margin-top:0.45rem;">${esc(t)}</div>`;
+          listEl.innerHTML = rows.map(s => {
+            const a = s.account, pr = a ? s.prior : null;
+            const enrolledPair = !!(pr && (a.enrolled || pr.enrolled));
+            const sameName = !!(pr && _rtNameKey(a.name) && _rtNameKey(a.name) === _rtNameKey(pr.name));
+            // 氏名違いでも、生徒メール一致・影アカウント疑い (カード以外の一致) は同一人物の表記ゆれがありうる → 控えめな統合ボタン
+            //   (おすすめ・緑の主ボタンは出さない)。氏名違いの同一カードは兄弟の可能性が高いので統合ボタンを出さない。
+            const cardMatch = /^同一カード/.test(String(s.reason || ''));
+            const canMerge = enrolledPair && (sameName || !cardMatch);
+            // おすすめ = 学習の記録が多い方 (同じなら前からある方)。記録の付け替えも食い違いも少なく済む。
+            //   見比べの枠もボタンもおすすめを先 (左) に並べ、緑の枠と緑のボタンを同じ側にそろえる。
+            const keepPrior = pr ? _rtActivity(pr) >= _rtActivity(a) : true;
+            const first = keepPrior ? pr : a, second = keepPrior ? a : pr;
+            const label = x => (x === pr ? '前からある' : '今回の登録');
+            const mergeBtn = (k, f, primary) => `<button type="button" data-rt-action="merge" data-rt-keep="${esc(k.id)}" data-rt-from="${esc(f.id)}" style="${btnCss}${primary
+              ? 'background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;font-weight:700;'
+              : 'background:rgba(34,197,94,0.1);color:#bbf7d0;border:1px solid rgba(34,197,94,0.45);'}">🤝 ${k === pr ? '前からある方' : '今回の方'} (#${esc(k.id)}) を残して統合</button>`;
+            return `
+            <div data-rt-card style="padding:0.6rem 0.75rem;background:rgba(15,23,42,0.5);border-radius:8px;">
+              <div style="color:#fecaca;font-weight:700;font-size:0.88rem;">${esc(s.name || '(名前未登録)')} <span style="color:#94a3b8;font-weight:400;font-size:0.76rem;">${esc(s.grade || '')} / ${esc(s.email || '')}</span></div>
+              <div style="color:#fca5a5;font-size:0.76rem;margin-top:0.2rem;">${esc(s.reason || '')}</div>
+              ${pr ? `<div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.55rem;">${_rtAcctBox(first, label(first), canMerge && sameName)}${_rtAcctBox(second, label(second), false)}</div>`
+                : (s.prior_id ? note(`比べる相手 (#${s.prior_id}) は見つかりません（統合・削除済み）。別人なら「誤検知」を押してください。`) : '')}
+              ${enrolledPair && !sameName ? note(cardMatch ? '氏名が違うため統合ボタンは出していません（同じカードを使う兄弟の可能性があります）。'
+                : '⚠️ 氏名の書き方が違います。同じ生徒だと確かめられたときだけ統合してください。') : ''}
+              ${s.can_convert === false ? note('通塾生がかかわるため「本契約へ切替」は出していません（通塾生のアカウントでは、締め出しや思わぬ即時課金になります）。'
+                + (canMerge ? '同じ生徒なら統合、別人なら誤検知を押してください。' : '別人なら誤検知を押してください。')) : ''}
+              <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.55rem;">
+                ${canMerge ? mergeBtn(first, second, sameName) + mergeBtn(second, first, false) : ''}
+                ${s.can_convert === false ? '' : `<button type="button" data-rt-action="convert" data-rt-id="${esc(s.id)}" style="${btnCss}background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;font-weight:700;">本契約へ切替(体験打切)</button>`}
+                <button type="button" data-rt-action="dismiss" data-rt-id="${esc(s.id)}" style="${btnCss}background:rgba(255,255,255,0.08);color:#e4e4e7;border:1px solid rgba(255,255,255,0.2);">${pr ? '別人なので無視(誤検知)' : '誤検知(無視)'}</button>
               </div>
-              <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-                <button type="button" data-rt-action="convert" data-rt-id="${esc(s.id)}" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;padding:0.45rem 0.85rem;border-radius:7px;cursor:pointer;font-size:0.78rem;font-weight:700;">本契約へ切替(体験打切)</button>
-                <button type="button" data-rt-action="dismiss" data-rt-id="${esc(s.id)}" style="background:rgba(255,255,255,0.08);color:#e4e4e7;border:1px solid rgba(255,255,255,0.2);padding:0.45rem 0.85rem;border-radius:7px;cursor:pointer;font-size:0.78rem;">誤検知(無視)</button>
-              </div>
-            </div>
-          `).join('');
+            </div>`;
+          }).join('');
           alertEl.style.display = 'block';
         } catch (e) {
+          if (stale()) return;   // 新しい一覧が出たあとに古い取得が落ちても、枠を消さない
           console.warn('[repeatTrial] load failed:', e);
           alertEl.style.display = 'none';
         }
