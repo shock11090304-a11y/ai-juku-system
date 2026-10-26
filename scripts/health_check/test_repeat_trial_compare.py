@@ -305,6 +305,10 @@ def main():
           "dry_run: true, from_repeat_trial: true" in html and "dry_run: false, from_repeat_trial: true" in html
           and html.index("dry_run: true, from_repeat_trial: true") < html.index("dry_run: false, from_repeat_trial: true"))
     check("確認文のログイン案内はサーバの from_email_login で出し分け", "p.from_email_login ?" in html)
+    check("確認文と完了の案内の両方で「消す側でログイン中の端末はログアウトされる」と伝える",
+          "(消す側) でログイン中のスマホ・パソコンは、統合するとログアウトされます" in html
+          and "でログインしていたスマホ・パソコンはログアウトされています" in html
+          and html.index("統合するとログアウトされます") < html.index("この操作は元に戻せません。統合しますか？"))
     check("統合中は自動更新で描き直さない・統合後は名簿も取り直す",
           "if (_rtState.busy && !force) return;" in html and "loadRepeatTrialSuspects({ force: true })" in html and "loadLiveMetrics({ dropOlder: true })" in html)
     check("const は初回の呼び出しより前に宣言", html.index("const _rtState =") < html.index("      loadRepeatTrialSuspects();\n"))
