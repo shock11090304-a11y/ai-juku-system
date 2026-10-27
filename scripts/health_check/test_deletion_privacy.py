@@ -9,6 +9,8 @@
   4. 学習記録の塾長コメント (study_log_reactions) が孤児化せず消える
   5. Stripe 顧客が付いていた生徒なら、レスポンスに「Stripe 側は残る」注記が出る
   6. cascade 4 リストの機械検査 (check_student_cascade_lists.py) が通る
+  7. (2026-10-27) 削除の下見 (dry_run) の応答には name / email がある。CEO の 🗑️ はこれを一覧の行と
+     突き合わせるので、無いとどの生徒も「一致しません」で消せない (1. で snapshot から外したときに起きていた)
 """
 import base64
 import datetime
@@ -90,10 +92,28 @@ def main():
     c.execute("INSERT INTO study_log_reactions (log_id, actor_type, actor_id, kind, comment) VALUES (?,?,?,?,?)", (log_id, "admin", None, "comment", "いいね"))
     conn.commit(); conn.close()
 
+    print("7) 削除の下見 (CEO の 🗑️ が一覧の行と突き合わせる値)")
+    r = client.post(f"/api/admin/students/{sid}/delete", json={"dry_run": True}, headers=adm)
+    snap = (r.json().get("snapshot") or {}) if r.status_code == 200 else {}
+    check("下見の応答に name / email がある (無いと画面から誰も消せない)",
+          snap.get("name") == "Delete Me" and snap.get("email") == email, (r.status_code, sorted(snap)))
+    ceo_js = open(os.path.join(REPO, "ceo.js"), encoding="utf-8").read()
+    check("ceo.js は下見の snapshot.name / snapshot.email で照合している (名前を変えたらこのテストも直す)",
+          "snapshot.name" in ceo_js and "snapshot.email" in ceo_js)
+    conn = mod.db(); c = conn.cursor()
+    c.execute("SELECT COUNT(*) AS n FROM events WHERE name = 'admin_student_deleted'")
+    check("下見では監査記録を書かない", c.fetchone()["n"] == 0)
+    c.execute("SELECT COUNT(*) AS n FROM students WHERE id = ?", (sid,))
+    check("下見では生徒は消えない", c.fetchone()["n"] == 1)
+    conn.close()
+
     r = client.post(f"/api/admin/students/{sid}/delete", json={"confirm_email": email, "dry_run": False, "cancel_stripe": False}, headers=adm)
     check("削除 API が 200", r.status_code == 200, f"{r.status_code} {r.text[:200]}")
     body = r.json() if r.status_code == 200 else {}
     check("レスポンスに Stripe 側が残る注記", bool(body.get("stripe_note")), body)
+    done_snap = body.get("snapshot") or {}
+    check("削除後の応答の snapshot には name / email が無い (付けるのは下見だけ)",
+          "name" not in done_snap and "email" not in done_snap, sorted(done_snap))
 
     conn = mod.db(); c = conn.cursor()
     c.execute("SELECT COUNT(*) AS n FROM students WHERE id = ?", (sid,)); check("生徒本体は消える", c.fetchone()["n"] == 0)

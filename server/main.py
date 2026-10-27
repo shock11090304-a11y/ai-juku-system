@@ -26302,7 +26302,12 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
         }
 
         if payload.dry_run:
-            return {"ok": True, "dry_run": True, "snapshot": snapshot, "message": "削除されません (dry_run)"}
+            # 🩹 2026-10-27 下見の応答だけは氏名/メールを付ける。CEO の 🗑️ (ceo.js _confirmAndDeleteStudentInner) は
+            #   一覧の行の値とこの name / email を突き合わせてから消す。2026-09-07 に snapshot から外して以来、
+            #   どの生徒も「一致しません / 氏名もメールも未登録」で止まり、画面から誰も消せなくなっていた。
+            #   ★監査記録 (events) と削除後の応答の snapshot には入れない (上の 2026-09-07 の方針のまま)。
+            preview = dict(snapshot, name=student["name"], email=student["email"])
+            return {"ok": True, "dry_run": True, "snapshot": preview, "message": "削除されません (dry_run)"}
 
         # 監査ログ: 削除前スナップショット
         try:
