@@ -7,7 +7,7 @@
   B. 古文の API (subject=kobun): 初回に DB の行が JSON に合わせて入る・出題は古文の語だけ・
      選択肢は「正解 + 固定の誤答 3 つ」・回答後の補足 (漢字・ほかの意味・メモ) が付く・統計/間違えた単語は古文だけ
   C. 英語の API (subject 省略): 古文の行を出題にも誤答の候補にも統計にも入れない (古文を入れる前と同じ値)
-  D. JSON を直して再起動したら、DB の古文の行も直る (同期は 1 プロセス 1 回)
+  D. JSON を直して再起動したら、DB の古文の行も直る (同期は 1 プロセス 1 回)。後から足した基礎の語も基礎→標準→難関の順で出る
   E. 画面の配線: kobun.html が data-subject="kobun" で vocab.js を読み、vocab.js が subject を送る
 """
 import importlib.util
@@ -62,7 +62,7 @@ def main():
           byw["かる（離る）"]["display"] == "かる" and byw["たまふ（四段）"]["display"] == "たまふ（四段）"
           and all("（" not in w["display"] for w in words if not w["word"].startswith("たまふ")))
     order = [w["level"] for w in words]
-    check("並びは基礎→標準→難関 (新しい語は id 順 = この順で出る)",
+    check("並びは基礎→標準→難関 (初回の取込はこの順)",
           order == sorted(order, key=["kobun_kiso", "kobun_hyojun", "kobun_nankan"].index))
 
     mod = load_main()
@@ -165,6 +165,26 @@ def main():
     mod._KOBUN_SYNC.update({"done": False, "tried_at": 0.0})
     st4 = client.get("/api/vocab/stats?subject=kobun", headers=H).json()
     check("JSON に戻せば元のレベルに戻り、進捗も戻る", st4.get("total_words_in_pool") == len(words) and st4.get("mistakes_count") == 1, st4)
+
+    # 後から足した基礎の語 (id が大きい) は、先に入っている標準・難関の語より先に出る
+    conn = mod.db(); c = conn.cursor()
+    c.execute("INSERT INTO students (name, email, grade, goal) VALUES (?,?,?,?)", ("テスト 生徒2", "kobun2@example.invalid", "高3", "x"))
+    c.execute("SELECT id FROM students WHERE email=?", ("kobun2@example.invalid",))
+    sid2 = c.fetchone()[0]
+    c.execute("INSERT INTO vocab_words (word, pos, meaning_jp, level, tags) VALUES (?,?,?,?,?)",
+              ("（後から足した基礎の語）", "名詞", "テスト", "kobun_kiso", "kobun"))
+    c.execute("SELECT id FROM vocab_words WHERE word=?", ("（後から足した基礎の語）",))
+    late_id = c.fetchone()[0]
+    c.execute("SELECT id FROM vocab_words WHERE level='kobun_kiso' AND id<>?", (late_id,))
+    for (wid,) in c.fetchall():  # ほかの基礎の語は学習済み (期限はずっと先)
+        c.execute("INSERT INTO vocab_progress (student_id, word_id, box, next_review_at, review_count, correct_count) "
+                  "VALUES (?,?,?,?,?,?)", (sid2, wid, 3, "2999-01-01T00:00:00+00:00", 1, 1))
+    conn.commit(); conn.close()
+    H2 = {"Authorization": "Bearer " + mod._sign_session_token(sid2)}
+    q5 = client.get("/api/vocab/queue?subject=kobun&limit=3", headers=H2).json()["queue"]
+    check("後から足した基礎の語は、先に入っている標準・難関の語より先に出る",
+          [x["word"] for x in q5][:1] == ["（後から足した基礎の語）"] and [x["level"] for x in q5][1:] == ["kobun_hyojun"] * 2,
+          [(x["word"], x["level"]) for x in q5])
 
     print("E. 画面の配線")
     kh = open(os.path.join(REPO, "kobun.html"), encoding="utf-8").read()

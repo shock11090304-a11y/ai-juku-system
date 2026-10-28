@@ -42461,6 +42461,14 @@ def _vocab_progress_sql(subject: str, col: str = "word_id") -> str:
     return f" AND {col} NOT IN (SELECT id FROM vocab_words WHERE level LIKE 'kobun_%')"
 
 
+def _vocab_new_order_sql(subject: str) -> str:
+    """未学習の語を出す順 (定数だけ)。英語は従来どおり id 順。古文は基礎→標準→難関、同じレベルの中は id 順
+    (後から足した基礎の語が、先に入っている難関の語より後に回らないように)。"""
+    if subject == "kobun":
+        return (" ORDER BY CASE level WHEN 'kobun_kiso' THEN 0 WHEN 'kobun_hyojun' THEN 1 ELSE 2 END, id")
+    return " ORDER BY id"
+
+
 def _kobun_vocab_ensure_synced() -> None:
     """vocab_words の古文の行を kobun_vocab_v1.json に合わせる (無い語は足す・変わった語は直す・
     JSON から外した語は kobun_retired に付け替える = 進捗の行は消さない・JSON に戻せば元のレベルに戻る)。
@@ -42487,7 +42495,7 @@ def _kobun_vocab_ensure_synced() -> None:
             c.execute("SELECT word FROM vocab_words WHERE level NOT LIKE 'kobun_%'")
             other_words = {(r["word"] if hasattr(r, "keys") else r[0]) for r in c.fetchall()}
             inserted = updated = retired = 0
-            for w in _KOBUN_VOCAB.values():  # JSON の順 (基礎→標準→難関) で足す = 新しい語は id 順にこの順で出る
+            for w in _KOBUN_VOCAB.values():  # JSON の順 (基礎→標準→難関) で足す。後から足した語も出す順は _vocab_new_order_sql でレベル順
                 vals = (w.get("pos") or "", w["meaning_jp"], w.get("example") or "", w.get("example_jp") or "",
                         w["level"], "kobun")
                 cur = have.get(w["word"])
@@ -42715,7 +42723,7 @@ def vocab_queue(student_id: Optional[int] = None, level: Optional[str] = None, l
         if level:
             sql_new += " AND level = ?"
             params2.append(level)
-        sql_new += " ORDER BY id LIMIT ?"
+        sql_new += _vocab_new_order_sql(subj) + " LIMIT ?"
         params2.append(remaining)
         c.execute(sql_new, tuple(params2))
         for r in c.fetchall():
@@ -43167,7 +43175,7 @@ def vocab_quiz(student_id: Optional[int] = None, level: Optional[str] = None, li
             if univ:
                 sql_new += " AND tags LIKE ?"
                 params2.append(f"%univ:{univ}%")
-            sql_new += " ORDER BY id LIMIT ?"
+            sql_new += _vocab_new_order_sql(subj) + " LIMIT ?"
             params2.append((limit - len(candidates)) * 3)
             c.execute(sql_new, tuple(params2))
             for r in c.fetchall():
