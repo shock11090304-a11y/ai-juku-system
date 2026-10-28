@@ -8,6 +8,15 @@
     ? 'http://localhost:8000'
     : window.location.origin;
 
+  // 📜 古文単語 (2026-10-28): kobun.html は <body data-subject="kobun"> でこの画面の仕組みをそのまま使う。
+  //   英語 (vocab.html) は subject を送らない = サーバは従来どおり英語の語だけを返す。
+  const IS_KOBUN = !!(document.body && document.body.dataset.subject === 'kobun');
+  const SUBJECT_QS = IS_KOBUN ? '&subject=kobun' : '';
+  // 古文の応答には subject: 'kobun' が付く。付いていない = サーバが古文に未対応 (画面だけ先に公開された間など)。
+  //   そのまま進めると英単語が出題され、英単語の記録に入るので、古文の画面では使わない。
+  const KOBUN_NOT_READY = '古文単語はただいま準備中です。少し時間をおいてから開き直してください。';
+  function kobunNotReady(data) { return IS_KOBUN && (!data || data.subject !== 'kobun'); }
+
   let queue = [];
   let queueIndex = 0;
   let currentLevel = '';
@@ -26,6 +35,7 @@
 
   // === Web Speech API 音声読み上げ ===
   function speak(text, rate = 0.9) {
+    if (IS_KOBUN) return; // 英語の音声で古語 (歴史的仮名遣い) を読ませない
     if (!('speechSynthesis' in window) || !text) return;
     try {
       window.speechSynthesis.cancel();
@@ -60,9 +70,10 @@
   async function loadStats() {
     try {
       const studentId = getStudentId();
-      const res = await vfetch(`${BACKEND_URL}/api/vocab/stats?student_id=${studentId}`);
+      const res = await vfetch(`${BACKEND_URL}/api/vocab/stats?student_id=${studentId}${SUBJECT_QS}`);
       if (!res.ok) return;
       const s = await res.json();
+      if (kobunNotReady(s)) return;
       document.getElementById('vcStatsCard').style.display = '';
       document.getElementById('vcDueNow').textContent = s.due_now || 0;
       document.getElementById('vcMastered').textContent = s.mastered || 0;
@@ -105,14 +116,17 @@
     try {
       const studentId = getStudentId();
       const params = new URLSearchParams({ student_id: studentId, limit: 100 });
+      if (IS_KOBUN) params.set('subject', 'kobun');
       if (currentLevel) params.set('level', currentLevel);
       if (currentUniv) params.set('univ', currentUniv);
       const res = await vfetch(`${BACKEND_URL}/api/vocab/mistaken-words?${params}`);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
+      if (kobunNotReady(data)) { listEl.innerHTML = `<div class="vc-mistakes-list-empty">${esc(KOBUN_NOT_READY)}</div>`; return; }
       const items = data.items || [];
       if (items.length === 0) {
-        listEl.innerHTML = '<div class="vc-mistakes-list-empty">該当する間違えた単語はありません。レベル/大学フィルタを外すと表示されるかもしれません。</div>';
+        listEl.innerHTML = '<div class="vc-mistakes-list-empty">該当する間違えた単語はありません。'
+          + (IS_KOBUN ? 'レベルの絞り込みを外すと表示されるかもしれません。' : 'レベル/大学フィルタを外すと表示されるかもしれません。') + '</div>';
         mistakesListLoaded = true;
         return;
       }
@@ -123,7 +137,7 @@
           <div class="vc-mistake-row">
             <div class="vc-mistake-word-block">
               <div class="vc-mistake-word">${esc(it.word)}</div>
-              <div class="vc-mistake-meta">${posLabel}<span class="vc-mistake-level">${esc(it.level || '')}</span></div>
+              <div class="vc-mistake-meta">${posLabel}<span class="vc-mistake-level">${esc(IS_KOBUN ? labelLevel(it.level) : (it.level || ''))}</span></div>
             </div>
             <div class="vc-mistake-meaning">${esc(it.meaning_jp || '')}</div>
             <div class="vc-mistake-stats">
@@ -144,6 +158,7 @@
     const studentId = getStudentId();
     const fetchLimit = univ ? 60 : 20;
     const params = new URLSearchParams({ student_id: studentId, limit: fetchLimit });
+    if (IS_KOBUN) params.set('subject', 'kobun');
     if (level) params.set('level', level);
     if (univ) params.set('univ', univ);
     if (useMistakesOnly) params.set('mistakes_only', '1');
@@ -151,6 +166,7 @@
       const res = await vfetch(`${BACKEND_URL}/api/vocab/quiz?${params}`);
       if (!res.ok) throw new Error(`Quiz fetch failed: ${res.status}`);
       const data = await res.json();
+      if (kobunNotReady(data)) { alert(KOBUN_NOT_READY); return false; }
       queue = (data.quiz || []).slice(0, 20);
       queueIndex = 0;
       reviewedCount = 0;
@@ -161,7 +177,9 @@
       if (queue.length === 0) {
         let msg;
         if (useMistakesOnly) {
-          msg = '🎉 該当する間違えた単語はありません。レベル/大学フィルタを外して再試行するか、通常クイズを進めてください。';
+          msg = IS_KOBUN
+            ? '🎉 該当する間違えた単語はありません。レベルの絞り込みを外して再試行するか、通常クイズを進めてください。'
+            : '🎉 該当する間違えた単語はありません。レベル/大学フィルタを外して再試行するか、通常クイズを進めてください。';
         } else if (univ) {
           msg = `${univ.toUpperCase()} 頻出単語の在庫がまだ少ないです。別大学/全レベルでお試しください。`;
         } else {
@@ -182,6 +200,7 @@
       'eiken_g3': '英検3級', 'eiken_gp2': '英検準2級', 'eiken_g2': '英検2級',
       'eiken_gp1': '英検準1級', 'eiken_g1': '英検1級',
       'kyotsu': '共通テスト', 'todai_kyodai': '難関国立',
+      'kobun_kiso': '古文 基礎', 'kobun_hyojun': '古文 標準', 'kobun_nankan': '古文 難関',
     };
     return map[lv] || lv || '--';
   }
@@ -195,7 +214,8 @@
     const w = queue[queueIndex];
     answered = false;
     document.getElementById('vcQueueCount').textContent = `単語 ${queueIndex + 1}/${queue.length}`;
-    document.getElementById('vcCardWord').textContent = w.word;
+    // 古文は出題時の見出し (display) を出す: 「かる（離る）」の括弧の漢字で答えが分からないように。漢字は回答後に出す
+    document.getElementById('vcCardWord').textContent = w.display || w.word;
 
     // 品詞バッジ (動詞/名詞/形容詞 ...)
     const posEl = document.getElementById('vcCardPos');
@@ -224,6 +244,8 @@
 
     // フィードバック非表示
     document.getElementById('vcQuizFeedback').style.display = 'none';
+    const noteEl = document.getElementById('vcCardNote'); // 古文の補足 (漢字・ほかの意味・覚え方)。回答後に出す
+    if (noteEl) { noteEl.innerHTML = ''; noteEl.style.display = 'none'; }
     document.getElementById('vcCardExample').textContent = w.example_en || '';
     document.getElementById('vcCardExampleJp').textContent = w.example_jp || '';
 
@@ -259,9 +281,19 @@
     const status = document.getElementById('vcFeedbackStatus');
     status.innerHTML = isCorrect
       ? '<span style="color:#10b981;font-weight:800;">✅ 正解!</span> '
-        + `<span style="font-size:0.85em;color:#94a3b8;">(${w.pos_label_jp || ''}${w.transitivity_label_jp ? ' / ' + w.transitivity_label_jp : ''})</span>`
+        + `<span style="font-size:0.85em;color:#94a3b8;">(${esc(w.pos_label_jp || '')}${w.transitivity_label_jp ? ' / ' + esc(w.transitivity_label_jp) : ''})</span>`
       : '<span style="color:#ef4444;font-weight:800;">❌ 不正解</span> '
-        + `<span style="font-size:0.95em;color:#cbd5e1;">正解: ${w.meaning_jp}</span>`;
+        + `<span style="font-size:0.95em;color:#cbd5e1;">正解: ${esc(w.meaning_jp)}</span>`;
+
+    const noteEl = document.getElementById('vcCardNote');
+    if (noteEl && IS_KOBUN) {
+      const rows = [];
+      if (w.kanji) rows.push(`<div class="vc-kobun-kanji">${esc(w.word.replace(/（[^）]*）$/, ''))}【${esc(w.kanji)}】</div>`);
+      if (w.other_meanings) rows.push(`<div class="vc-kobun-other">ほかの意味: ${esc(w.other_meanings)}</div>`);
+      if (w.note) rows.push(`<div class="vc-kobun-memo">${esc(w.note)}</div>`);
+      noteEl.innerHTML = rows.join('');
+      noteEl.style.display = rows.length ? '' : 'none';
+    }
 
     // 例文の自動読み上げ
     const autoSpeak = document.getElementById('vcAutoSpeak');
@@ -405,11 +437,14 @@
       if (['1','2','3','4'].includes(e.key)) onChoiceClick(parseInt(e.key,10) - 1);
     });
 
-    document.getElementById('vcSpeakBtn').addEventListener('click', () => {
+    // 読み上げボタンは英語の画面だけにある (kobun.html には無い)
+    const speakBtn = document.getElementById('vcSpeakBtn');
+    if (speakBtn) speakBtn.addEventListener('click', () => {
       const w = queue[queueIndex];
       if (w) speak(w.word, 0.85);
     });
-    document.getElementById('vcSpeakExampleBtn').addEventListener('click', () => {
+    const speakExBtn = document.getElementById('vcSpeakExampleBtn');
+    if (speakExBtn) speakExBtn.addEventListener('click', () => {
       const w = queue[queueIndex];
       if (w && w.example_en) speak(w.example_en, 0.95);
     });

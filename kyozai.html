@@ -221,6 +221,8 @@
      desc:"共通テスト大問1個を10〜15分で解き、弱点に自動反映する短時間ドリル。ログインで解答記録が残ります。"},
     {title:"AI単語帳", subject:"英語", type:"単語帳", access:"login", url:"vocab.html", section:"tools",
      desc:"レベル別の英単語を4択で覚えるAI単語帳。ログインすると語彙の進捗が自分に紐づいて記録されます。"},
+    {title:"AI古文単語", subject:"国語", type:"単語帳", access:"login", url:"kobun.html", section:"tools",
+     desc:"入試に出る古文単語（基礎・標準・難関）を4択で覚える単語帳。意味・例文はこの塾の書き下ろし。ログインで進捗が記録されます。"},
     {title:"写真で質問・3AI解答", subject:"横断", type:"AIツール", access:"login", url:"ai-tutor-photo.html", section:"tools",
      desc:"問題の写真をアップロードすると3つのAIが解答・解説。利用にはログインが必要です。"},
     {title:"オリジナル参考書ジェネレーター", subject:"横断", type:"AIツール", access:"login", url:"textbook-generator.html", section:"tools",
@@ -243,7 +245,7 @@
     {id:"exam",  label:"🎓 大学入試の動く解説（要ログイン）", note:"難関大の実際の入試問題を、図形・グラフ・分布を動かして直感的に。ログインで開けます。"},
     {id:"tools", label:"📚 演習・学習ツール（要ログイン）", note:"ログインすると正解率・弱点・履歴があなたに紐づいて記録されます。"}
   ];
-  var SUBJECTS=["すべて","数学","物理","化学","英語","横断"];
+  var SUBJECTS=["すべて","数学","物理","化学","英語","国語","横断"];
   var ACCESS=[["すべて","すべて"],["無料（登録不要）","public"],["要ログイン","login"]];
 
   var state={subject:"すべて", access:"すべて"};

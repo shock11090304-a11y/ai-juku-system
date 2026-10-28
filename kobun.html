@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI古文単語 | AIコーチング</title>
+  <script src="cache-purge.js?v=20260721-inherit-notice"></script>
+  <!-- 🔑 認証ガード: 未ログインは login へ誘導し、表示/データをログイン本人に固定する。vocab.js より前に読む。 -->
+  <script src="auth-guard.js?v=20261018-session-renew"></script>
+  <script src="frontend-error-monitor.js"></script>
+  <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost-r2">
+  <link rel="stylesheet" href="vocab.css?v=20260525-mistakes-tag">
+  <script src="analytics.js" defer></script>
+  <style>
+    /* 📜 古文単語 (2026-10-28): 単語帳の画面 (vocab.css) に、古語の見出しと回答後の補足の見た目だけ足す */
+    .vc-kobun-note { margin-top: 0.75rem; padding: 0.7rem 0.85rem; background: rgba(0,0,0,0.22); border-radius: 8px; text-align: left; font-size: 0.9rem; line-height: 1.7; color: #e2e8f0; }
+    .vc-kobun-kanji { font-weight: 800; color: #fbbf24; margin-bottom: 0.2rem; }
+    .vc-kobun-other { color: #c7d2fe; margin-bottom: 0.2rem; }
+    .vc-kobun-memo { color: #cbd5e1; }
+    .vc-card-example { font-family: "Hiragino Mincho ProN", "Yu Mincho", serif; font-style: normal; } /* 明朝には斜体が無く字が傾くだけなので立てる */
+    .vc-kobun-credit { font-size: 0.78rem; color: #94a3b8; margin-top: 0.6rem; }
+  </style>
+</head>
+<body data-subject="kobun">
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="lp.html" class="nav-logo">
+        <span class="logo-icon">🎓</span>
+        <span class="logo-text">AIコーチング</span>
+      </a>
+      <div class="nav-cta">
+        <a href="mypage.html" class="btn-ghost">マイページ</a>
+        <a href="vocab.html" class="btn-ghost">📖 英単語</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="vc-container">
+    <!-- Step 1: レベル選択 -->
+    <section id="vcSetup" class="vc-section">
+      <div class="vc-header">
+        <div class="eyebrow">📜 AI 古文単語</div>
+        <h1>入試に出る古文単語を<br><span class="gradient-text">忘れかけた頃にもう一度</span></h1>
+        <p class="vc-sub">
+          4 択で意味を答えると、覚えた度合いに合わせて次の復習日が決まります。<br>
+          答えたあとに漢字・ほかの意味・例文が出ます。
+        </p>
+        <p class="vc-kobun-credit">意味・例文・解説はすべてこの塾の書き下ろしです。</p>
+      </div>
+
+      <div class="vc-stats" id="vcStatsCard" style="display:none;">
+        <div class="vc-stat-row">
+          <div class="vc-stat-cell">
+            <div class="vc-stat-num" id="vcDueNow">--</div>
+            <div class="vc-stat-label">今復習すべき</div>
+          </div>
+          <div class="vc-stat-cell">
+            <div class="vc-stat-num" id="vcMastered">--</div>
+            <div class="vc-stat-label">習得済み (Box5)</div>
+          </div>
+          <div class="vc-stat-cell">
+            <div class="vc-stat-num" id="vcAccuracy">--</div>
+            <div class="vc-stat-label">正答率 (%)</div>
+          </div>
+          <div class="vc-stat-cell">
+            <div class="vc-stat-num vc-stat-mistakes" id="vcMistakes">--</div>
+            <div class="vc-stat-label">🔴 間違えた単語</div>
+          </div>
+          <div class="vc-stat-cell">
+            <div class="vc-stat-num" id="vcTotal">--</div>
+            <div class="vc-stat-label">総単語数</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 🔴 間違えた単語タグ (英単語と同じ仕組み・古文の語だけ) -->
+      <div class="vc-mistakes-panel" id="vcMistakesPanel" style="display:none;">
+        <div class="vc-mistakes-header">
+          <div>
+            <div class="vc-mistakes-title">🔴 間違えた単語タグ</div>
+            <div class="vc-mistakes-sub">過去に1回以上間違えた古文単語を自動保存。集中復習で苦手を一気に潰しましょう。</div>
+          </div>
+          <div class="vc-mistakes-count-big" id="vcMistakesCountBig">0</div>
+        </div>
+        <div class="vc-mistakes-actions">
+          <button id="vcMistakeReviewBtn" class="btn-primary btn-mistake">🔴 間違えた単語だけクイズ →</button>
+          <button id="vcMistakeListToggleBtn" class="btn-ghost btn-small">📋 一覧を見る</button>
+        </div>
+        <div class="vc-mistakes-list" id="vcMistakesList" style="display:none;">
+          <div class="vc-mistakes-list-loading">読み込み中…</div>
+        </div>
+      </div>
+
+      <div class="vc-level-picker">
+        <h3>レベル選択</h3>
+        <div class="vc-level-buttons">
+          <button class="vc-level-btn" data-level="">全レベル (基礎から順に)</button>
+          <button class="vc-level-btn" data-level="kobun_kiso">基礎 (最重要)</button>
+          <button class="vc-level-btn" data-level="kobun_hyojun">標準 (共通テスト)</button>
+          <button class="vc-level-btn" data-level="kobun_nankan">難関 (国公立二次・難関私大)</button>
+        </div>
+      </div>
+
+      <div class="vc-actions">
+        <button id="vcStartBtn" class="btn-primary btn-lg">📜 復習を開始 →</button>
+      </div>
+    </section>
+
+    <!-- Step 2: 4 択クイズ画面 -->
+    <section id="vcReview" class="vc-section" style="display:none;">
+      <div class="vc-review-header">
+        <span id="vcQueueCount">単語 0/0</span>
+        <button id="vcExitBtn" class="btn-ghost btn-small">終了</button>
+      </div>
+
+      <div class="vc-card-wrap">
+        <div class="vc-card vc-quiz-card" id="vcCard">
+          <div class="vc-quiz-tags">
+            <span class="vc-pos-badge" id="vcCardPos"></span>
+            <span class="vc-vt-badge" id="vcCardVt" style="display:none;"></span>
+          </div>
+          <div class="vc-card-word" id="vcCardWord">--</div>
+
+          <p class="vc-quiz-prompt">↓ 正しい意味を選んでください</p>
+
+          <!-- 4 択ボタン (誤答は語ごとに固定の 3 つ) -->
+          <div class="vc-choices" id="vcChoices">
+            <button type="button" class="vc-choice" data-idx="0"></button>
+            <button type="button" class="vc-choice" data-idx="1"></button>
+            <button type="button" class="vc-choice" data-idx="2"></button>
+            <button type="button" class="vc-choice" data-idx="3"></button>
+          </div>
+
+          <!-- 解説 (回答後に表示) -->
+          <div class="vc-quiz-feedback" id="vcQuizFeedback" style="display:none;">
+            <div class="vc-feedback-status" id="vcFeedbackStatus"></div>
+            <div class="vc-kobun-note" id="vcCardNote" style="display:none;"></div>
+            <div class="vc-card-example-row">
+              <div class="vc-card-example" id="vcCardExample"></div>
+            </div>
+            <div class="vc-card-example-jp" id="vcCardExampleJp"></div>
+            <div class="vc-next-review" id="vcNextReview" style="display:none;margin-top:0.75rem;font-size:0.9rem;font-weight:700;color:#a78bfa;"></div>
+            <button type="button" class="btn-primary btn-small" id="vcNextBtn" style="margin-top:1rem;">次の単語 →</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="vc-progress-info">
+        <span id="vcCurrentBox">Box: --</span> ·
+        <span id="vcCurrentLevel">レベル: --</span>
+      </div>
+    </section>
+
+    <!-- Step 3: 完了画面 -->
+    <section id="vcComplete" class="vc-section" style="display:none;">
+      <div class="vc-complete-emoji">🎉</div>
+      <h2>本日の復習完了!</h2>
+      <p>復習した単語: <strong id="vcReviewedCount">0</strong> 単語</p>
+      <p>正答: <strong id="vcCorrectCount">0</strong> 単語</p>
+      <div class="vc-complete-actions">
+        <button id="vcContinueBtn" class="btn-secondary btn-lg">続けて学習</button>
+        <a href="mypage.html" class="btn-primary btn-lg">マイページへ →</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="vocab.js?v=20261028-kobun"></script>
+</body>
+</html>

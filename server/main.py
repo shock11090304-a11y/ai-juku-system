@@ -42403,6 +42403,133 @@ def mock_exam_history(request: Request, student_id: int, authorization: Optional
 LEITNER_INTERVALS = {1: 1, 2: 3, 3: 7, 4: 21, 5: 60}  # box → days until next review
 
 # =====================================================================
+# 📜 古文単語 (塾長指示 2026-10-28「AI 単語帳に古文を追加」)
+# 英単語と同じ vocab_words / vocab_progress (FSRS・間違えた単語) を使い、科目は level の接頭辞 kobun_ で分ける
+# (列を足す ALTER は起動時のロック待ちの地雷になるので足さない)。中身の正本は server/kobun_vocab_v1.json
+# (書き下ろし・scripts/kobun_vocab/build.py が生成)。DB の行は古文の API が初めて呼ばれたときに JSON に合わせる
+# (起動時には DB を触らない)。誤答 3 つは語ごとに固定: 古語は意味が重なりやすく、英語のように他の語の意味を
+# ランダムに引くと正解が 2 つある問題が出る。英単語の API は subject 省略 = 英語のままで、古文の行を
+# 出題・統計・誤答の候補に混ぜない。
+# =====================================================================
+_KOBUN_VOCAB_PATH = ROOT / "kobun_vocab_v1.json"
+# 出題する古文のレベル。JSON から外した語は同期で kobun_retired に付け替え、出題・統計・間違えた単語から外す
+# (外した語の進捗が「今日の復習」に残り続けたり、期限切れの外した語で出題の窓が埋まったりしないように)
+_KOBUN_LEVELS = ("kobun_kiso", "kobun_hyojun", "kobun_nankan")
+_KOBUN_LEVELS_SQL = "(" + ",".join(f"'{lv}'" for lv in _KOBUN_LEVELS) + ")"
+
+
+def _load_kobun_vocab() -> dict:
+    """kobun_vocab_v1.json → {見出し語: 項目}。読めなければ空 (古文だけが空になり、英単語は影響を受けない)。"""
+    try:
+        with open(_KOBUN_VOCAB_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+        out = {}
+        for w in data.get("words") or []:
+            if w.get("word") and w.get("meaning_jp") and str(w.get("level") or "").startswith("kobun_"):
+                out[w["word"]] = w
+        return out
+    except Exception as e:
+        log.warning("kobun vocab load failed: %s", e)
+        return {}
+
+
+_KOBUN_VOCAB = _load_kobun_vocab()
+_KOBUN_SYNC = {"done": False, "tried_at": 0.0}
+_KOBUN_SYNC_LOCK = threading.Lock()
+
+
+def _vocab_subject(subject: Optional[str], level: Optional[str] = None) -> str:
+    """'kobun' か 'eng'。subject=kobun か level が kobun_ で始まれば古文、それ以外 (省略・未知の値) は英語。"""
+    if (subject or "").strip().lower() == "kobun" or (level or "").startswith("kobun_"):
+        return "kobun"
+    return "eng"
+
+
+def _vocab_level_sql(subject: str, col: str = "vw.level") -> str:
+    """vocab_words の level 列で科目を絞る SQL 断片 (定数だけ・利用者の入力は入らない)。
+    古文は出題中の 3 レベルだけ、英語は kobun_ で始まらないもの (外した古文の語も英語には入らない)。"""
+    if subject == "kobun":
+        return f" AND {col} IN {_KOBUN_LEVELS_SQL}"
+    return f" AND {col} NOT LIKE 'kobun_%'"
+
+
+def _vocab_progress_sql(subject: str, col: str = "word_id") -> str:
+    """vocab_progress だけの集計で科目を絞る SQL 断片。英語は「古文の語でない」で絞るので、
+    消えた語の進捗も従来どおり数える (英単語の統計の値を変えない)。"""
+    if subject == "kobun":
+        return f" AND {col} IN (SELECT id FROM vocab_words WHERE level IN {_KOBUN_LEVELS_SQL})"
+    return f" AND {col} NOT IN (SELECT id FROM vocab_words WHERE level LIKE 'kobun_%')"
+
+
+def _kobun_vocab_ensure_synced() -> None:
+    """vocab_words の古文の行を kobun_vocab_v1.json に合わせる (無い語は足す・変わった語は直す・
+    JSON から外した語は kobun_retired に付け替える = 進捗の行は消さない・JSON に戻せば元のレベルに戻る)。
+    1 プロセス 1 回。失敗したら 5 分は試し直さない (古文の画面を開くたびに DB を叩かない)。
+    ほかのスレッドが同期中なら待たずに今の DB のまま返す (スレッドプールを待ちで埋めない)。"""
+    if _KOBUN_SYNC["done"] or not _KOBUN_VOCAB:
+        return
+    if not _KOBUN_SYNC_LOCK.acquire(blocking=False):
+        return
+    try:
+        if _KOBUN_SYNC["done"] or time.time() - _KOBUN_SYNC["tried_at"] < 300:
+            return
+        _KOBUN_SYNC["tried_at"] = time.time()
+        conn = db()
+        try:
+            c = conn.cursor()
+            c.execute("SELECT id, word, pos, meaning_jp, example_en, example_jp, level, tags FROM vocab_words "
+                      "WHERE level LIKE 'kobun_%'")
+            cols = ("id", "word", "pos", "meaning_jp", "example_en", "example_jp", "level", "tags")
+            have = {}
+            for r in c.fetchall():
+                d = dict(r) if hasattr(r, "keys") else dict(zip(cols, r))
+                have[d["word"]] = d
+            c.execute("SELECT word FROM vocab_words WHERE level NOT LIKE 'kobun_%'")
+            other_words = {(r["word"] if hasattr(r, "keys") else r[0]) for r in c.fetchall()}
+            inserted = updated = retired = 0
+            for w in _KOBUN_VOCAB.values():  # JSON の順 (基礎→標準→難関) で足す = 新しい語は id 順にこの順で出る
+                vals = (w.get("pos") or "", w["meaning_jp"], w.get("example") or "", w.get("example_jp") or "",
+                        w["level"], "kobun")
+                cur = have.get(w["word"])
+                if cur is None:
+                    if w["word"] in other_words:  # 同じ綴りの英語側の行 (word は UNIQUE)。古文には入れない
+                        log.warning("kobun vocab: word already used outside kobun: %s", w["word"])
+                        continue
+                    c.execute("INSERT INTO vocab_words (word, pos, meaning_jp, example_en, example_jp, level, tags) "
+                              "VALUES (?,?,?,?,?,?,?)", (w["word"],) + vals)
+                    inserted += 1
+                elif tuple(cur.get(k) or "" for k in cols[2:]) != vals:
+                    c.execute("UPDATE vocab_words SET pos=?, meaning_jp=?, example_en=?, example_jp=?, level=?, tags=? "
+                              "WHERE id=?", vals + (cur["id"],))
+                    updated += 1
+            for word, cur in have.items():
+                if word not in _KOBUN_VOCAB and cur.get("level") != "kobun_retired":
+                    c.execute("UPDATE vocab_words SET level='kobun_retired' WHERE id=?", (cur["id"],))
+                    retired += 1
+            conn.commit()
+            _KOBUN_SYNC["done"] = True
+            if inserted or updated or retired:
+                log.info("kobun vocab synced: inserted=%d updated=%d retired=%d", inserted, updated, retired)
+        except Exception as e:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            log.warning("kobun vocab sync failed: %s", e)
+        finally:
+            conn.close()
+    finally:
+        _KOBUN_SYNC_LOCK.release()
+
+
+def _kobun_item_extra(word: str) -> dict:
+    """古文の語の補足: 出題時の見出し (display = 「かる（離る）」の括弧の漢字を外したもの。漢字で答えが分からないように)
+    と、回答後に見せる漢字表記・ほかの意味・覚え方のメモ。英語の語には空の値を返す。"""
+    w = _KOBUN_VOCAB.get(word) or {}
+    return {"display": w.get("display") or word, "kanji": w.get("kanji") or "",
+            "other_meanings": w.get("other") or "", "note": w.get("note") or ""}
+
+# =====================================================================
 # 🧠 FSRS-4.5 (Free Spaced Repetition Scheduler) — 2026-06-24 導入
 # 固定間隔の Leitner より少ない復習回数で同じ定着率を達成するアルゴリズム (Anki 採用)。
 # カードごとに stability(S=日) と difficulty(D=1-10) を保持し、復習時の retrievability(R) から
@@ -42536,7 +42663,7 @@ def vocab_import(payload: dict, authorization: Optional[str] = Header(None), x_c
 
 
 @app.get("/api/vocab/queue")
-def vocab_queue(student_id: Optional[int] = None, level: Optional[str] = None, limit: int = 20, authorization: Optional[str] = Header(None)):
+def vocab_queue(student_id: Optional[int] = None, level: Optional[str] = None, limit: int = 20, subject: Optional[str] = None, authorization: Optional[str] = Header(None)):
     """次に復習すべき単語キューを返す。student_id は token から解決 (IDOR fix)。
     優先順位: 1) 今復習期限の単語 2) まだ未学習の単語
 
@@ -42544,6 +42671,9 @@ def vocab_queue(student_id: Optional[int] = None, level: Optional[str] = None, l
     """
     # 🔑 [trust-identity] vocab IDOR fix の取りこぼし (queue だけ未対策だった) を塞ぐ
     student_id = _vocab_resolve_student_id(student_id, authorization)
+    subj = _vocab_subject(subject, level)  # 📜 古文 (2026-10-28): 省略時は英語だけ
+    if subj == "kobun":
+        _kobun_vocab_ensure_synced()
     # limit clamp (silent fallback 防止)
     orig_limit = limit
     if limit is None or limit < 1:
@@ -42560,7 +42690,7 @@ def vocab_queue(student_id: Optional[int] = None, level: Optional[str] = None, l
         FROM vocab_progress vp
         JOIN vocab_words vw ON vw.id = vp.word_id
         WHERE vp.student_id = ? AND vp.next_review_at <= ?
-    """
+    """ + _vocab_level_sql(subj)
     params = [student_id, now]
     if level:
         sql_due += " AND vw.level = ?"
@@ -42580,7 +42710,7 @@ def vocab_queue(student_id: Optional[int] = None, level: Optional[str] = None, l
             SELECT id, word, pos, meaning_jp, example_en, example_jp, level, tags
             FROM vocab_words
             WHERE id NOT IN (SELECT word_id FROM vocab_progress WHERE student_id = ?)
-        """
+        """ + _vocab_level_sql(subj, "level")
         params2 = [student_id]
         if level:
             sql_new += " AND level = ?"
@@ -42594,7 +42724,7 @@ def vocab_queue(student_id: Optional[int] = None, level: Optional[str] = None, l
             d["status"] = "new"
             out.append(d)
     conn.close()
-    return {"queue": out, "count": len(out), "requested_limit": orig_limit, "applied_limit": limit}
+    return {"queue": out, "count": len(out), "requested_limit": orig_limit, "applied_limit": limit, "subject": subj}
 
 
 def _vocab_resolve_student_id(client_sid, authorization: Optional[str]):
@@ -42712,9 +42842,14 @@ def vocab_grade(payload: dict, authorization: Optional[str] = Header(None)):
 
 
 @app.get("/api/vocab/stats")
-def vocab_stats(student_id: Optional[int] = None, authorization: Optional[str] = Header(None)):
-    """生徒の単語学習統計 (mypage 用)。student_id は token から解決 (IDOR fix)。"""
+def vocab_stats(student_id: Optional[int] = None, subject: Optional[str] = None, authorization: Optional[str] = Header(None)):
+    """生徒の単語学習統計 (mypage 用)。student_id は token から解決 (IDOR fix)。
+    subject=kobun で古文だけ、省略で英語だけを数える (2026-10-28)。"""
     student_id = _vocab_resolve_student_id(student_id, authorization)
+    subj = _vocab_subject(subject)
+    if subj == "kobun":
+        _kobun_vocab_ensure_synced()
+    sp = _vocab_progress_sql(subj)
     def _val(row, idx, key):
         # sqlite3.Row / psycopg _Row どちらも row[key] (列名アクセス) をサポートする。
         # 旧コードは row.get(key) を使い sqlite3.Row に .get が無く SQLite で crash していた
@@ -42732,7 +42867,7 @@ def vocab_stats(student_id: Optional[int] = None, authorization: Optional[str] =
     c = conn.cursor()
     by_box = {}
     try:
-        c.execute("SELECT box AS box_n, COUNT(*) AS cnt FROM vocab_progress WHERE student_id=? GROUP BY box", (student_id,))
+        c.execute("SELECT box AS box_n, COUNT(*) AS cnt FROM vocab_progress WHERE student_id=?" + sp + " GROUP BY box", (student_id,))
         for r in c.fetchall():
             b = _val(r, 0, 'box_n')
             n = _val(r, 1, 'cnt')
@@ -42740,13 +42875,13 @@ def vocab_stats(student_id: Optional[int] = None, authorization: Optional[str] =
     except Exception:
         by_box = {}
 
-    c.execute("SELECT COUNT(*) AS cnt FROM vocab_progress WHERE student_id=? AND next_review_at <= ?", (student_id, datetime.now(timezone.utc).isoformat()))
+    c.execute("SELECT COUNT(*) AS cnt FROM vocab_progress WHERE student_id=? AND next_review_at <= ?" + sp, (student_id, datetime.now(timezone.utc).isoformat()))
     due_now = int(_val(c.fetchone(), 0, 'cnt'))
 
-    c.execute("SELECT COUNT(*) AS cnt FROM vocab_words")
+    c.execute("SELECT COUNT(*) AS cnt FROM vocab_words WHERE 1=1" + _vocab_level_sql(subj, "level"))
     total_words = int(_val(c.fetchone(), 0, 'cnt'))
 
-    c.execute("SELECT COALESCE(SUM(review_count), 0) AS rsum, COALESCE(SUM(correct_count), 0) AS csum FROM vocab_progress WHERE student_id=?", (student_id,))
+    c.execute("SELECT COALESCE(SUM(review_count), 0) AS rsum, COALESCE(SUM(correct_count), 0) AS csum FROM vocab_progress WHERE student_id=?" + sp, (student_id,))
     rr = c.fetchone()
     total_reviews = int(_val(rr, 0, 'rsum'))
     total_correct = int(_val(rr, 1, 'csum'))
@@ -42754,7 +42889,7 @@ def vocab_stats(student_id: Optional[int] = None, authorization: Optional[str] =
     # 🔴 間違えた単語数: 一度でも間違えた単語 (review_count > correct_count) を母数とする
     # 塾長指示 2026-05-25: 生徒からの要望「間違えた単語を別タグに保存」
     try:
-        c.execute("SELECT COUNT(*) AS cnt FROM vocab_progress WHERE student_id=? AND review_count > correct_count", (student_id,))
+        c.execute("SELECT COUNT(*) AS cnt FROM vocab_progress WHERE student_id=? AND review_count > correct_count" + sp, (student_id,))
         mistakes_count = int(_val(c.fetchone(), 0, 'cnt'))
     except Exception:
         mistakes_count = 0
@@ -42768,6 +42903,7 @@ def vocab_stats(student_id: Optional[int] = None, authorization: Optional[str] =
         "total_reviews": total_reviews,
         "accuracy_percent": accuracy,
         "mistakes_count": mistakes_count,
+        "subject": subj,
     }
 
 
@@ -42851,13 +42987,17 @@ def _expand_levels(level: Optional[str]) -> list:
 
 
 @app.get("/api/vocab/mistaken-words")
-def vocab_mistaken_words(student_id: Optional[int] = None, level: Optional[str] = None, univ: Optional[str] = None, limit: int = 100, authorization: Optional[str] = Header(None)):
+def vocab_mistaken_words(student_id: Optional[int] = None, level: Optional[str] = None, univ: Optional[str] = None, limit: int = 100, subject: Optional[str] = None, authorization: Optional[str] = Header(None)):
     """🔴 間違えた単語一覧 (一度でも誤答した全単語)。student_id は token から解決 (IDOR fix)。
     塾長指示 2026-05-25 (生徒要望): 間違えた単語を別タグに保存して復習可能に。
     定義: review_count > correct_count → 過去に1回以上誤答ありの単語。
     並び順: 誤答回数多い順 → 直近誤答順 (mistake_count DESC, last_reviewed_at DESC)。
+    subject=kobun で古文だけ、省略で英語だけ (2026-10-28)。
     """
     student_id = _vocab_resolve_student_id(student_id, authorization)
+    subj = _vocab_subject(subject, level)
+    if subj == "kobun":
+        _kobun_vocab_ensure_synced()
     # limit clamp
     if limit is None or limit < 1:
         limit = 100
@@ -42873,7 +43013,7 @@ def vocab_mistaken_words(student_id: Optional[int] = None, level: Optional[str] 
         FROM vocab_progress vp
         JOIN vocab_words vw ON vw.id = vp.word_id
         WHERE vp.student_id = ? AND vp.review_count > vp.correct_count
-    """
+    """ + _vocab_level_sql(subj)
     params = [student_id]
     if levels:
         sql += f" AND vw.level IN ({placeholders})"
@@ -42919,15 +43059,16 @@ def vocab_mistaken_words(student_id: Optional[int] = None, level: Optional[str] 
             "accuracy_percent": accuracy_per_word,
             "last_reviewed_at": d.get("last_reviewed_at"),
             "next_review_at": d.get("next_review_at"),
+            **(_kobun_item_extra(d["word"]) if subj == "kobun" else {}),
         })
         if len(items) >= limit:
             break
     conn.close()
-    return {"items": items, "count": len(items), "limit": limit}
+    return {"items": items, "count": len(items), "limit": limit, "subject": subj}
 
 
 @app.get("/api/vocab/quiz")
-def vocab_quiz(student_id: Optional[int] = None, level: Optional[str] = None, limit: int = 10, univ: Optional[str] = None, mistakes_only: int = 0, authorization: Optional[str] = Header(None)):
+def vocab_quiz(student_id: Optional[int] = None, level: Optional[str] = None, limit: int = 10, univ: Optional[str] = None, mistakes_only: int = 0, subject: Optional[str] = None, authorization: Optional[str] = Header(None)):
     """4 択形式の単語クイズキュー。各 item は target word + 同 pos の distractor 3 個 + 品詞 + 自他動詞ラベル。
     塾長指示 (2026-05-03): 4 択は同品詞で固める / 自他動詞 + 品詞を表示。
     フロントが distractors を shuffle して出題する想定 (server は shuffle 済み choices も返す)。
@@ -42939,8 +43080,14 @@ def vocab_quiz(student_id: Optional[int] = None, level: Optional[str] = None, li
     mistakes_only=1: 過去に誤答ありの単語 (review_count > correct_count) のみ。
     SRS スケジュール無視で即出題。塾長指示 2026-05-25 (生徒要望「間違えた単語を別タグに」)。
     student_id は token から解決 (IDOR fix)。
+
+    subject=kobun (2026-10-28): 古文単語だけを出す。誤答 3 つは kobun_vocab_v1.json の語ごとの固定の 3 つ
+    (他の語の意味をランダムに引かない)。省略時は英語だけ (古文の行は出題にも誤答の候補にも入らない)。
     """
     student_id = _vocab_resolve_student_id(student_id, authorization)
+    subj = _vocab_subject(subject, level)
+    if subj == "kobun":
+        _kobun_vocab_ensure_synced()
     import random as _r
     # limit clamp (silent fallback 防止)
     orig_limit = limit
@@ -42963,7 +43110,7 @@ def vocab_quiz(student_id: Optional[int] = None, level: Optional[str] = None, li
             FROM vocab_progress vp
             JOIN vocab_words vw ON vw.id = vp.word_id
             WHERE vp.student_id = ? AND vp.review_count > vp.correct_count
-        """
+        """ + _vocab_level_sql(subj)
         params_m = [student_id]
         if levels:
             sql_m += f" AND vw.level IN ({placeholders})"
@@ -42990,7 +43137,7 @@ def vocab_quiz(student_id: Optional[int] = None, level: Optional[str] = None, li
             FROM vocab_progress vp
             JOIN vocab_words vw ON vw.id = vp.word_id
             WHERE vp.student_id = ? AND vp.next_review_at <= ?
-        """
+        """ + _vocab_level_sql(subj)
         params = [student_id, now]
         if levels:
             sql_due += f" AND vw.level IN ({placeholders})"
@@ -43011,7 +43158,7 @@ def vocab_quiz(student_id: Optional[int] = None, level: Optional[str] = None, li
                 SELECT id, word, pos, meaning_jp, example_en, example_jp, level, tags
                 FROM vocab_words
                 WHERE id NOT IN (SELECT word_id FROM vocab_progress WHERE student_id = ?)
-            """
+            """ + _vocab_level_sql(subj, "level")
             params2 = [student_id]
             if levels:
                 sql_new += f" AND level IN ({placeholders})"
@@ -43034,12 +43181,41 @@ def vocab_quiz(student_id: Optional[int] = None, level: Optional[str] = None, li
         want = f"univ:{univ}"
         candidates = [w for w in candidates if want in (w.get("tags") or "")]
 
+    if subj == "kobun":  # JSON から外した語 (DB には残る) は出さない = 固定の誤答が無い語を出さない
+        candidates = [w for w in candidates if w["word"] in _KOBUN_VOCAB]
     candidates = candidates[:limit]
 
     # 各 candidate に対して同 pos の distractor を 3 件取得
     quiz_items = []
     for w in candidates:
         wpos = (w.get("pos") or "").strip()
+        if subj == "kobun":
+            kw = _KOBUN_VOCAB[w["word"]]
+            meaning = kw["meaning_jp"]
+            dis = [d for d in (kw.get("distractors") or []) if d and d != meaning][:3]
+            if len(dis) < 3:
+                continue
+            choices = [meaning] + dis
+            _r.shuffle(choices)
+            quiz_items.append({
+                "id": w["id"],
+                "word": w["word"],
+                "pos": wpos,
+                "pos_label_jp": wpos,
+                "transitivity": "",
+                "transitivity_label_jp": "",
+                "meaning_jp": meaning,
+                "example_en": kw.get("example") or "",
+                "example_jp": kw.get("example_jp") or "",
+                "level": w["level"],
+                "tags": w.get("tags") or "",
+                "box": w.get("box", 0),
+                "status": w.get("status", "new"),
+                "choices": choices,
+                "correct_index": choices.index(meaning),
+                **_kobun_item_extra(w["word"]),
+            })
+            continue
         # 同 pos / 異なる id / 同 level 優先 → 不足なら同 pos / 全 level
         c.execute(
             "SELECT meaning_jp FROM vocab_words WHERE pos=? AND id<>? AND level=? ORDER BY RANDOM() LIMIT 3",
@@ -43049,7 +43225,8 @@ def vocab_quiz(student_id: Optional[int] = None, level: Optional[str] = None, li
         if len(distractors) < 3:
             need = 3 - len(distractors)
             c.execute(
-                "SELECT meaning_jp FROM vocab_words WHERE pos=? AND id<>? AND meaning_jp NOT IN (" + ",".join(["?"]*max(1,len(distractors))) + ") ORDER BY RANDOM() LIMIT ?",
+                "SELECT meaning_jp FROM vocab_words WHERE pos=? AND id<>? AND meaning_jp NOT IN (" + ",".join(["?"]*max(1,len(distractors))) + ")"
+            + _vocab_level_sql("eng", "level") + " ORDER BY RANDOM() LIMIT ?",
                 (wpos, w["id"], *(distractors or [""]), need),
             )
             for row in c.fetchall():
@@ -43060,7 +43237,7 @@ def vocab_quiz(student_id: Optional[int] = None, level: Optional[str] = None, li
         if len(distractors) < 3:
             need = 3 - len(distractors)
             c.execute(
-                "SELECT meaning_jp FROM vocab_words WHERE id<>? ORDER BY RANDOM() LIMIT ?",
+                "SELECT meaning_jp FROM vocab_words WHERE id<>?" + _vocab_level_sql("eng", "level") + " ORDER BY RANDOM() LIMIT ?",
                 (w["id"], need * 3),
             )
             for row in c.fetchall():
@@ -43091,7 +43268,7 @@ def vocab_quiz(student_id: Optional[int] = None, level: Optional[str] = None, li
             "correct_index": correct_index,
         })
     conn.close()
-    return {"quiz": quiz_items, "count": len(quiz_items), "requested_limit": orig_limit, "applied_limit": limit}
+    return {"quiz": quiz_items, "count": len(quiz_items), "requested_limit": orig_limit, "applied_limit": limit, "subject": subj}
 
 
 # ==========================================================================

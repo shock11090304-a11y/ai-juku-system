@@ -1,0 +1,366 @@
+# 古文単語 見出し語リスト（2026-10-28・意味は書き下ろし）
+# 列: level(K=基礎 H=標準 N=難関)	word	kanji	pos	dgroup	clusters	core	other
+# core は 4 択の正解になる意味 (意味の区切りは「／」・同じ意味の言い換えは「・」)。other は回答後に見せる補足の意味。
+# dgroup は誤答を選ぶ範囲 (同じ dgroup の別の語の core から選ぶ)。clusters を 1 つでも共有する語は互いの誤答にしない。
+# --- 動詞 ---
+K	ありく	歩く	動詞	verb	ugoku	動き回る・出歩く	（動詞の連用形に付いて）〜してまわる
+K	おどろく	驚く	動詞	verb	kizuku	目を覚ます／はっと気づく	びっくりする
+K	ながむ	眺む・詠む	動詞	verb	ginzuru,omoi	物思いにふける／詩歌を口ずさむ	物思いにふけってぼんやり見る
+K	ののしる	罵る	動詞	verb	sawagu	大声で騒ぐ／評判になる	（勢いが）盛んである
+K	まもる	守る	動詞	verb	miru	じっと見つめる	大切に守る
+K	かしづく	傅く	動詞	verb	sewa	大切に育てる・大切に世話をする	
+K	ときめく	時めく	動詞	verb	sakaeru	時流に乗って栄える／寵愛を受ける	
+K	うつろふ	移ろふ	動詞	verb	kawaru	色があせる・散る／心変わりする	移る・移動する
+K	ものす	物す	動詞	verb	daidoushi	（いろいろな動作の代わりに）いる・行く・する	
+K	おぼゆ	覚ゆ	動詞	verb	omowareru	（自然に）思われる・感じられる／似る	思い出される・記憶している
+K	ねんず	念ず	動詞	verb	gaman,inoru	心の中で祈る／じっと我慢する	
+K	ゐる（率る）	率る	動詞	verb	tsureteiku	連れて行く・引き連れる	
+K	いらふ	答ふ	動詞	verb	kotaeru	答える・返事をする	
+K	あくがる	憧る	動詞	verb	samayou,uwanosora	（魂が）体から抜け出してさまよう／うわの空になる	（ある所から）離れる・疎遠になる
+K	わぶ	侘ぶ	動詞	verb	komaru,shikaneru	思い悩む・困る／（補助動詞）〜しかねる	落ちぶれる・わびしく暮らす
+K	しのぶ（忍ぶ）	忍ぶ	動詞	verb	gaman,kakusu	人目を避ける・隠す／じっと我慢する	
+K	しのぶ（偲ぶ）	偲ぶ	動詞	verb	natsukashimu	懐かしく思い出す・慕う	
+K	おこなふ	行ふ	動詞	verb	shugyou	仏道修行をする・勤行する	（物事を）行う
+K	あきらむ	明らむ	動詞	verb	akiraka,kiwoharasu	明らかにする・はっきりさせる	心を晴らす
+K	なやむ	悩む	動詞	verb	byouki,komaru	病気で苦しむ	困る・思い悩む
+K	ぐす	具す	動詞	verb	tsureteiku	連れて行く・連れ添う／備わる・そろう	
+K	ちぎる	契る	動詞	verb	yakusoku	約束する・（男女が）将来を誓う	
+K	めづ	愛づ	動詞	verb	aisuru	愛する・かわいがる／ほめる・感心する	
+K	かたらふ	語らふ	動詞	verb	hanasu	親しく話し合う・親しく付き合う／説得して仲間に引き入れる	
+H	かこつ	託つ	動詞	verb	nageku,koujitsu	嘆く・ぐちをこぼす／口実にする	
+H	ならふ	慣らふ・習ふ	動詞	verb	nareru	慣れる・慣れ親しむ	学ぶ・習う
+H	さはる	障る	動詞	verb	sashitsukae	差し支える・妨げられる	
+H	あそぶ	遊ぶ	動詞	verb	asobu	詩歌・管弦を楽しむ	（狩りなどをして）遊ぶ
+H	まどふ	惑ふ	動詞	verb	midareru	心が乱れる・迷う／（補助動詞）ひどく〜する	
+H	おもひやる	思ひ遣る	動詞	verb	natsukashimu,kiwoharasu,shizumeru	（遠くのことに）思いをはせる・想像する	気を晴らす・同情する
+H	しる（領る）	領る・知る	動詞	verb	osameru	（土地を）治める・領有する	
+H	あふ（逢ふ）	逢ふ	動詞	verb	kekkon	結婚する・男女が契りを結ぶ	会う
+H	よばふ	呼ばふ	動詞	verb	kekkon	求婚する・言い寄る	呼び続ける
+H	まねぶ	学ぶ	動詞	verb	maneru	まねる／（見聞きしたことを）そのまま伝える	学ぶ
+H	いとふ	厭ふ	動詞	verb	iyau,shukke	嫌って避ける	（世をいとふで）出家する／（身を）大事にする・かばう
+H	わづらふ	煩ふ	動詞	verb	byouki,komaru,shikaneru	病気で苦しむ／（補助動詞）〜しかねる	思い悩む
+H	おこたる	怠る	動詞	verb	byouki_naoru	（病気が）よくなる	なまける・油断する
+H	やつす	窶す	動詞	verb	henshin,shukke	目立たない姿に変える・みすぼらしくする	出家姿になる
+H	いそぐ	急ぐ	動詞	verb	junbi	準備する・支度する	急ぐ
+H	いぬ（往ぬ）	往ぬ・去ぬ	動詞	verb	saru	去る・行ってしまう	（時が）過ぎ去る
+H	とぶらふ	訪ふ・弔ふ	動詞	verb	houmon	訪問する・見舞う／弔う	
+H	こころゆく	心行く	動詞	verb	manzoku,kiwoharasu	満足する・気が晴れる	
+H	よをそむく	世を背く	連語	verb	shukke	出家する	
+H	はかなくなる	果無くなる	連語	verb	shinu	死ぬ・亡くなる	
+N	ことわる	理る	動詞	verb	handan,akiraka	判断する・判定する／筋道を立てて説明する	
+N	すまふ	争ふ・辞ふ	動詞	verb	teikou	抵抗する・断る	
+N	ねぶ	—	動詞	verb	toshi	年をとる・大人びる	
+N	かきくらす	掻き暗す	動詞	verb	kanashimu	悲しみで心を暗くする	（雨・雪が）空を暗くする
+N	あつかふ	扱ふ	動詞	verb	sewa,komaru	世話をする／もてあます・困る	うわさをする
+N	みゆ	見ゆ	動詞	verb	kekkon	見える／（女性が）結婚する・妻になる	姿を見せる
+N	したたむ	認む	動詞	verb	junbi,shori	整える・準備する／処理する・始末する	食事をする
+N	うそぶく	嘯く	動詞	verb	ginzuru	詩歌を口ずさむ／口笛を吹く	知らん顔をする
+N	ずんず	誦ず	動詞	verb	ginzuru	（詩歌・経文を）声に出して唱える	
+N	みまかる	身罷る	動詞	verb	shinu	死ぬ・この世を去る	
+N	おとなふ	音なふ・訪ふ	動詞	verb	houmon	訪問する・便りをする／音を立てる	
+N	かる（離る）	離る	動詞	verb	saru	離れる・疎遠になる	
+N	たばかる	謀る	動詞	verb	kufuu	思案する・工夫する／だます	
+N	まうく	設く	動詞	verb	junbi	準備する・用意する	得る・手に入れる
+N	もてなす	持て成す	動詞	verb	furumau	振る舞う・取り扱う	大切に扱う・ごちそうする
+N	ことよす	言寄す・事寄す	動詞	verb	koujitsu	かこつける・口実にする	
+N	ありつく	有り付く	動詞	verb	sumitsuku	住みつく・落ち着く／似合う	
+N	うけばる	受け張る	動詞	verb	furumau	遠慮なく振る舞う・わがもの顔にする	
+N	ためらふ	躊躇ふ	動詞	verb	shizumeru	気持ちを静める・（病気を）落ち着かせる	ためらう
+N	あらがふ	争ふ	動詞	verb	teikou	言い争う・反論する	
+N	うとむ	疎む	動詞	verb	iyau	嫌って遠ざける	
+N	ものもおぼえず	物も覚えず	連語	verb	midareru,shouki	正気を失う・何も分からなくなる	
+N	こころやる	心遣る	連語	verb	manzoku,kiwoharasu	気を晴らす・満足する	
+# --- 敬語動詞 ---
+K	のたまふ	宣ふ	敬語動詞	keigo	ossharu	おっしゃる	
+K	おほす	仰す	敬語動詞	keigo	ossharu,meizuru	お命じになる／おっしゃる	
+K	たまふ（四段）	給ふ	敬語動詞	keigo	ataeru,nasaru	お与えになる／（補助動詞）〜なさる・お〜になる	
+K	たまはる	賜る	敬語動詞	keigo	itadaku,ataeru,ukeru	いただく・頂戴する	お与えになる
+K	きこゆ	聞こゆ	敬語動詞	keigo	moushiageru,sou,kei,kikoeru	申し上げる／聞こえる・評判になる	
+K	まうす	申す	敬語動詞	keigo	moushiageru,sou,kei	申し上げる	
+K	そうす	奏す	敬語動詞	keigo	sou	（天皇・上皇に）申し上げる	
+K	けいす	啓す	敬語動詞	keigo	kei	（皇后・中宮・皇太子に）申し上げる	
+K	たてまつる	奉る	敬語動詞	keigo	ageru,meshiagaru	差し上げる／召し上がる・お召しになる	（補助動詞）〜申し上げる／お乗りになる
+K	まゐる	参る	敬語動詞	keigo	sanjou,ageru,meshiagaru	参上する／差し上げる	召し上がる・（お世話などを）して差し上げる
+K	まかづ	罷づ	敬語動詞	keigo	taishutsu	退出する	
+K	まかる	罷る	敬語動詞	keigo	taishutsu	退出する／（丁寧語）参ります	地方へ下る
+K	はべり	侍り	敬語動詞	keigo	tsukaeru,aru	お仕えする・おそばに控える／あります・おります	（補助動詞・丁寧語）〜です・〜ます・〜ております
+K	さぶらふ	候ふ	敬語動詞	keigo	tsukaeru,aru	お仕えする・おそばに控える／あります・おります	（補助動詞・丁寧語）〜です・〜ます・〜ております
+K	おはす	—	敬語動詞	keigo	irassharu	いらっしゃる	
+K	ごらんず	御覧ず	敬語動詞	keigo	goran	ご覧になる	
+K	めす	召す	敬語動詞	keigo	yobu,meshiagaru	お呼びになる／召し上がる・お召しになる	
+K	おほとのごもる	大殿籠る	敬語動詞	keigo	yasumu	おやすみになる	
+K	つかうまつる	仕うまつる	敬語動詞	keigo	tsukaeru	お仕えする／して差し上げる・いたす	
+K	おぼす	思す	敬語動詞	keigo	omou	お思いになる	
+H	しろしめす	知ろし召す	敬語動詞	keigo	shiru_k,osameru_k	ご存じである／お治めになる	
+H	きこしめす	聞こし召す	敬語動詞	keigo	kiku_k,meshiagaru,osameru_k	お聞きになる／召し上がる	お治めになる
+H	うけたまはる	承る	敬語動詞	keigo	ukeru,itadaku	お受けする・お聞きする	
+H	まうづ	詣づ	敬語動詞	keigo	sanjou	参上する・参詣する	
+H	まゐらす	参らす	敬語動詞	keigo	ageru	差し上げる	（補助動詞）〜申し上げる
+H	あそばす	遊ばす	敬語動詞	keigo	nasaru	なさる	（詩歌・管弦を）なさる
+H	つかはす	遣はす	敬語動詞	keigo	ataeru,haken	派遣なさる・おやりになる／お与えになる	
+N	みそなはす	—	敬語動詞	keigo	goran	ご覧になる	
+N	たまふ（下二段）	給ふ	敬語動詞	keigo	itadaku,ukeru	（補助動詞）〜させていただく・〜ております	
+# --- 形容詞・形容動詞・状態を表す連語 ---
+K	あはれなり	—	形容動詞	adj	omomuki,kawaisou,kawaii,sabishii	しみじみと心を動かされる・趣深い／かわいそうだ	いとしい・寂しい
+K	をかし	—	形容詞	adj	omomuki,kawaii,baka,subarashii	趣がある・風情がある／かわいらしい	こっけいだ・すばらしい
+K	いみじ	—	形容詞	adj	hanahadashi,subarashii,hidoi	（程度が）はなはだしい／すばらしい・ひどい	
+K	ゆかし	—	形容詞	adj	kokorohikareru	見たい・聞きたい・知りたい	心ひかれる
+K	あやし（怪し）	怪し	形容詞	adj	ayashi,fushigi	不思議だ・変だ	けしからん・見苦しい
+K	あやし（賤し）	賤し	形容詞	adj	ayashi,mibun_hikui	身分が低い・いやしい／粗末だ・みすぼらしい	
+K	ありがたし	有り難し	形容詞	adj	mezurashii,subarashii	めったにない・珍しい／（生きることが）難しい	（めったにないほど）すぐれている
+K	うつくし	愛し	形容詞	adj	kawaii,subarashii	かわいらしい・いとしい	立派だ・美しい
+K	いとほし	—	形容詞	adj	kawaisou,kawaii	気の毒だ・かわいそうだ／かわいい・いとしい	
+K	かなし	愛し・悲し	形容詞	adj	kawaii,kanashii	かわいい・いとしい	悲しい
+K	らうたし	労たし	形容詞	adj	kawaii	かわいい・いじらしい	
+K	うしろめたし	後ろめたし	形容詞	adj	fuan	気がかりだ・不安だ	やましい
+K	おぼつかなし	覚束無し	形容詞	adj	fuan,machidooshii,bonyari	はっきりしない・ぼんやりしている／気がかりだ	待ち遠しい
+K	こころもとなし	心許無し	形容詞	adj	fuan,machidooshii,bonyari	待ち遠しい・じれったい／気がかりだ	ぼんやりしている
+K	かたはらいたし	傍ら痛し	形容詞	adj	mittomonai,kimariwarui,kawaisou	みっともない・見苦しい／きまりが悪い	気の毒だ
+K	くちをし	口惜し	形容詞	adj	zannen,tsumaranai	残念だ・がっかりだ	つまらない
+K	すさまじ	凄じ	形容詞	adj	kyouzame	興ざめだ・おもしろくない	殺風景だ・寒々としている
+K	つれづれなり	徒然なり	形容動詞	adj	taikutsu,sabishii	退屈だ・手持ちぶさただ	もの寂しい
+K	はしたなし	端なし	形容詞	adj	kimariwarui,chuutohanpa,fusawashikunai	中途半端だ・不似合いだ／きまりが悪い	そっけない・激しい
+K	めでたし	—	形容詞	adj	subarashii	すばらしい・立派だ	
+K	めづらし	珍し	形容詞	adj	subarashii,mezurashii,kokorohikareru	すばらしい・心ひかれる／目新しい・珍しい	
+K	ゆゆし	由々し・忌々し	形容詞	adj	fukitsu,osoreooi,hanahadashi,subarashii,hidoi,kimiwarui	不吉だ・恐れ多い／（程度が）はなはだしい	すばらしい・ひどい
+K	あさまし	—	形容詞	adj	odoroki,nasakenai,hidoi,totsuzen	驚きあきれる・意外だ	情けない・ひどい
+K	あたらし	惜し	形容詞	adj	zannen,mottainai	もったいない・惜しい	
+K	こころにくし	心憎し	形容詞	adj	omomuki,kokorohikareru	奥ゆかしい・心ひかれる	
+K	さうざうし	—	形容詞	adj	monotarinai,sabishii,kyouzame	物足りない・心寂しい	
+K	つきづきし	付き付きし	形容詞	adj	fusawashii	ふさわしい・似つかわしい	
+K	つらし	辛し	形容詞	adj	hakujou,tsurai	薄情だ・冷淡だ	つらい・耐えがたい
+K	なまめかし	艶かし	形容詞	adj	yuubi	若々しく優美だ・上品で美しい	
+K	はかなし	果無し・儚し	形容詞	adj	hakanai,sasai,tsumaranai	頼りない・あっけない／ちょっとした・取るに足りない	
+K	むつかし	難し	形容詞	adj	fukai,kimiwarui	うっとうしい・不快だ	気味が悪い・面倒だ
+K	めざまし	目覚まし	形容詞	adj	fukai,subarashii	気にくわない・心外だ	（目が覚めるほど）すばらしい
+K	やさし	優し・恥し	形容詞	adj	kimariwarui,tsurai,yuubi	（身も細るほど）つらい・恥ずかしい／優美だ・上品だ	
+K	やむごとなし	止む事無し	形容詞	adj	kouki,kakubetsu	高貴だ・尊い／格別だ・特別だ	
+K	わりなし	理無し	形容詞	adj	douri_nashi,doushiyou,tsurai,hidoi	道理に合わない・無理だ／どうしようもない・つらい	ひどい・この上ない
+K	わろし	悪し	形容詞	adj	yokunai	よくない・感心しない	
+K	あてなり	貴なり	形容動詞	adj	kouki,yuubi	高貴だ・身分が高い／上品だ・優美だ	
+K	いたづらなり	徒らなり	形容動詞	adj	muda,hakanai,tsumaranai	むだだ・役に立たない／むなしい・ひまだ	
+K	おろかなり	疎かなり	形容動詞	adj	iikagen,iumademonai	いいかげんだ・おろそかだ	（言へばおろかなり）言うまでもない
+K	あだなり	徒なり	形容動詞	adj	fujitsu,hakanai	誠実でない・浮気だ／はかない・かりそめだ	
+K	まめなり	—	形容動詞	adj	majime	まじめだ・誠実だ／実用的だ	
+K	こころうし	心憂し	形容詞	adj	tsurai,nasakenai,fukai	つらい・情けない	
+K	なつかし	懐かし	形容詞	adj	kokorohikareru,shitashii	心ひかれる・親しみが持てる	
+K	はづかし	恥づかし	形容詞	adj	subarashii,kimariwarui	（こちらが気後れするほど）立派だ	恥ずかしい
+K	よろし	宜し	形容詞	adj	futsuu,fusawashii	まあまあだ・悪くない	ふさわしい
+K	つれなし	—	形容詞	adj	hakujou,heizen	平然としている・素知らぬ顔だ／冷淡だ・薄情だ	
+H	うしろやすし	後ろ安し	形容詞	adj	anshin	安心だ・心配がない	
+H	ねんごろなり	懇ろなり	形容動詞	adj	nesshin,shitashii	心がこもっている・熱心だ	親しい
+H	うし	憂し	形容詞	adj	tsurai,iya	つらい・いやだ	
+H	あぢきなし	—	形容詞	adj	douri_nashi,tsumaranai,doushiyou,muda	道理に合わない／つまらない・どうしようもない	無益だ
+H	あいなし	—	形容詞	adj	fukai,tsumaranai,kyouzame,fusawashikunai,wakemonaku	気に入らない・つまらない	不似合いだ・（あいなく）むやみに
+H	いぶせし	—	形容詞	adj	fukai,fuan	気が晴れない・うっとうしい	気がかりだ
+H	うるはし	麗し	形容詞	adj	seizen,yuubi,shitashii	きちんとして整っている・端正だ	親しい・美しい
+H	かしこし	畏し・賢し	形容詞	adj	osoreooi,kashikoi,subarashii	恐れ多い／すぐれている・賢い	（連用形で）ひどく
+H	こちたし	言痛し	形容詞	adj	gyougyou,urusai,hanahadashi	仰々しい・大げさだ／うるさい・わずらわしい	はなはだしい
+H	ねたし	妬し	形容詞	adj	fukai	しゃくにさわる・いまいましい	
+H	びんなし	便無し	形容詞	adj	yokunai,kawaisou	都合が悪い・不都合だ	気の毒だ
+H	むつまし	睦まし	形容詞	adj	shitashii	親しい・仲がよい	
+H	ものぐるほし	物狂ほし	形容詞	adj	baka,shouki	正気でないようだ・ばかげている	
+H	よしなし	由無し	形容詞	adj	doushiyou,tsumaranai,muda	理由がない・方法がない／つまらない・くだらない	
+H	あらまほし	—	形容詞	adj	risou	理想的だ・望ましい	あってほしい
+H	おどろおどろし	—	形容詞	adj	kimiwarui,gyougyou	気味が悪い・恐ろしい／大げさだ・仰々しい	
+H	かたじけなし	忝し	形容詞	adj	osoreooi,mottainai	恐れ多い・もったいない／ありがたい	恥ずかしい
+H	こころぐるし	心苦し	形容詞	adj	kawaisou,fuan	気の毒だ・心が痛む／気がかりだ	
+H	すずろなり	漫ろなり	形容動詞	adj	wakemonaku,totsuzen	なんとなく・わけもなく／思いがけない	むやみだ・関係ない
+H	たのもし	頼もし	形容詞	adj	yuufuku,tayorininaru	裕福だ／頼りになる	
+H	なのめなり	斜めなり	形容動詞	adj	iikagen,heibon	平凡だ・ありふれている／いいかげんだ	
+H	いうなり	優なり	形容動詞	adj	yuubi,subarashii	優美だ・上品だ／すぐれている	
+H	さかし	賢し	形容詞	adj	kashikoi,namaiki	賢い・しっかりしている／こざかしい・利口ぶっている	
+H	さがなし	—	形容詞	adj	ijiwaru,urusai	意地が悪い・たちが悪い／口うるさい	（子どもが）いたずらだ・やんちゃだ
+H	こころなし	心無し	形容詞	adj	hakujou,fuzei_nashi	思慮がない・思いやりがない／情趣を解さない	
+H	ものし	物し	形容詞	adj	fukai	不快だ・目障りだ	
+H	ことわりなり	理なり	形容動詞	adj	douri_ari	もっともだ・当然だ	
+H	かりそめなり	仮初めなり	形容動詞	adj	ichiji,hakanai,sasai	一時的だ・その場限りだ／ちょっとしたことだ	
+H	あからさまなり	—	形容動詞	adj	ichiji,sasai	ほんのちょっと・一時的だ	
+H	ひたぶるなり	—	形容動詞	adj	hitasura	ひたすらだ・いちずだ	（ひたぶるに）まったく
+H	あながちなり	強ちなり	形容動詞	adj	hitasura,gouin	強引だ・身勝手だ／ひたすらだ・いちずだ	（打消を伴って）必ずしも〜ない
+H	まばゆし	目映し	形容詞	adj	kimariwarui,mabushii	まぶしい／恥ずかしい・きまりが悪い	（まぶしいほど）美しい
+H	おとなし	大人し	形容詞	adj	otona	大人びている・分別がある	年長だ
+H	むくつけし	—	形容詞	adj	kimiwarui	気味が悪い・恐ろしい	無骨だ
+H	こころづきなし	心付き無し	形容詞	adj	fukai,kyouzame	気にくわない・心ひかれない	
+H	をこなり	痴なり	形容動詞	adj	baka	ばかげている・間が抜けている	
+H	いふかひなし	言ふ甲斐無し	形容詞	adj	doushiyou,tsumaranai,mibun_hikui	どうしようもない／つまらない・取るに足りない	身分が低い
+H	いへばさらなり	言へば更なり	連語	adj	iumademonai	言うまでもない	
+H	なのめならず	斜めならず	連語	adj	kakubetsu	並ひととおりでない・格別だ	
+N	けうとし	気疎し	形容詞	adj	kimiwarui,iya	気味が悪い／親しみにくい・うとましい	
+N	ゆくりなし	—	形容詞	adj	totsuzen	突然だ・思いがけない	
+N	いはけなし	—	形容詞	adj	osanai	幼い・子どもっぽい	
+N	いぎたなし	寝穢し	形容詞	adj	nemuru	ぐっすり眠り込んでいる・寝坊だ	
+N	せちなり	切なり	形容動詞	adj	hitasura	切実だ・ひたすらだ	（連用形で）しきりに
+N	えんなり	艶なり	形容動詞	adj	yuubi	優美だ・あでやかだ	
+N	むげなり	無下なり	形容動詞	adj	hidoi	ひどい・最低だ	（むげに）むやみに・まったく
+N	けしからず	怪しからず	連語	adj	ijou,yokunai	異様だ・ふつうでない／よくない	
+N	しどけなし	—	形容詞	adj	darashinai,ranzatsu	だらしない・乱れている／くつろいでいる	
+N	すきずきし	好き好きし	形容詞	adj	fuuryuu	好色めいている／風流だ・物好きだ	
+N	なほざりなり	等閑なり	形容動詞	adj	iikagen	いいかげんだ・ほどほどだ	
+N	あえかなり	—	形容動詞	adj	kayowai	か弱い・きゃしゃだ	
+N	らうらうじ	労労じ	形容詞	adj	takumi,yuubi	巧みだ・物慣れている／上品で美しい	
+N	にげなし	似げ無し	形容詞	adj	fusawashikunai	似つかわしくない・不似合いだ	
+N	ことごとし	事事し	形容詞	adj	gyougyou	大げさだ・仰々しい	
+N	うちつけなり	打ち付けなり	形容動詞	adj	totsuzen	突然だ／軽率だ	
+N	すごし	凄し	形容詞	adj	sabishii,subarashii,kimiwarui	ぞっとするほど寂しい／ぞっとするほどすばらしい	ぞっとするほど恐ろしい・気味が悪い
+N	こころやすし	心安し	形容詞	adj	anshin,shitashii	安心だ／親しい・気楽だ	
+N	いまいまし	忌々し	形容詞	adj	fukitsu,fukai	縁起が悪い・不吉だ	（身を慎むべきで）はばかられる
+N	まさなし	正無し	形容詞	adj	yokunai,mittomonai	よくない・不都合だ／みっともない	
+N	ずちなし	術無し	形容詞	adj	doushiyou	どうしようもない・なすすべがない	
+N	おほけなし	—	形容詞	adj	mibun_shirazu	身の程知らずだ・分不相応だ	
+N	あへなし	敢へ無し	形容詞	adj	hakanai	あっけない・張り合いがない	
+N	あかず	飽かず	連語	adj	monotarinai,zannen	物足りない・名残惜しい／飽きることがない	
+N	さればよ	—	連語	adj	yahari	思ったとおりだ・やはりそうだ	
+# --- 連体詞・連体修飾の連語 ---
+H	ありし	—	連体詞	rentai	mukashi	以前の・昔の	生前の
+N	ありつる	—	連体詞	rentai	mukashi	さっきの・先ほどの	
+H	あらぬ	—	連語	rentai	betsu	別の・違う／意外な・とんでもない	
+H	さるべき	然るべき	連語	rentai	tekitou	そうなるはずの・ふさわしい／立派な	
+N	さらぬ	然らぬ	連語	rentai	betsu,taishita	そうでない・たいしたことのない	（さらぬ別れ）死別
+H	かかる	斯かる	連体詞	rentai	konoyouna	このような・こういう	
+N	あたら	可惜	連体詞	rentai	mottainai	惜しい・もったいない	
+N	させる	—	連体詞	rentai	taishita	（打消を伴って）たいした・これといった	
+# --- 名詞 ---
+K	うつつ	現	名詞	noun	genjitsu	現実／正気	
+K	おほやけ	公	名詞	noun	tennou	朝廷・天皇／公的なこと	
+K	かたち	形・容貌	名詞	noun	youbou	容貌・顔立ち	
+K	けしき	気色	名詞	noun	yousu,kibun	様子・ありさま／機嫌・意向	
+K	ここち	心地	名詞	noun	kibun,byouki	気分・気持ち／病気	
+K	ことわり	理	名詞	noun	douri	道理・筋道	
+K	しるし（験）	験・徴	名詞	noun	shirushi	効き目・ご利益／前兆	
+K	せうそこ	消息	名詞	noun	tegami,houmon	手紙・便り／訪問（して来意を告げること）	
+K	つとめて	—	名詞	noun	asa	早朝／翌朝	
+K	としごろ	年頃	名詞	noun	nagaku	長年・数年来	
+K	ほい	本意	名詞	noun	negai	本来の志・かねてからの願い	
+K	ゆゑ	故	名詞	noun	riyuu,fuuryuu	理由・原因／由緒・風情	
+K	よし	由	名詞	noun	riyuu,houhou,fuuryuu,yousu	理由・いわれ／手段・方法	趣旨・（〜という）こと／風情・由緒
+K	おぼえ	覚え	名詞	noun	hyouban	評判・世間の信望／（主君の）寵愛	
+K	きは	際	名詞	noun	mibun	身分・家柄／程度・限度	
+K	ざえ	才	名詞	noun	gakumon	学問（特に漢学）／才能・技芸	
+K	ちぎり	契り	名詞	noun	yakusoku,en,unmei	約束／前世からの因縁	
+K	なさけ	情け	名詞	noun	omoiyari,fuuryuu	思いやり・情愛／風流心	
+K	ほど	程	名詞	noun	jikan,mibun	時間・頃／身分・程度	距離・広さ
+H	よすが	縁・便	名詞	noun	tayori,tsuma	頼りとするもの・身を寄せる所	
+H	うしろみ	後見	名詞	noun	kouken	世話をすること・後見人	
+H	いとま	暇	名詞	noun	itoma	休暇・ひま／辞去・別れ	
+H	しな	品	名詞	noun	mibun	身分・家柄／品格	
+H	たより	頼り・便り	名詞	noun	tayori,kikai,houhou,tegami	頼りになるもの・縁故／よい機会・ついで	手段・便宜・手紙
+H	つま	夫・妻	名詞	noun	tsuma	（夫から見た）妻・（妻から見た）夫	
+H	まつりごと	政	名詞	noun	seiji	政治・政務	
+H	みゆき	行幸・御幸	名詞	noun	miyuki	（天皇・上皇などの）お出かけ	
+H	ひがこと	僻事	名詞	noun	machigai	間違い・道理に外れたこと	
+H	ついで	序	名詞	noun	kikai,junjo	順序／機会・折	
+H	けはひ	気配	名詞	noun	yousu	雰囲気・様子／気配・物音	
+H	うち	内	名詞	noun	tennou	宮中／天皇	
+H	すき	好き	名詞	noun	fuuryuu	風流・風流に熱中すること／好色	
+H	すくせ	宿世	名詞	noun	en	前世からの因縁・宿命	
+H	ごせ	後世	名詞	noun	raise	来世・死後の世界	来世の安楽
+H	ためし	例	名詞	noun	rei	前例・手本	
+H	まらうと	客人	名詞	noun	kyaku	客・客人	
+H	かげ	影	名詞	noun	youbou,hikari	光／姿・面影	
+H	こころばへ	心延へ	名詞	noun	seishitsu,fuuryuu,kokorogamae	気立て・性質／趣・風情	
+H	ふみ	文	名詞	noun	tegami,gakumon	手紙／漢詩・漢籍・学問	
+H	あした	朝	名詞	noun	asa	朝／翌朝	
+H	よ（世）	世	名詞	noun	yononaka	男女の仲／世の中・世間	
+H	こころざし	志	名詞	noun	omoiyari	愛情・誠意／贈り物	
+H	そらごと	空言	名詞	noun	uso	うそ・作り話	
+H	あかつき	暁	名詞	noun	asa	夜明け前・未明	
+N	ほだし	絆	名詞	noun	sokubaku	（出家などの）妨げになるもの・束縛	
+N	うへ	上	名詞	noun	tennou	天皇・主君／奥方・貴婦人	
+N	さが	性	名詞	noun	seishitsu,unmei	性質・習性／運命	
+N	しるべ	導	名詞	noun	michi	道案内・手引き	
+N	ひま	暇・隙	名詞	noun	itoma,jikan	すき間／絶え間・合間	不和・仲たがい
+N	あるじ（饗）	饗	名詞	noun	motenashi	（客の）もてなし・ごちそう	
+N	かち	徒歩	名詞	noun	toho	徒歩	
+N	かごと	託言	名詞	noun	iiwake	言い訳・口実／恨み言	
+N	まうけ	設け	名詞	noun	motenashi,junbi	準備・用意／もてなし	
+N	なごり	名残	名詞	noun	yoin	余韻・影響／（別れの）名残惜しさ	子孫・忘れ形見
+N	ありあけ	有明	名詞	noun	tsuki	夜が明けても空に残っている月（の頃）	
+N	こころおきて	心掟	名詞	noun	kokorogamae	心構え・意向	
+# --- 副詞 ---
+K	いと	—	副詞	adv	totemo	とても・たいそう	（打消を伴って）たいして〜ない
+K	いとど	—	副詞	adv	issou	いっそう・ますます	
+K	やがて	—	副詞	adv	sugu,sonomama,hayaku	そのまま／すぐに	
+K	かたみに	互に	副詞	adv	tagai	互いに	
+K	いかで	—	副詞	adv	doushite,nantoka	どうして・どうやって／なんとかして	
+K	いかが	—	副詞	adv	doushite	どのように／どうして	
+K	げに	実に	副詞	adv	hontou	本当に・なるほど	
+K	さすがに	—	副詞	adv	yahari	そうはいってもやはり	
+K	いつしか	—	副詞	adv	hayaku	早く／いつの間にか	
+K	やうやう	漸う	副詞	adv	dandan	だんだん・しだいに	
+K	やをら	—	副詞	adv	shizuka	そっと・静かに	
+K	おのづから	自ら	副詞	adv	guuzen,moshi	自然と／たまたま・偶然	（仮定の表現で）ひょっとして・万一
+K	あまた	数多	副詞	adv	takusan,totemo	たくさん・数多く	
+K	とく	疾く	副詞	adv	hayaku,sugu	早く・すぐに	
+K	なほ	猶・尚	副詞	adv	yahari,issou	やはり・依然として／いっそう	
+K	なかなか	中中	副詞	adv	kaette	かえって・むしろ	
+H	うたて	—	副詞	adv	iyani	ますますひどく／いやに・不快に	
+H	せめて	—	副詞	adv	shiite,totemo	しいて・無理に／ひどく・きわめて	
+H	かねて	予て	副詞	adv	maemotte	前もって・以前から	
+H	かつ	且つ	副詞	adv	ippou,sugu	一方では・同時に／すぐに	
+H	すなはち	即ち	副詞	adv	sugu	すぐに・ただちに	
+H	しばし	暫し	副詞	adv	shibaraku	しばらく・少しの間	
+H	さながら	—	副詞	adv	sonomama,subete	そのまま／すべて・そっくり	
+H	なべて	並べて	副詞	adv	subete,ippan	一般に・総じて／すべて	
+H	ひとへに	偏に	副詞	adv	hitasura	ひたすら・もっぱら	
+H	よに	世に	副詞	adv	totemo	実に・非常に	（打消を伴って）決して〜ない
+H	ひねもす	終日	副詞	adv	ichinichi	一日中	
+H	よもすがら	夜もすがら	副詞	adv	hitoban	一晩中・夜通し	
+N	あまねく	遍く	副詞	adv	subete	広く・すみずみまで	
+N	ここら	—	副詞	adv	takusan,totemo	たくさん・たいそう	
+N	はた	将	副詞	adv	yahari,moshi	また・やはり／もしかして	
+N	かまへて	構へて	副詞	adv	kanarazu	必ず・きっと	（禁止を伴って）決して〜するな
+N	いはんや	況んや	副詞	adv	mashite	まして・言うまでもなく	
+N	たまさかに	偶さかに	副詞	adv	guuzen	たまに・まれに／偶然に	
+# --- 呼応の副詞 ---
+K	え〜ず	—	副詞	koou	fukanou	〜できない	
+K	な〜そ	—	副詞	koou	kinshi	〜するな・〜しないでくれ	
+K	さらに〜ず	更に	副詞	koou	zenhitei	まったく〜ない	
+K	つゆ〜ず	露	副詞	koou	zenhitei	少しも〜ない	
+H	をさをさ〜ず	—	副詞	koou	bubunhitei	ほとんど〜ない・めったに〜ない	
+H	ゆめ〜な	努	副詞	koou	kinshi	決して〜するな	
+H	よも〜じ	—	副詞	koou	suiryo	まさか〜ないだろう	
+H	いさ〜知らず	—	副詞	koou	isa	さあ、どうだか（〜は分からない）	
+
+# --- 2026-10-28 追加: 入試頻出なのに最初の一覧に無かった語 (市販の単語集の見出し語と突き合わせて洗い出し、意味・例文は書き下ろし) ---
+K	にほひ	匂ひ	名詞	noun	utsukushisa	（色の）つややかな美しさ／気品・風格	香り
+K	わびし	侘びし	形容詞	adj	tsurai,mazushii	つらい・やりきれない／貧しい・みすぼらしい	（興ざめで）つまらない
+K	れい	例	名詞	noun	itsumo,rei	いつものこと・ふだん／普通・並	（例の）いつもの・いつものように
+K	けしうはあらず	怪しうはあらず	連語	adj	futsuu,kanjiyoi	悪くない・まあまあだ	
+K	めやすし	目安し	形容詞	adj	kanjiyoi,futsuu,kokorohikareru	見苦しくない・感じがよい	
+H	とみなり	頓なり	形容動詞	adj	totsuzen	急だ・にわかだ	（とみの）急ぎの
+H	くまなし	隈無し	形容詞	adj	kumanashi	曇りや陰がない／行き届かない所がない	
+H	つごもり	晦	名詞	noun	tsukisue	月末・月の最後の日	
+H	みそかなり	密かなり	形容動詞	adj	hisoka	ひそかだ・こっそりしている	
+H	はかばかし	果果し・捗捗し	形容詞	adj	shikkari,tayorininaru	しっかりしている・頼もしい／はっきりしている	
+H	うす	失す	動詞	verb	shinu,kieru	消える・なくなる／死ぬ	
+H	まだし	未だし	形容詞	adj	mijuku	まだ早い・未熟だ	
+H	おほかた	大方	副詞	adv	ippan	だいたい・一般に	（打消を伴って）まったく〜ない／（文頭で）そもそも・総じて
+H	しるし（著し）	著し	形容詞	adj	hakkiri	はっきりしている・際立っている／予想どおりだ	
+H	おくる	後る・遅る	動詞	verb	okureru	（親しい人に）先立たれる／劣る	
+H	とが	咎	名詞	noun	tsumi	罪・過失／欠点	
+H	なめし	—	形容詞	adj	burei	無礼だ・失礼だ	
+H	きしかた	来し方	名詞	noun	kako	過ぎ去った時・過去／通ってきた方向	
+H	おもしろし	面白し	形容詞	adj	omomuki	趣がある・風情がある／楽しい・興味深い	
+H	いざ	—	副詞	adv	sasou	さあ（誘いかけ）	
+N	かたへ	片方	名詞	noun	katawara,nakama	一部分／かたわら・そば	仲間・同僚
+N	しげし	繁し	形容詞	adj	ooi,urusai	（量や回数が）多い・絶え間ない／わずらわしい	
+N	さうなし	双無し・左右無し	形容詞	adj	narabunashi	比べるものがない／ためらわない・あれこれ考えない	
+N	かづく	被く	動詞	verb	itadaku_v	（四段）褒美をいただく／（下二段）褒美として与える	かぶる・かぶせる
+N	ところせし	所狭し	形容詞	adj	kyuukutsu,gyougyou,urusai	窮屈だ・気づまりだ／仰々しい・堂々としている	
+N	たがふ	違ふ	動詞	verb	chigau	食い違う・背く	（下二段で）違える・背かせる
+N	うるさし	—	形容詞	adj	urusai,subarashii	わずらわしい・面倒だ／（細かいところまで）行き届いている	
+N	かしかまし	囂し	形容詞	adj	urusai	やかましい・騒がしい	
+N	らうがはし	乱がはし	形容詞	adj	ranzatsu,urusai	乱雑だ・乱れている／騒がしい	
+N	そこばく	若干・許多	副詞	adv	takusan	たくさん・数多く／いくらか	
+N	あらまし	—	名詞	noun	keikaku	計画・予定／概略・あらすじ	
+N	まほなり	真秀なり	形容動詞	adj	kanzen	完全だ・整っている	正式だ・本格的だ
+N	かたほなり	片秀なり	形容動詞	adj	mijuku	不完全だ・未熟だ	
+N	さるものにて	然るものにて	連語	adv	sorehasoreto,mashite	それはそれとして・もちろんのこととして	
+N	おこす	遣す	動詞	verb	yokosu	（こちらへ）よこす・送ってくる	
+N	たぐひ	類	名詞	noun	nakama	仲間・同類／例・たぐい	
+N	はばかる	憚る	動詞	verb	enryo	遠慮する・ためらう／幅をきかせる・はびこる	
+N	むね	旨・宗	名詞	noun	shushi	趣旨・意向／中心となるもの	
+N	ようい	用意	名詞	noun	kokorozukai	心づかい・注意・用心	
+N	おきつ	掟つ	動詞	verb	kimeru	（前もって）決める・計画する／指図する	
+N	なにおふ	名に負ふ	連語	verb	yuumei	（その名を）名として持つ・評判が高い	

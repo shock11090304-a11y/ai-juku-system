@@ -58,6 +58,11 @@ on:
       # ⛔ 週次弱点プリントの停止 (test_weekly_worksheet_stop.py) は mypage.html の終了表示と prod_healthcheck の監視対象もソースで見る
       - 'mypage.html'
       - 'scripts/health_check/prod_healthcheck.py'
+      # 📜 古文単語 (test_kobun_vocab.py) は正本 (scripts/kobun_vocab/) と画面 (kobun.html・vocab.js・vocab.html) の配線も見る
+      - 'scripts/kobun_vocab/**'
+      - 'kobun.html'
+      - 'vocab.js'
+      - 'vocab.html'
       # 🆕 新しい宿題のお知らせ (test_hw_notice_js.py) は hw-notice.js と class.html / mypage.js を JS で実際に動かす
       #   (画面だけ直した push でも走らせる。?v= 検査 js_cache_bust.py もこの workflow の中で回る)
       - 'hw-notice.js'
@@ -612,6 +617,12 @@ jobs:
       - name: 学年の判定 (サーバ・student-mode.js・ceo.html の一致) 回帰テスト
         if: ${{ !cancelled() }}
         run: python3 scripts/health_check/test_grade_band_consistency.py
+
+      # 📜 AI 単語帳の古文 (2026-10-28 塾長「AI 単語帳に古文を追加」): server/kobun_vocab_v1.json が正本 (scripts/kobun_vocab/) から
+      #   作り直したものと一致・語ごとの誤答 3 つ・古文の API (subject=kobun) は古文だけ・英単語の API に古文が混ざらない・JSON を直すと DB も直る。
+      - name: AI 古文単語 回帰テスト
+        if: ${{ !cancelled() }}
+        run: python3 scripts/health_check/test_kobun_vocab.py
 
       # 🤖 自動配信の共通部品 (2026-10-15 塾長決定「自動で配るのはレビュー済みの科目別ドリルだけ」): 出典の許可リスト
       #   (シードの分類を固定・習熟度テストは env でも外せない)・弱点 topic → 単元・学年の区分と科目・AI の振り分け (1 人 1 経路)・

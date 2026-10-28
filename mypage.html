@@ -213,6 +213,14 @@
               <div class="action-desc">忘れかけた頃にもう一度出てくる単語帳</div>
             </div>
           </a>
+          <!-- 📜 古文単語 (塾長指示 2026-10-28): 英単語と同じ仕組み・意味と例文はこの塾の書き下ろし -->
+          <a href="kobun.html" id="kobunMenuCard" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(245,158,11,0.16),rgba(239,68,68,0.08));border:2px solid rgba(245,158,11,0.45);">
+            <div class="action-icon">📜</div>
+            <div>
+              <div class="action-title">AI 古文単語</div>
+              <div class="action-desc">入試に出る古文単語を 4 択でくり返す</div>
+            </div>
+          </a>
           <a href="index.html" class="action-btn primary">
             <div class="action-icon">💬</div>
             <div>
@@ -1319,6 +1327,7 @@
       <div id="lbTodayReview"></div>
       <div id="lbStudyTimeWidget" style="margin-top:1rem;"></div>
       <div id="vocabSrsWidget" style="margin-top:1rem;"></div>
+      <div id="kobunSrsWidget" style="margin-top:0.6rem;"></div>
       <div id="curriculumWeekWidget" style="margin-top:1rem;"></div>
       <!-- 🙈 2026-09-09 塾長判断: 生徒には不要な表示として非表示 (今月の利用状況 / 次の定期テスト未登録 / 紹介プログラム)。
            描画関数の呼び出しも initWidgets で止めている。戻すときは display:none を外し initWidgets の呼び出しを復活させる。
@@ -1530,6 +1539,8 @@
           }
           // 中学生/小学生モード専用ヒーロー (高校受験/中学受験向けの文言・チップ)
           if (_ajMode !== 'kosei') {
+            // 📜 古文単語は大学入試向け (共通テスト・国公立二次) なので高校生だけに出す (下の復習欄も kosei のみ)
+            const _kc = document.getElementById('kobunMenuCard'); if (_kc) _kc.style.display = 'none';
             const _heroMap = {
               chugaku: { t: '🧒 高校受験モード', s: '内申点アップと志望校合格まで、AI が 5 教科をまるごと伴走します。', c: ['📐 5教科対応', '📄 高校入試の模試', '✍️ AI が答案添削'] },
               shougaku: { t: '🎒 中学受験モード', s: '算数・国語・理科・社会の 4 教科を、AI がやさしく伴走します。', c: ['📚 4教科対応', '🎯 志望校別の対策'] }
@@ -1565,6 +1576,7 @@
           renderCurriculumWeekWidget('curriculumWeekWidget');
           syncCurriculumWeekWidgetFromServer('curriculumWeekWidget'); // ☁️ 端末に無ければアカウントから復元
           renderVocabSrsWidget('vocabSrsWidget', studentId);
+          if (_ajMode === 'kosei') renderKobunSrsWidget('kobunSrsWidget', studentId); // 📜 大学入試向けなので高校生だけ
         }
         renderLessonPrints(student); // 📚 配布プリント (公開カタログ・モード絞り込み・プレビューでも表示)
         // 🧒 中学生モード (2026-06-04): 大学受験オリエンテッドなウィジェットは高校生(kosei)のみ表示。プレビューでは出さない。
@@ -2158,6 +2170,40 @@
           </div>`;
       } catch (e) {
         console.warn('Vocab SRS widget fetch failed:', e);
+        el.innerHTML = '';
+      }
+    }
+
+    // 📜 AI 古文単語 (2026-10-28): 英単語の欄とは別に、古文の「今日の復習」を 1 行で出す (stats の subject=kobun)
+    async function renderKobunSrsWidget(containerId, studentId) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      const API_BASE = (window.location.origin.includes(':8090') || window.location.origin.includes('localhost:8090'))
+        ? 'http://localhost:8000' : window.location.origin;
+      try {
+        const _tok = localStorage.getItem('ai_juku_session_token');
+        const res = await fetch(`${API_BASE}/api/vocab/stats?student_id=${encodeURIComponent(studentId)}&subject=kobun`, _tok ? { headers: { 'Authorization': 'Bearer ' + _tok } } : {});
+        if (!res.ok) { el.innerHTML = ''; return; }
+        const d = await res.json();
+        // subject が kobun でない応答 = サーバが古文に未対応 (英単語の数字を古文として出さない)
+        if (!d || d.subject !== 'kobun') { el.innerHTML = ''; return; }
+        const total = d.total_words_in_pool || 0;
+        if (!total) { el.innerHTML = ''; return; }
+        const due = d.due_now || 0;
+        const learned = Object.values(d.by_box || {}).reduce((a, b) => a + (Number(b) || 0), 0);
+        const status = !learned ? `全 ${total} 語・まだ始めていません`
+          : (due > 0 ? `🔥 今日の復習 ${due} 語` : '✅ 今日の復習は完了');
+        const statusColor = (learned && due > 0) ? '#f87171' : '#cbd5e1';
+        el.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;background:linear-gradient(135deg,rgba(245,158,11,0.10),rgba(239,68,68,0.05));border:1px solid rgba(245,158,11,0.35);border-radius:12px;padding:0.75rem 0.95rem;">
+            <div style="min-width:0;">
+              <div style="font-weight:800;color:#fbbf24;">📜 AI 古文単語</div>
+              <div style="font-size:0.85rem;font-weight:700;color:${statusColor};">${status}${learned ? ` <span style="font-size:0.75rem;color:#94a3b8;font-weight:600;">(学習済み ${learned} / ${total} 語・習得 ${d.mastered || 0})</span>` : ''}</div>
+            </div>
+            <a href="kobun.html" style="background:rgba(245,158,11,0.20);color:#fde68a;border:1px solid rgba(245,158,11,0.5);padding:0.35rem 0.85rem;border-radius:6px;font-size:0.78rem;font-weight:700;text-decoration:none;">→ 学習する</a>
+          </div>`;
+      } catch (e) {
+        console.warn('Kobun SRS widget fetch failed:', e);
         el.innerHTML = '';
       }
     }
