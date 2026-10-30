@@ -222,7 +222,7 @@ sup.qn { font-weight:bold; font-size:8pt; }
 .bk { font-weight:bold; white-space:nowrap; }
 .glossary { font-family:'Hiragino Mincho ProN',serif; font-size:8.8pt; color:#222; background:#f5f5f0; border:1px solid #bbb; padding:5px 8px; margin:8px 0 4px; line-height:1.6; break-inside:avoid; }
 .srcnote { font-size:8.4pt; color:#444; margin:4px 0; text-align:right; }
-.qh { font-family:'Hiragino Mincho ProN','Yu Mincho',serif; font-size:10pt; font-weight:bold; margin:12px 0 5px; background:#eee; padding:3px 7px; border-left:3px solid #555; }
+.qh { font-family:'Hiragino Mincho ProN','Yu Mincho',serif; font-size:10pt; font-weight:bold; margin:12px 0 5px; background:#eee; padding:3px 7px; border-left:3px solid #555; break-inside:avoid; break-after:avoid; }
 .q { margin:2px 0 4px; font-size:10pt; line-height:1.6; }
 .q .ql { font-weight:bold; margin-right:8px; font-family:'Hiragino Mincho ProN',serif; }
 .q .opts .op { display:inline-block; margin:0 12px 1px 0; }
