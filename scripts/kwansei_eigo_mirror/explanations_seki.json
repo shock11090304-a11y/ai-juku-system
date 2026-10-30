@@ -2,6 +2,8 @@
  "I_A_1": {
   "quote": "neither the scientists nor the reporters seem eager to accept the blame",
   "quote_ja": "科学者も記者も、その責任を進んで引き受けようとはしないように見える。",
+  "syntax": "…, and 〈neither the scientists nor the reporters〉{S} seem{V} eager{C} （to accept the blame）{M}",
+  "syntax_note": "and の後ろが新しい節。S は neither A nor B（A も B も～ない）で the scientists と the reporters を並べたまとまり。neither A nor B が主語のときは動詞を B に合わせるのが原則で、ここは A も B も複数なので seem。seem の補語（C）が形容詞 eager で、（to accept the blame）は eager にかかる不定詞（be eager to do『進んで～する』）。",
   "reason": "空所の後ろが the scientists nor the reporters と「A nor B」の形になっていて、前に否定語が無いので、空所には neither が入る。neither A nor B(AもBも～ない)は相関接続詞で、ここも「科学者も記者も責任を取ろうとしない」と両方まとめて否定する流れにぴったりはまる。",
   "distractors": "either は either A or B(AかBか)で相方が or、後ろの nor と噛み合わない。both は both A and B で相方が and、しかも否定の nor と両立しない。whether は whether A or B(AかBか)で相方が or なので、後ろの nor と噛み合わない。",
   "point": "主語が「＿ A nor B」の形で前に否定語が無ければ neither。nor は not や few などの否定の後にも来る(大問Ⅱ問A(2))ので、「nor なら必ず neither」とは覚えない。"
@@ -9,6 +11,8 @@
  "I_A_2": {
   "quote": "far weaker than the confident language used to describe them",
   "quote_ja": "それら（＝研究）を説明するのに使われる自信たっぷりの言葉よりもはるかに弱い。",
+  "syntax": "It{S} is{V} 〈that 〈the studies ［behind these stories］〉{S′} are{V′} far weaker{C′} （than the confident language ［used （to describe them）］）{M′}〉{C}",
+  "syntax_note": "It は前の文の The real problem（本当の問題）を受け、is の補語（C）が that 節（強調構文ではない）。that 節の中は〈the studies …〉（S′。［behind these stories］が studies にかかる）are（V′）far weaker（C′。far は比較級 weaker を強める）。（than …）は weaker と比べる相手。［used （to describe them）］は language にかかる過去分詞のまとまりで『それらを説明するのに使われる』。them は前の the studies（複数）を指す。",
   "reason": "代名詞は「数」と「格」の一致で決める。describe の目的語が要り、指すのは前に出た the studies(複数のモノ)。複数のモノを受ける目的格は them 一択。「研究の実態は、それを語る言葉ほど強くない」という文意にも自然につながる。",
   "distractors": "it と one は単数を受ける形なので複数の studies を指せない。those は those of ～／those who ～ のように後ろに修飾語句を付けて使うのがふつうで、修飾語句なしで前の複数名詞を受ける目的語には them を使う。",
   "point": "代名詞は「数＋格」で決める。複数のモノの目的語は them。"
@@ -16,6 +20,8 @@
  "I_A_3": {
   "quote": "Most nutrition research relies on observation rather than experiment.",
   "quote_ja": "栄養研究の大半は、実験ではなく観察に頼っている。",
+  "syntax": "〈Most nutrition research〉{S} relies{V} （on observation rather than experiment）{M}",
+  "syntax_note": "rely は自動詞で、頼る相手を on で示す（on 以下は relies にかかる M）。observation rather than experiment は『実験ではなく観察』で、全体が on の目的語。rely on をひとまとまりの他動詞と見て observation を O とする説明もある。",
   "reason": "rely の相方の前置詞を選ぶ問題。on のコアイメージは「接触」、そこから「何かにピタッと寄りかかる→頼る・依存する」が生まれる。rely on / depend on / count on は同じ仲間。「研究が観察に寄りかかっている」とイメージすれば on で即決。",
   "distractors": "in / of / for はいずれも rely と結びつかない。rely の相方は on(接触＝寄りかかる)だけ、と押さえれば迷わない。",
   "point": "「頼る」系 rely / depend / count は前置詞 on(接触)とセット。"
@@ -23,6 +29,8 @@
  "I_A_4": {
   "quote": "The human subjects in these studies are never assigned a diet by the researchers",
   "quote_ja": "こうした研究における被験者たちは、研究者から食事を割り当てられることは決してない。",
+  "syntax": "〈The human subjects ［in these studies］〉{S} are never assigned{V} 〈a diet〉{O} （by the researchers）{M}; they{S} choose{V} one{O} （for themselves）{M}, …",
+  "syntax_note": "S の中心は subjects（被験者）で、［in these studies］がかかる。are never assigned は受動態の否定。assign A B（A に B を割り当てる）の A を主語にした受動態なので、B に当たる a diet が後ろに残る（O）。（by the researchers）は割り当てる側。セミコロンの後ろの they は subjects、one は a diet を指す。食事を自分で『選ぶ』のは人なので、空所には人を表す subjects が入る。",
   "reason": "研究で観察・実験の対象となる「被験者」を表す語が要る。subject には「主題」のほかに「(実験・研究の)対象者＝被験者」という重要な意味がある。後ろの they choose one for themselves(自分で選ぶ)も、指すのが人=被験者であることを裏づける。",
   "distractors": "objects は「物・対象物」でモノ寄り、人間の参加者には使わない。figures は「数字・人物像」、themes は「(抽象的な)テーマ」で、研究の「被験者」にはならない。",
   "point": "subject＝「主題」だけでなく「被験者」の多義語。研究文脈では後者を疑う。"
@@ -30,6 +38,8 @@
  "I_A_5": {
   "quote": "it will be confirmed again and again by different teams",
   "quote_ja": "それ（＝発見）は、異なるチームによって何度も何度も確かめられるだろう。",
+  "syntax": "（If 〈a finding〉{S′} （genuinely）{M′} matters{V′}）{M}, it{S} will be confirmed{V} （again and again）{M} （by different teams ［using different methods］）{M}; …",
+  "syntax_note": "If 節は条件を表す副詞のまとまり（M）。主節の it は a finding を指し、will be confirmed は受動態（『確かめられる』）。（by different teams …）が確かめる側で、［using different methods］は teams にかかる現在分詞のまとまり（『異なる方法を使う』）。",
   "reason": "空所の前が it will be ___、後ろに by different teams。この「be＋___＋by」が受動態のサイン。発見は「確かめる」側ではなく「確かめられる」側なので be動詞の後ろは過去分詞 confirmed。「本物の発見なら何度も追試される」という主旨にも合う。",
   "distractors": "confirm(原形)は be の後に置けない。confirming(能動‑ing)は「確かめる側」で by と矛盾。confirms(三単現)は will be の後には入らない。",
   "point": "「be＋___＋by」は受動態＝過去分詞。「される」側かで判断。"
@@ -77,18 +87,18 @@
   "point": "rule out＝「線を引いて外へ→(可能性を)除外する」。out(外へ)がキー。"
  },
  "I_C_i": {
-  "quote": "The human subjects in these studies are never assigned a diet by the researchers; they choose one for themselves ... the groups being compared come to differ in countless hidden ways",
-  "quote_ja": "これらの研究の被験者は、研究者から食事を割り当てられることはなく、自分で選ぶ…比較されるグループは、数え切れない隠れた点で異なってくる。",
-  "reason": "第2段落が核心。被験者は研究者から食事を割り当てられず（never assigned a diet by the researchers）、好み・収入・文化・習慣に応じて自分で選ぶ。そのため比較されるグループが、調べている食品とは無関係な数え切れない点で異なってしまう（differ in countless hidden ways）。筆者はこの一点を That single fact … undermines almost every dramatic claim（ほぼすべての劇的な主張を揺るがす）と評価している。この「自分で選ぶ→隠れた差」を言い換えた a が正解。",
-  "distractors": "b「研究者が食事を割り当てるが、被験者が長年それを守らない」は、本文の never assigned a diet by the researchers と食い違う（研究者は食事を割り当てない）。c「数か月しか追跡しないので長期の影響が見えない」は、本文の follow their health over many years と期間が食い違う（数か月ではなく何年も追跡する）。d「記録する要因が多すぎて食品の効果が埋もれる」は本文に書かれていない。第3段落が弱点として挙げるのは no calculation can remove a factor that was never measured（測っていない要因は計算で取り除けない）で、問題は測りすぎではなく、測れていない要因が残ること。",
-  "point": "central weakness（中心的な弱点）は、筆者が undermines almost every dramatic claim と評価した第2段落の一点。b は「誰が食事を決めるか」、c は「追跡の期間」が本文と食い違い、d は本文にない弱点（測りすぎ）を持ち込んでいる。"
+  "quote": "But stop and ask who actually piles spinach and kale onto their plates. Very often they are wealthier, exercise more, smoke less, sleep better, and visit their doctors regularly.",
+  "quote_ja": "だが、実際にほうれん草やケールを皿に山盛りにしているのは誰なのかを考えてみよう。そうした人々は、より裕福で、より多く運動し、喫煙が少なく、よく眠り、定期的に医者にかかっていることが非常に多い。",
+  "reason": "第3段落の葉物野菜の例で、筆者は野菜をたくさん食べる人の特徴を Very often they are wealthier, exercise more, smoke less, sleep better, and visit their doctors regularly と5つ挙げている。a は前半の sleep better（よく眠る）も、後半の see their doctors on a regular basis（＝visit their doctors regularly、定期的に医者にかかる）も本文と合う。筆者は続けて、これらの違いのどれもが野菜とは関係なく長生きの理由になりうる（交絡因子）と述べ、比較の弱さを示している。",
+  "distractors": "b「ほかの人より裕福で、酒を飲む量も少ない」、c「学校に通った年数が長く、より多く運動する」、d「喫煙が少なく、親しい友人の輪が広い」は、どれも一方（b の裕福・c の運動・d の喫煙）は本文の5つに入っているが、もう一方（飲酒・学歴・友人）は本文に書かれていない。片方が本文にないので、選択肢全体としては本文と合わない。",
+  "point": "この設問の答えの範囲は、本文が挙げた5つの特徴だけ。常識的にありそうな特徴（飲酒・学歴・友人）でも、本文に挙がっていなければ選ばない。この設問では片方だけ本文と合う組が並ぶので、本文の語を1つ見つけて決めず、組の両方を本文の列挙と照らす。"
  },
  "I_C_ii": {
-  "quote": "People who dutifully follow a single piece of medical advice tend to follow many others, so the apparent benefit of any one food may simply boil down to a general willingness to look after oneself",
-  "quote_ja": "一つの医学的助言を忠実に守る人は他の多くの助言も守る傾向があるので、ある一つの食品の見かけの効果は、結局のところ自分の健康に気を配る全般的な姿勢にすぎないのかもしれない。",
-  "reason": "第4段落の定義を問う。healthy-user effect とは、一つの助言を忠実に守る人は他の多くの助言も守る（tend to follow many others）ため、ある食品の見かけの効果（the apparent benefit of any one food）が、実は自分の健康に気を配る姿勢全般によるものかもしれない、という偏り。「一つの良い習慣を持つ人はほかの習慣も持つ」「そのため一つの食品が実際以上に効くように見える」の2点をそろえた d が正解。",
-  "distractors": "a「健康志向の研究者が健康的な食品をひいきし、結果がその食品寄りになる」は、偏りの主体を研究者にしている。本文で習慣を重ねるのは研究の対象となる人々（the conscientious, cautious sort of person）。b「一つの助言を守る人がほかをおろそかにし、食品の本当の効果が隠れる」は、本文の tend to follow many others と向きが逆。c「すでに病気の人が健康的な食品に切り替え、その食品が有害に見える」は、本文に述べられていない別の偏りで、第4段落の説明（健康的な習慣が重なる）とは仕組みが違う。",
-  "point": "用語の定義を問う問題は、本文の定義文（People who … tend to follow many others）の「誰が」「何をするか」「その結果どう見えるか」を一つずつ照らす。主体（研究者か、研究の対象となる人か）と向き（ほかの習慣も守るか、おろそかにするか）が典型のずらし方。"
+  "quote": "A vitamin supplement, a breakfast cereal, even a particular brand of yogurt can appear protective merely because the conscientious, cautious sort of person is the one most likely to buy them.",
+  "quote_ja": "ビタミン剤、朝食用シリアル、さらには特定の銘柄のヨーグルトでさえ、まじめで慎重なタイプの人こそがそれらを最も買いそうだというだけで、健康を守る効果があるように見えることがある。",
+  "reason": "第4段落で、健康的利用者効果（一つの医学的助言を守る人はほかの多くの助言も守るので、ある食品の効果が実際以上に見える偏り）の例として、筆者は A vitamin supplement, a breakfast cereal, even a particular brand of yogurt の3つを挙げている。d は朝食用シリアルも特定の銘柄のヨーグルトも本文の例と合う。merely because the conscientious, cautious sort of person is the one most likely to buy them（それらを最も買いそうなのがまじめで慎重なタイプの人だというだけで）が、設問の『買う人の種類のせいで効くように見える』に当たる。",
+  "distractors": "a「ビタミン剤と特定の銘柄のお茶」は、前半のビタミン剤は本文の例だが、お茶は本文に挙がっていない。b「スポーツドリンクと特定の銘柄のパン」、c「低脂肪のスプレッドと特定の銘柄のジュース」は、どちらの品も本文の例（ビタミン剤・朝食用シリアル・特定の銘柄のヨーグルト）に挙がっていない。どれも健康を気づかう人が買いそうな品なので、常識では切れない。",
+  "point": "用語の名前（healthy-user effect）から仕組みは推測できても、どの品が例に挙がっているかは本文でしか決まらない。健康を気づかう人が買いそうな品はいくらでもあるので、該当箇所の名詞（3つの例）だけを答えの範囲にする。"
  },
  "I_C_iii": {
   "quote": "Observation is frequently the only ethical way to study what humans eat over a lifetime ... it will be confirmed again and again by different teams using different methods",
@@ -99,7 +109,9 @@
  },
  "II_A_1": {
   "quote": "physicians themselves appeared in advertisements praising one brand over another",
-  "quote_ja": "医師たち自身が広告に登場し、ある銘柄を別の銘柄より上だと称賛していた。",
+  "quote_ja": "医師たち自身が、ある銘柄を別の銘柄より上だとほめる広告に登場していた。",
+  "syntax": "…, and 〈physicians themselves〉{S} appeared{V} （in advertisements ［praising{V′} 〈one brand〉{O′} （over another）{M′}］）{M}",
+  "syntax_note": "S は〈physicians themselves〉。themselves は physicians と同格に置かれて『医師たち自身が』と強める語なので、S の中に含めた。appeared（自動詞）が V。［praising …］は advertisements にかかる現在分詞のまとまり（『ある銘柄を別の銘柄より上だとほめる広告』）と取った。physicians が主語の分詞構文（『～しながら』）と見ることもでき、どちらでも『医師が広告で銘柄をほめた』という意味は変わらない。（over another）は praising にかかり、A over B で『B より A を』。",
   "reason": "over のコアは「覆う→～を超えて」。二つを比べて一方が他方の「上に立つ」イメージから、prefer A over B / choose A over B のように優劣を表す。ここも one brand over another(ある銘柄を別の銘柄より上に置いて)という比較・対比。",
   "distractors": "than は比較級(better/more)が無いので不可。from は「～から離れて」で優劣にならない。beyond は「～を越えた先」で範囲の話になり合わない。",
   "point": "A over B＝「AをBより上に(優先)」。prefer/choose A over B で覚える。"
@@ -107,6 +119,8 @@
  "II_A_2": {
   "quote": "Few ordinary people suspected that the pleasant habit might carry a lethal cost, nor did the tobacco firms have any incentive to raise the alarm",
   "quote_ja": "普通の人々でその心地よい習慣が命にかかわる代償を伴うと疑う者はほとんどおらず、たばこ会社にも警鐘を鳴らす動機はなかった。",
+  "syntax": "〈Few ordinary people〉{S} suspected{V} 〈that 〈the pleasant habit〉{S′} might carry{V′} 〈a lethal cost〉{O′}〉{O}, nor did 〈the tobacco firms〉{S} have{V} 〈any incentive ［to raise the alarm］〉{O}",
+  "syntax_note": "前半の S は Few ordinary people（『～する普通の人はほとんどいない』と否定の意味）。suspected の目的語（O）が that 節。nor の後ろは『～もまた…ない』で、疑問文と同じ語順 did＋S＋have になる（V は did … have）。［to raise the alarm］は incentive にかかる不定詞（『警鐘を鳴らす動機』）。",
   "reason": "前半が Few(＝ほとんど～ない)で否定の内容。否定文に「～もまた…ない」を続けるときは nor を使い、その直後は必ず疑問文の語順(倒置)になる。だから nor did the firms have… と did が前に出ている。この倒置が nor を選ぶ最大の手がかり。",
   "distractors": "so は「～もそうだ」で肯定の同意、否定内容に続かない。either は否定同意でも文頭・倒置では使えない(文末型)。and は単なる並列で「～もまた…ない」が出ず倒置とも噛み合わない。",
   "point": "否定＋nor＋倒置(did+S+V)。「～もまた…ない」は nor が先頭で語順がひっくり返る。"
@@ -114,6 +128,8 @@
  "II_A_3": {
   "quote": "The verdict, published over the following decade, left little room for doubt",
   "quote_ja": "その後の十年にわたり公表された結論は、疑いの余地をほとんど残さなかった。",
+  "syntax": "〈The verdict〉{S}, ［published （over the following decade）］, left{V} 〈little room ［for doubt］〉{O}",
+  "syntax_note": "S は The verdict。カンマで挟まれた［published …］は verdict に説明を加える過去分詞のまとまり（挿入された分詞構文と見る説明もある）。left の目的語（O）が little room（ほとんどない余地）で、［for doubt］が room にかかる。leave room for A で『A の余地を残す』。",
   "reason": "room は「部屋」ではなく「余地・スペース」。leave room for ～ で「～の余地を残す」という決まった言い方。ここは little(ほとんどない)とセットで「疑いの余地をほとんど残さなかった＝ほぼ決定的だった」。動詞は leave が定番。",
   "distractors": "took「余地を取る」は意味不明。held「保持する」は leave room の慣用に合わない。filled「埋めた」なら「余地を無くした」方向で little と重複・不自然。",
   "point": "leave (little/no) room for doubt＝「疑いの余地を残さない」。room は不可算の「余地」。"
@@ -121,6 +137,8 @@
  "II_A_4": {
   "quote": "The tobacco industry funded its own studies, disputing the science and insisting that the link was mere coincidence",
   "quote_ja": "たばこ業界は自前の研究に資金を出し、その科学に異を唱え、関連はただの偶然だと言い張った。",
+  "syntax": "〈The tobacco industry〉{S} funded{V} 〈its own studies〉{O}, （disputing{V′} 〈the science〉{O′} and insisting{V′} 〈that 〈the link〉{S′} was{V′} 〈mere coincidence〉{C′}〉{O′}）{M}",
+  "syntax_note": "カンマの後ろの（disputing … and insisting …）は、主語 The tobacco industry がしたことを補う分詞構文（M）。disputing と insisting が and で並び、意味上の主語は文の主語と同じ業界で、業界が『異を唱える・言い張る』側なので能動の ‑ing。insisting の目的語（O′）が that 節で、その中は the link（主語）was（動詞）mere coincidence（補語）。",
   "reason": "カンマの後ろに主語を付けず「～しながら」と補足を足すのが分詞構文で、能動なら ‑ing 形。ここは業界が「異を唱えている(能動)」ので disputing。後ろの and insisting(同じ‑ing)と並ぶのも決め手。",
   "distractors": "to dispute は「異を唱えるために」という目的の不定詞としてなら置けるが、後ろの and insisting と形がそろわない(to dispute … and insisting は並列にならない)。disputed(定形)は動詞が重複し接続詞なしに繋がらない。dispute(原形)は主語がないと置けない。",
   "point": "カンマ＋‑ing＝分詞構文「～しながら」。後続の and insisting と形をそろえる。"
@@ -128,6 +146,8 @@
  "II_A_5": {
   "quote": "the slow accumulation of proof, placed at the public's disposal through decades of relentless campaigning",
   "quote_ja": "何十年にもわたる粘り強い運動を通じて人々が自由に使えるようにされた、証拠の緩やかな積み重ね。",
+  "syntax": "〈What{S′} （finally）{M′} shifted{V′} 〈the balance〉{O′}〉{S} was{V} 〈not a single dramatic discovery but the slow accumulation ［of proof］〉{C}, ［placed{V′} （at the public's disposal）{M′} （through decades ［of relentless campaigning］）{M′}］",
+  "syntax_note": "S は What で始まる名詞のまとまり（『最終的に形勢を変えたもの』。What は節の中の主語 S′）。was の補語（C）は not A but B（A ではなく B）の形。［placed …］は直前の the slow accumulation of proof にかかる過去分詞のまとまり（『人々が自由に使えるようにされた』）で、積み重ねは『置かれる』側なので過去分詞（proof だけにかかると見ることもできるが、どちらでも置かれる側なので過去分詞）。（at the public's disposal）と（through …）はどちらも placed にかかる。",
   "reason": "直前の the slow accumulation of proof(証拠の緩やかな積み重ね)は「人々の手に委ねられる＝される側」なので受け身の関係。名詞に後ろから「～された」と説明を加えるときは過去分詞。だから (which was) placed… の which was が省かれた placed。",
   "distractors": "placing(能動‑ing)だと「積み重ねが(何かを)委ねる」となり、委ねられる側という関係が逆になる。to place は「(これから)委ねる・委ねるための」という意味になり、through decades of relentless campaigning(何十年もの運動を通じて)すでに委ねられた積み重ね、という受け身の意味にならない。place(原形)は名詞を修飾できない。",
   "point": "名詞＋過去分詞＝「～された名詞」。関係代名詞＋be動詞の省略と見抜く。"
@@ -154,11 +174,11 @@
   "point": "sobering＝「身の引き締まる・考えさせる」。sober の「しらふ→冷静・真剣」から発想。"
  },
  "II_C": {
-  "quote": "the gesture came to signify glamour, independence, and calm ... the heavier the smoking, the greater the risk",
-  "quote_ja": "その仕草は華やかさ・自立・落ち着きの象徴となった…喫煙が多いほど、リスクも大きかった。",
-  "reason": "正解は c と f。c「20世紀半ばより前、喫煙は世間に認められた、さらには流行の習慣とさえ広くみなされていた」は、第1段落の a mark of sophistication（洗練の証）、医師が広告で銘柄を推したこと、glamour, independence, and calm（華やかさ・自立・落ち着き）の象徴、questioning it seemed almost impolite（疑うのは失礼にさえ思えた）と一致。f「2人の英国の科学者は、多く吸う人は少なく吸う人より肺がんのリスクが高いことを突き止めた」は、第3段落の the heavier the smoking, the greater the risk の言い換え。",
-  "distractors": "a「たばこ業界は最初は関連を認めたが、のちに疑わせる研究に資金を出した」は、第4段落で業界は自ら研究に資金を出して科学に異を唱え「単なる偶然だ」と主張したとあり、最初に認めたという記述はない。b「政府が何年もためらったのは、主に科学者の統計手法を疑ったから」は、第4段落の理由（税収を失うこと・国民に説教しているように見えることへの警戒）と食い違う。d「肺がんの増加は、10代から吸っていた女性の間で最初に気づかれた」は、第2段落の in men who had reached middle age（中年に達した男性）と対象が違う。e「批判に答えるため、健康な医師の追跡から入院患者への聞き取りに切り替えた」は、第3段落の順序（入院患者への聞き取り→批判に答えて健康な医師を追跡）と逆。",
-  "point": "内容一致は、選択肢の1点（主体・順序・理由・対象）を本文の該当箇所と照らす。本文の語が多く使われていても、順序や理由が入れ替わっていないかを確かめる。"
+  "quote": "Smoking was woven so deeply into social ritual that questioning it seemed almost impolite ... Governments, wary of losing tax revenue and of appearing to lecture their citizens, hesitated for years.",
+  "quote_ja": "喫煙は社会の慣習にあまりに深く織り込まれていたので、それを疑うことはほとんど無作法に思えた…政府は、税収を失うことと国民に説教しているように見えることを警戒して、何年もためらった。",
+  "reason": "正解は c と f。c「政府の対応が遅れた理由の一つは、国民に説教しているように見えることへの恐れだった」は、第4段落の Governments, wary of losing tax revenue and of appearing to lecture their citizens, hesitated for years と一致する（理由は2つ挙がっており、c はそのうちの一つを述べている）。f「喫煙は社会の慣習の一部になりきっていたので、それを疑うことはほとんど無礼に思えた」は、第1段落の Smoking was woven so deeply into social ritual that questioning it seemed almost impolite の言い換え（so … that ～『とても…なので～』）。",
+  "distractors": "a「多くの観察者は当初、工場の煙や石炭を燃やす煙が肺がんの増加を引き起こしていると疑った」は、第2段落で観察者が疑ったのは the fumes of automobiles or the tar of newly paved roads（自動車の排気ガスか、舗装したばかりの道路のタール）で、疑いの対象が違う。b「最初の研究への批判者は、入院患者が公平に選ばれていなかったと主張した」は、第3段落の批判の中身（sick people might simply misremember their habits＝病気の人は自分の習慣について記憶違いをしているだけかもしれない）と違う。d「しばらくの間、たいていの人は、かかりつけの医者から来たほうの言い分を信じた」は、第4段落の many chose to believe whichever was more convenient（多くの人は都合のよいほうを信じた）と、信じる基準が違う。e「雑誌の写真では、喫煙という行為が若さ・強さ・健康を表すようになった」は、第1段落で喫煙の仕草が表したのは glamour, independence, and calm（華やかさ・自立・落ち着き）で、中身が違う。",
+  "point": "内容一致は、選択肢の1点（疑われた原因・批判の中身・信じる基準・象徴したもの）を本文の該当箇所と照らす。どの選択肢も歴史の話としてはありそうなので、知識や常識ではなく本文の記述で判断する。"
  },
  "III_A_1": {
   "quote": "cars that can carry out the entire task of driving with no human input at all",
@@ -191,6 +211,8 @@
  "III_B_ア": {
   "quote": "interpret the surrounding world far faster than any human eye could manage",
   "quote_ja": "人間の目にできるよりはるかに速く周囲の世界を読み取る。",
+  "syntax": "〈These vehicles〉{S} rely{V} （on a dense web ［of sensors, cameras, and software ［that{S′} （together）{M′} interpret{V′} 〈the surrounding world〉{O′} （far faster）{M′} （than any human eye could manage）{M′}］］）{M}",
+  "syntax_note": "二重下線部は関係詞節［that …］の中の V′ 以下。that の先行詞は、動詞が interpret（3単現の s が無い）なので、単数の a dense web ではなく複数の sensors, cameras, and software（together『いっしょになって』もこれを支える）。（far faster）は interpret にかかり、far は比較級を強める。（than …）は比べる相手で、manage は『やってのける』の意味で、後ろの to interpret it（世界を読み取ること）が省かれていると見られる（人間の目が世界を読み取れる速さよりもはるかに速く、ということ）。",
   "reason": "interpret the surrounding world は「周囲の世界を解釈する=状況を把握する」、far faster than any human eye could manage は「人間の目より速く」。この2点をそのまま言い換えたのが d「環境を人間ドライバーより速く理解する」。interpret を「翻訳」でなく「情報を意味づけして理解する」と取れれば他は全部ズレると分かる。",
   "distractors": "a は travel around the world「世界中を旅する」と誤読=surrounding world を地理的世界と取り違えた罠。b「人間に全く見えない物を感知」は「速さ」の話を「不可視」にすり替え、言い過ぎ。c「目の焦点合わせを真似る」は本文にない発想。",
   "point": "interpret＝「解釈する=状況把握」。二重下線は「速く周囲を理解」の一点に集約。"
@@ -198,6 +220,8 @@
  "III_B_イ": {
   "quote": "It is precisely this promise of saving tens of thousands of lives each year that keeps investors pouring money into the field",
   "quote_ja": "毎年何万人もの命を救えるというまさにこの約束こそが、投資家にこの分野へ資金を注ぎ込ませ続けている。",
+  "syntax": "It is （precisely）{M} 〈this promise ［of saving tens of thousands of lives each year］〉{S} that keeps{V} investors{O} pouring{C} money （into the field）",
+  "syntax_note": "It is X that … の強調構文。It is と that を外すと This promise of saving … keeps investors pouring money into the field（S V O C）が残るので、強調されている X（this promise …）は keeps の主語（S）に当たる。（precisely）は X を強める（『まさにこの』）。［of saving …］は promise の中身を言う同格の of（『…を救えるという約束』）。keep O ～ing で『O に～させ続ける』で、pouring 以下が補語（C。money は pouring の目的語）。",
   "reason": "It is ～ that … の強調構文で、this promise of saving ... lives(命を救う見込み)を強調している。keep O ~ing は「Oに～し続けさせる」、pour money into は「資金を注ぐ」。つまり「多くの命を救えるという希望が投資家に資金提供を続けさせる」。これを平易にした a が正解。",
   "distractors": "b「手早く大儲け」は saving lives(人命救済)という動機を金儲けにすり替え。c「技術が命を救えるか疑っている」は本文と真逆(投資家は期待して出資)。d「政府が大半を出資」は本文になく investors(民間投資家)と食い違う。",
   "point": "It is X that …＝X を強調。ここの X=「人命救済の見込み」が投資の原動力。"
@@ -205,6 +229,8 @@
  "III_B_ウ": {
   "quote": "an awkward compromise that assumes a distracted passenger can suddenly become an alert driver within a second or two",
   "quote_ja": "注意散漫な同乗者が1〜2秒で急に注意力のあるドライバーになれる、と決めてかかる、ぎこちない妥協策。",
+  "syntax": "…—〈an awkward compromise ［that{S′} assumes{V′} 〈〈a distracted passenger〉{S′} can （suddenly）{M′} become{V′} 〈an alert driver〉{C′} （within a second or two）{M′}〉{O′}］〉",
+  "syntax_note": "ダッシュの後ろの〈an awkward compromise …〉は、ダッシュの前（同じ文の前半）の内容（理解できない場面で人間に運転を返すように車を設計すること）を言い換えてまとめた名詞のまとまり（同格）。S・O・C のどれでもないので、外側の〈 〉には記号を付けていない。［that …］が compromise にかかる関係詞節で、that が節の主語（S′）。assumes の目的語（O′）は接続詞 that が省かれた名詞節で、その中は a distracted passenger（主語）can become（動詞）an alert driver（補語）。『注意散漫な同乗者が1〜2秒で急に注意力のあるドライバーになれる』と決めてかかる点を、筆者は awkward（無理がある）と評している。",
   "reason": "awkward compromise は「ぎこちない・不都合な妥協案」。assume は「(証拠なく)当然そうだと決めてかかる」。distracted(気の散った)passenger が within a second or two で alert(油断のない)driver になる、という無理な前提を批判している。これを「不注意な人に即座に運転を代われと期待する不満足な取り決め」とした c が一致。",
   "distractors": "a「全員を常に覚醒させる巧妙な設計」は awkward(不都合)を clever(巧妙)と正反対に。b「前方注視以外禁止の規則」は本文にない義務を創作。d「どんな時も人間に制御を返さない」は制御を返す本文と逆。",
   "point": "awkward＝「無理があって不都合」。筆者は「急に運転を代われ」という前提を批判している。"
@@ -226,6 +252,8 @@
  "IV_1": {
   "quote": "By the time the ambulance arrived, the injured hiker had been lying on the cold ground for nearly an hour.",
   "quote_ja": "救急車が到着したときには、その負傷した登山者は1時間近く冷たい地面に横たわっていた。",
+  "syntax": "（By the time 〈the ambulance〉{S′} arrived{V′}）{M}, 〈the injured hiker〉{S} had been lying{V} （on the cold ground）{M} （for nearly an hour）{M}",
+  "syntax_note": "By the time … は『～するまでに（は）』を表す副詞のまとまり（by the time がひとまとまりで接続詞の働きをする）。主節の V は had been lying（過去完了進行形）。lie（横たわる）は自動詞なので O は無く、（on the cold ground）（for nearly an hour）はどちらも had been lying にかかる。",
   "reason": "By the time the ambulance arrived(過去の一点)が基準。その過去の時点までずっと横たわり続けていた「過去から過去までの継続」を表すのが過去完了進行形 had been Ving。for nearly an hour という継続の期間もあり、ずっと続く感じを出す進行形がベスト。",
   "distractors": "has lain(現在完了)は「今」基準で過去の arrived とズレる。is lying は現在進行形で時制違い。would lie は推量・意志で継続を表せない。",
   "point": "「過去の一点までズッと継続」は had been Ving。基準の過去＋for＋期間が合図。"
@@ -233,6 +261,8 @@
  "IV_2": {
   "quote": "I was not used to speaking in front of such a large audience, so my hands were shaking throughout the speech.",
   "quote_ja": "私はそんな大勢の聴衆の前で話すことに慣れていなかったので、スピーチの間ずっと手が震えていた。",
+  "syntax": "I{S} was{V} not used{C} （to speaking （in front of such a large audience））{M}, so 〈my hands〉{S} were shaking{V} （throughout the speech）{M}",
+  "syntax_note": "be used to ～ing（～に慣れている）の used は『慣れている』という形容詞で、was の補語（C）。to は前置詞なので、後ろは名詞か動名詞（speaking）。（to speaking …）は used にかかる。so の後ろは結果を表す新しい節。",
   "reason": "この to は不定詞の to ではなく「方向・くっつく先」を表す前置詞の to。be used to は「to(その状態)にくっついて慣れている」イメージなので、後ろは名詞か動名詞 Ving。だから speaking。used to do(昔はよく～した)と混同しないこと。",
   "distractors": "to speak は be used to の to を不定詞の to と取り違え、used to do(以前は～した)と混線した誤り。speak / spoke は to が無いので、used の直後に動詞がそのまま来てしまう。be used to の to は前置詞で省けず、その後ろは動名詞にする。",
   "point": "be used to Ving「～に慣れている」の to は前置詞。used to do「昔よく～した」とは別物。"
@@ -240,6 +270,8 @@
  "IV_3": {
   "quote": "Seen from the summit, the villages below looked like tiny models scattered across the valley.",
   "quote_ja": "山頂から見ると、眼下の村々は谷に散らばった小さな模型のように見えた。",
+  "syntax": "（Seen （from the summit））{M}, 〈the villages ［below］〉{S} looked like{V} 〈tiny models ［scattered （across the valley）］〉{C}",
+  "syntax_note": "文頭の（Seen …）は分詞構文（M）。主節の主語 the villages は『見られる』側なので過去分詞 Seen で始まる。［below］は villages に後ろからかかる（『眼下の村々』）。look like N はひとまとまりで『N のように見える』の意味なので、ここでは looked like を V、tiny models 以下を補語（C）と取った（like を前置詞と見て、like 以下全体を補語とする説明もある）。どちらに取っても、『見える』の look は補語を取る動詞なので、like 以下を修飾語（M）にはしない（rely は補語を取らない動詞なので、rely on〔大問Ⅰ問A(3)〕では on 以下を M にしている。扱いが違うのはこのため）。［scattered …］は models にかかる過去分詞のまとまり。",
   "reason": "分詞構文の主語は文の主語 the villages(村々)。村は「見る」のではなく「見られる」側なので受け身の関係。受け身の分詞構文は過去分詞 Seen で始める(元は Being seen の Being 省略)。",
   "distractors": "Seeing(能動)は「村が見る」で主語と合わない。To see は「見るために」の目的で文意に合わない。Having seen(能動の完了)もやはり「村が見た」で不自然。",
   "point": "分詞構文は主語との関係で決める。主語が「される」側なら過去分詞スタート。"
@@ -247,6 +279,8 @@
  "IV_4": {
   "quote": "This is the little town where my grandparents first met and later decided to settle down.",
   "quote_ja": "ここは、私の祖父母が初めて出会い、後に定住することを決めた小さな町だ。",
+  "syntax": "This{S} is{V} 〈the little town ［where{M′} 〈my grandparents〉{S′} （first）{M′} met{V′} and （later）{M′} decided{V′} 〈to settle down〉{O′}］〉{C}",
+  "syntax_note": "is の補語（C）が the little town で、［where …］が town にかかる関係副詞の節。節の中は my grandparents（S′）met（V′。自動詞）と decided（V′）〈to settle down〉（O′）が and で並び、主語も目的語も欠けていない完全な文。where は節の中で『その町で』という場所の修飾語（M′）の働きをするので、関係副詞。",
   "reason": "先行詞は town(場所)。後ろの my grandparents first met… は主語＋動詞がそろった完全な文。先行詞が「場所」で後ろが欠けのない完全文なら関係副詞 where。関係代名詞 which/that は後ろに名詞の欠けが要るが、ここは穴がない。",
   "distractors": "which / that は後ろに名詞の欠けが必要だが完全文で穴がない。what は先行詞をとらない(the town があるので不可)。",
   "point": "先行詞が場所＋後ろが完全文=関係副詞 where。後ろが「欠け」なら関係代名詞。"
@@ -261,6 +295,8 @@
  "IV_6": {
   "quote": "Write down her number now, or you will forget it by tomorrow morning.",
   "quote_ja": "今すぐ彼女の番号を書き留めておきなさい、さもないと明日の朝までに忘れてしまうよ。",
+  "syntax": "Write down{V} 〈her number〉{O} （now）{M}, or you{S} will forget{V} it{O} （by tomorrow morning）{M}",
+  "syntax_note": "前半は命令文で、主語（S）の you が省かれている。write down（書き留める）は動詞＋副詞の句動詞なので、まとめて V とした。her number が O。命令文, or … で『～しなさい、さもないと…』。後半は you（S）will forget（V）it（O。her number を指す）。",
   "reason": "前半は Write down という命令文。命令文の後の接続詞は2択で覚える。「命令文, and ～=そうすれば」「命令文, or ～=さもないと」。ここは後半が「忘れてしまう」という悪い結果なので or がぴったり。and だと「書けば忘れる」と逆になる。",
   "distractors": "and は「そうすれば」でプラスの結果向け、悪い結果と合わない。so / but は命令文＋接続詞のこの定型では使わない。",
   "point": "命令文, and＝そうすれば／命令文, or＝さもないと。後ろが良い結果か悪い結果かで一発判定。"
@@ -268,6 +304,8 @@
  "IV_7": {
   "quote": "The passengers were extremely disappointed to hear that their flight had been canceled without any prior notice.",
   "quote_ja": "乗客たちは、何の事前通知もなく便が欠航になったと聞いて、ひどくがっかりした。",
+  "syntax": "〈The passengers〉{S} were{V} extremely disappointed{C} （to hear{V′} 〈that 〈their flight〉{S′} had been canceled{V′} （without any prior notice）{M′}〉{O′}）{M}",
+  "syntax_note": "were の補語（C）が disappointed（extremely が強める）。disappoint は『（人を）がっかりさせる』という他動詞なので、がっかりさせられた側の乗客の状態は過去分詞 disappointed で表す。（to hear …）は感情の原因を表す不定詞（『～と聞いて』）で disappointed にかかり、hear の目的語が that 節。",
   "reason": "感情動詞は「‑ing=感じさせる側(原因)」「‑ed=感じる側(～させられる)」が核心。主語は The passengers(人)で欠航の知らせに「がっかりさせられた」側なので ‑ed の disappointed。人が主語で感情を受けているときは必ず過去分詞形。",
   "distractors": "disappointing は「(人を)がっかりさせるような」で、がっかりさせる側を表す(The news was disappointing.)。乗客は知らせにがっかりさせられた側なので合わない。disappoint(原形)は be の後ろに置けない。disappointment(名詞)は副詞 extremely で修飾できず、文として成り立たない。",
   "point": "感情動詞は「感じる側＝‑ed／感じさせる側＝‑ing」。乗客はがっかり「させられた」側なので disappointed(人が主語でも、人をがっかりさせる側なら disappointing)。"
@@ -282,6 +320,8 @@
  "IV_9": {
   "quote": "The thick fog prevented the rescue team from reaching the stranded climbers before nightfall.",
   "quote_ja": "濃い霧のせいで、救助隊は日没前に取り残された登山者のもとへたどり着けなかった。",
+  "syntax": "〈The thick fog〉{S} prevented{V} 〈the rescue team〉{O} （from reaching 〈the stranded climbers〉 （before nightfall））{M}",
+  "syntax_note": "prevent O from ～ing（O が～するのを妨げる）。O が the rescue team で、（from reaching …）は prevented にかかる。from は前置詞なので後ろは動名詞 reaching。主語が物（霧）なので、『濃い霧のせいで、救助隊は…たどり着けなかった』と訳すと自然。",
   "reason": "prevent A from Ving で「A が～するのを妨げる」。この from は「分離・引き離す」のコアで、A を「～する」行為から引き離す=させない感覚。「霧が救助隊を到達から引き離した=たどり着けなかった」となり自然。stop A from Ving も同じ形。",
   "distractors": "to=prevent は不定詞をとらない(この型は from)。against / of=prevent とセットになる前置詞ではない。",
   "point": "prevent(stop / keep)A from Ving「A が～するのを妨げる」。from は「引き離す」イメージ。"
@@ -289,6 +329,8 @@
  "IV_10": {
   "quote": "It was not until she reached the station that she realized she had left her wallet at home.",
   "quote_ja": "駅に着いて初めて、彼女は財布を家に置いてきたことに気づいた。",
+  "syntax": "It was （not until she reached the station）{M} that she{S} realized{V} 〈she had left her wallet at home〉{O}",
+  "syntax_note": "It was not until A that B（A して初めて B）は強調構文。It was と that を外して元の形に戻すと She did not realize … until she reached the station（駅に着くまで気づかなかった）で、強調されているのは副詞のまとまり not until …（M）。realized の目的語（O）は、接続詞 that が省かれた名詞節。",
   "reason": "not until ～「～して初めて…」を強調構文 It is ～ that … に入れた形。It was not until [その時] that SV で「[その時]になって初めてSVした」。強調構文の目印は that なので空所は that。",
   "distractors": "when は It was ... that の強調構文の枠に入らない。which は先行詞となる名詞がなく不可。then は接続詞ではなく文をつなげない。",
   "point": "It was not until ～ that …＝「～して初めて…」。強調構文の受け皿は必ず that。"
@@ -296,6 +338,8 @@
  "V_1": {
   "quote": "Had it not been for your help, I could not have finished the project.",
   "quote_ja": "もしあなたの助けがなかったら、私はその計画を終えることができなかっただろう。",
+  "syntax": "（Had it not been for your help）{M}, I{S} could not have finished{V} 〈the project〉{O}",
+  "syntax_note": "前半は If it had not been for A（A がなかったら）の if を省き、had を主語 it の前に出した倒置で、条件を表す副詞のまとまり（M）。主節は I（S）could not have finished（V。仮定法過去完了の帰結『～できなかっただろう』）the project（O）。",
   "reason": "まず「～がなかったら」に反応する。これは仮定法過去完了 If it had not been for A の決まり文句。一発ルールとして、仮定法で if を消すと残った had が主語の前に出て倒置=Had it not been for A。だから文頭は接続詞でなく Had。骨組みは Had→it→not→been for→your help(=Aの部分)、後半は結論の主節 I could not have finished the project。前半=条件、後半=結果と2つのカタマリで捉えれば迷わない。並びは bdfhagce、2番目は it(d)、6番目は I could not(g)。",
   "distractors": "文頭を If にしたくなるが語群に if は無く、代わりに Had があるのが倒置のサイン。it(d)/not(f)/been for(h) は「it had not been for」の had が文頭へ飛んだ残りで、この順に固定。後半 I could not(g)＋have finished(c)＋the project(e) は主節としてワンセットにして最後に置く。",
   "point": "「～がなかったら」=If it had not been for A。if を省略したら had を前に出して倒置=Had it not been for A、が関学頻出の型。"
@@ -303,6 +347,8 @@
  "V_2": {
   "quote": "Not knowing what to do, she asked her teacher for advice.",
   "quote_ja": "何をすべきか分からなかったので、彼女は先生に助言を求めた。",
+  "syntax": "（Not knowing 〈what to do〉）{M}, she{S} asked{V} 〈her teacher〉{O} （for advice）{M}",
+  "syntax_note": "文頭の（Not knowing …）は理由を表す分詞構文（『～が分からなかったので』）。分詞構文を否定する not は分詞の前に置く。knowing の目的語が〈what to do〉（疑問詞＋不定詞『何をすべきか』）。ask A for B で『A に B を求める』（（for advice）は asked にかかる）。",
   "reason": "「～だったので」と理由を表しながら文をつなぐときは、接続詞を使わず動詞を ‑ing にする分詞構文が便利。否定はその ‑ing の直前に not を置くのがコア=Not knowing ～(知らないので)。ここでは Not knowing が語群では一つのカタマリ(トークン)で与えられている。続く what to do は「疑問詞＋to do(何をすべきか)」で knowing の目的語。ここまでが前半の飾りで、主節は she asked her teacher for advice。この for は ask 人 for A(人にAを求める)の語法。並びは cegfadhb、2番目は what(e)、6番目は her teacher(d)。",
   "distractors": "分詞構文の否定は文頭の Not knowing(=c)に含まれ、独立した not のカードは無いので探さないこと。what(e)＋to do(g) はセットで knowing の直後。asked(a)→her teacher(d)→for(h)→advice(b) は ask 人 for A の語順で一列に確定する。",
   "point": "分詞構文の否定は「Not＋‑ing」を文頭に。ask 人 for A=人にAを求める、をワンセットで覚える。"
@@ -310,6 +356,8 @@
  "V_3": {
   "quote": "His hard work resulted in the success of the whole project.",
   "quote_ja": "彼の努力が、その計画全体の成功をもたらした。",
+  "syntax": "〈His hard work〉{S} resulted{V} （in the success ［of the whole project］）{M}",
+  "syntax_note": "result は自動詞で、result in A（A という結果になる・A をもたらす）の in 以下は resulted にかかる（result in をひとまとまりの他動詞と見て the success を O とする説明もある）。［of the whole project］は success にかかる。原因 result in 結果 で、結果 result from 原因 と向きが逆。",
   "reason": "キーは熟語 result in A(Aという結果になる=Aをもたらす)。in のコアは「中へ入り込む→行き着く」で、原因が進んで A に行き着くイメージ。主語 His hard work(彼の努力)＋動詞 resulted in、その後ろに行き着いた先 the success(成功)を置き、of＋名詞で of the whole project(その計画全体の)とつなぐ。原因→result in→結果、の因果の流れで並べれば一直線。並びは dhbefacg、2番目は hard work(h)、6番目は of(a)。",
   "distractors": "前置詞 of(a) は the success of the whole project の of なので success の直後。似た形の result from A(Aから生じる)と混同して from を探しても語群に無く、in を選ぶのが正解。the whole(c)＋project(g) はセットで of の後ろに。",
   "point": "result in A=Aをもたらす(結果)／result from A=Aから生じる(原因)。in か from で因果の向きが逆になる。"
@@ -317,6 +365,8 @@
  "V_4": {
   "quote": "What he said was completely different from what we had expected.",
   "quote_ja": "彼が言ったことは、私たちが予想していたものとは全く違っていた。",
+  "syntax": "〈What he said〉{S} was{V} completely different{C} （from 〈what we had expected〉）{M}",
+  "syntax_note": "S は関係代名詞 what が作る名詞のまとまり（『彼が言ったこと』）。what は節の中で said の目的語に当たる（said の後ろに目的語が無い）。was の補語（C）が different（completely が強める）で、（from …）は be different from A『A と違う』の相手。from の目的語も what の名詞のまとまり（『私たちが予想していたもの』。what は had expected の目的語）。",
   "reason": "「彼が言ったこと」は関係代名詞 what(～すること・もの)で What he said とカタマリにし、これが文全体の主語。what は先行詞を含み the thing which の働き。動詞は was、後ろに different from A(Aとは違う)。この from は「分離・出発点」のコアで「A から離れている→A と違う」。程度を強める completely(全く)は different の直前。A の部分も what we had expected(私たちが予想していたもの)ともう一つの what で受けるのがきれいな対比。並びは cgehadbf、2番目は he said(g)、6番目は from(d)。",
   "distractors": "文頭は疑問詞でなく関係代名詞 What(c) で名詞のカタマリを作る役。前置詞 from(d) は different の後ろに固定で、これが6番目の決め手。what we(b)＋had expected(f) はセットで from の目的語となり文末に置く。なお、主語と from の後ろを入れ替えた what we had expected was completely different from what he said も文法上は作れるが、日本文の主語は「彼が言ったことは」なので、英文の主語も what he said にする（2番目 g・6番目 d）。",
   "point": "関係代名詞 what=「～すること／もの」で主語にも目的語にもなる名詞節。be different from A=A と違う、の from もセットで。"
@@ -324,6 +374,8 @@
  "V_5": {
   "quote": "No sooner had I left home than it began to rain.",
   "quote_ja": "私が家を出るとすぐに雨が降り始めた。",
+  "syntax": "（No sooner）{M} had I{S} left{V} home{O} （than it{S′} began{V′} 〈to rain〉{O′}）{M}",
+  "syntax_note": "No sooner A than B（A するとすぐに B）。否定の意味を持つ No sooner が文頭に出ると、後ろは疑問文と同じ語順（had＋S＋過去分詞）になる（V は had … left）。home は left の目的語（leave home『家を出る』）。（than …）は sooner と組になり、中は it（天候の it）began（動詞）to rain（目的語）。家を出たのが先なので過去完了 had left、雨が降り始めたのが後なので過去形 began。",
   "reason": "「～するとすぐに…」の代表構文が No sooner A than B(AするやいなやB)。ポイントは否定の副詞 No sooner が文頭に出ると後ろが疑問文のような語順になる=倒置。だから No sooner＋had＋主語＋過去分詞で No sooner had I left home。than は「～よりも」の比較から来た接続詞で、後ろに it began to rain。前の出来事が過去完了(had left)、後が過去形(began)という時のズレも自然。並びは dfbeahgc、2番目は had(f)、6番目は it began(h)。",
   "distractors": "文頭 No sooner(d) の直後は倒置で had(f) が主語 I の前に来るのが最大の決め手。ここを「I had」の平叙語順にすると誤り。後半の合図は than(a) で、as ではない点に注意。it began(h)＋to(g)＋rain(c) は begin to do の形でひとまとまりにして文末へ。",
   "point": "否定の副詞(No sooner／Hardly／Never 等)が文頭→後ろは倒置。No sooner A than B=AするやいなやB、の相方は必ず than。"

@@ -31,9 +31,13 @@
     どの記号を指しているか機械では決まらない。**正解と解説の食い違いを検出できない**。
     直すなら解説に記号 (a/b/c/d) を書き足すこと。書き足せば自動で検査対象に入る。
     → 2026-10-30 に II_B_ア/イ/ウ へ記号を書き足した。NO_REF は空、記号方式は 12 問になった。
-  - 問C（内容一致・主旨）の「該当箇所」は複数箇所を `...` で束ねた要約で、本文に一続きとしては
-    存在しない。G3 の通し照合から名指しで外してある（`QUOTE_SKIP`）。
+  - 問C（内容一致・主旨）の「該当箇所」は複数箇所を `...` で束ねた引用で、本文に一続きとしては
+    存在しない。以前は G3 の照合から名指しで外していた（`QUOTE_SKIP`）。
+    → 2026-10-30 に「...」で割って部分ごとに照合するようにし、外す設問は無くなった。
   - 選択肢の**内容が正しいか**（英語として正解が本当に1つか）は見ていない。
+  - G5（構文欄）が見るのは「構文欄の英語が本文と1語も違わないか」「該当箇所を含んでいるか」「空所の正解が入っているか」
+    「記号・括弧の形」まで。S/V/O/C/M の振り方そのものが正しいかは機械では決まらない（独立の校閲で見る）。
+    「…」に接する端の語が1つ落ちても、省略と区別できないので検出できない（実測：語を1つ消す変異で残るのはこの4通りだけ）。
 """
 import json
 import os
@@ -52,15 +56,17 @@ EXPECT_ITEM = 52       # 記号1つ（または複数）で答える設問の総
 EXPECT_EXP = 57        # explanations_seki.json のキー総数（設問 52 + Ⅴ5 … 下で内訳を検算する）
 EXPECT_LETTER = 12     # 記号 a〜h で誤答を名指ししている設問（2026-10-30 に II_B の3問が加わり 9→12）
 EXPECT_WORD = 40       # 誤答を英単語そのもので名指ししている設問
-EXPECT_QUOTE = 51      # 該当箇所を本文/例文/会話と通し照合できる件数
+EXPECT_QUOTE = 57      # 該当箇所を本文/例文/会話と照合する件数（2026-10-30 に問C の6件が加わり 51→57）
 EXPECT_BLANK = 30      # 空所補充（Ⅰ/Ⅱ問A・Ⅳ・Ⅵ）＝該当箇所に正解が入っているはずの設問
+EXPECT_SYNTAX = 26     # 構文欄のある設問（Ⅰ/Ⅱ問A 10・Ⅲ問B 3・Ⅳ 8〔5 の応答と 8 の慣用句を除く〕・Ⅴ 5）
+EXPECT_SYNTAX_BLANK = 18   # そのうち空所補充（Ⅰ/Ⅱ問A・Ⅳ）＝構文欄に正解が入っているはずの設問
 # 正解を誤答欄で否定している形（「〜は不可」「〜は誤り」）。語のすぐ後ろだけ見る。
 _NEGATED = re.compile(r"(?:不可|誤り|×|ならない|なれない|成り立たない|使えない"
                       r"|合わない|ズレ|できない|不適|は違う)")
 LONG_OPT_WORDS = 5     # これを超える語数の選択肢は「記号で参照する」流儀（実測: 短い側は最大5語、
                        # 長い側は最小12語で、間にはっきり空きがある）
 NO_REF = set()                                                   # docstring 参照（2026-10-30 に空になった）
-QUOTE_SKIP = {"I_C_i", "I_C_ii", "I_C_iii", "II_C", "III_C_i", "III_C_ii"}
+QUOTE_SKIP = set()     # 2026-10-30 に「...」で束ねた引用を部分ごとに照合するようにして空になった
 
 # 記号での名指し。`(?<![A-Za-z])` が要る（付けないと "as if=" の f、"world「" の d を拾う）。
 LABEL = re.compile(r"(?<![A-Za-z])([a-h])(?:\s*[「『=＝：:]|\s+は(?![A-Za-z]))")
@@ -101,6 +107,23 @@ def appears_in(quote, text, slack=4):
         if j == len(qw) and (i - st) - len(qw) <= slack:
             return True
     return False
+
+
+def _find_from(qw, pw, start=0, slack=4):
+    """appears_in と同じ照合で、pw[start:] から探して一致の終わりの位置を返す（無ければ -1）。"""
+    if not qw:
+        return -1
+    for st in range(start, len(pw)):
+        if pw[st] != qw[0]:
+            continue
+        i, j = st, 0
+        while i < len(pw) and j < len(qw):
+            if pw[i] == qw[j]:
+                j += 1
+            i += 1
+        if j == len(qw) and (i - st) - len(qw) <= slack:
+            return i
+    return -1
 
 
 def mentions(text, option):
@@ -307,9 +330,20 @@ def main():
             fail(f"[G3] {key}: 該当箇所が空")
             return
         quoted += 1
-        if not appears_in(q, text):
-            fail(f"[G3] {key}: 該当箇所が本文に無い（要約を引用符で囲んでいる／正解と本文が食い違う）"
-                 f" 『{q[:60]}…』")
+        # 問C は離れた2か所を「...」で束ねて引く。束ねた引用は、部分ごとに本文の順で現れるかを見る
+        # （英語の無い引用・前後を入れ替えた引用・2語以下のかけらは落とす）
+        parts = [p for p in re.split(r"\.\.\.|…", q) if words(p)]
+        if not parts:
+            fail(f"[G3] {key}: 該当箇所に英語が無い『{q[:40]}』")
+        pw, pos = words(text), 0
+        for part in parts:
+            qw = words(part)
+            end = _find_from(qw, pw, pos)
+            if end < 0 or (len(parts) > 1 and len(qw) < 3):
+                fail(f"[G3] {key}: 該当箇所が本文に無い（要約を引用符で囲んでいる／正解と本文が食い違う／"
+                     f"「...」の前後が本文の順でない） 『{part.strip()[:60]}…』")
+                break
+            pos = end
         if answer is None:
             return
         blanks_checked += 1
@@ -333,6 +367,12 @@ def main():
                         amap.get(it["ref"]) if s.get("A_kind") == "blank" else None)
         for it in s["B_items"]:
             check_quote(f"{K}_B_{it['ref']}", t)
+        # 問C は要約の引用（QUOTE_SKIP）以外を照合する
+        ckeys = [f"{K}_C"] if s.get("C_form") == "multi" else \
+            [f"{K}_C_{it['q_label'].strip('()')}" for it in s.get("C_items", [])]
+        for ck in ckeys:
+            if ck not in QUOTE_SKIP:
+                check_quote(ck, t)
     for i, it in enumerate(content.get("IV", {}).get("items", []), 1):
         if isinstance(it.get("ans"), int) and 1 <= it["ans"] <= len(it["options"]):
             sent = re.sub(r"\[\[BL:[^\]]+\]\]", it["options"][it["ans"] - 1], it["sentence"])
@@ -347,7 +387,7 @@ def main():
         for it in vi["items"]:
             check_quote(f"VI_{it['ref']}", t, amap.get(it["ref"]))
     print(f"  該当箇所を本文と {quoted} 件照合（うち空所の正解入りを {blanks_checked} 件確認・"
-          f"要約のため外した {len(QUOTE_SKIP)} 件: 問C）")
+          f"照合から外した {len(QUOTE_SKIP)} 件）")
     if blanks_checked != EXPECT_BLANK:
         fail(f"[G3b] 空所の正解を照合できたのが {blanks_checked} 件（{EXPECT_BLANK} 件のはず）")
     if quoted != EXPECT_QUOTE:
@@ -378,6 +418,95 @@ def main():
         for s in seqs:
             if list(s) != order:
                 fail(f"[G4] V_{i}: 解説の並び {s} が正解の並び {''.join(order)} と食い違う")
+
+    # ---- G5: 構文欄（syntax）。英語は本文/例文/完成文と1語も違わないこと。
+    #      ★構文欄は記号と括弧を足して英文を組み直すので、写すときに語が落ちたり入れ替わったりする
+    #        （同志社の構文欄でも機械で照合した）。「…」で区切った各まとまりが一続きで本文にあるかを見る。
+    src = {}
+    for K in ("I", "II", "III"):
+        s = content.get(K)
+        if not s:
+            continue
+        t = " ".join(s["paragraphs"])
+        t = re.sub(r"\[\[(?:UL|DU):[^\]=]+=([^\]]+)\]\]", r"\1", t)
+        amap = {it["ref"]: it["options"][it["ans"] - 1] for it in s["A_items"]
+                if isinstance(it.get("ans"), int) and 1 <= it["ans"] <= len(it["options"])}
+        t = re.sub(r"\[\[BL:([^\]]+)\]\]", lambda m: " %s " % amap.get(m.group(1), "?"), t)
+        for k in expl:
+            if k.startswith(K + "_"):
+                ref = k.split("_", 2)[-1]
+                blank = amap.get(ref) if k.startswith(K + "_A_") and s.get("A_kind") == "blank" else None
+                src[k] = (t, blank)
+    for i, it in enumerate(content.get("IV", {}).get("items", []), 1):
+        if isinstance(it.get("ans"), int) and 1 <= it["ans"] <= len(it["options"]):
+            a = it["options"][it["ans"] - 1]
+            src[f"IV_{i}"] = (re.sub(r"\[\[BL:[^\]]+\]\]", a, it["sentence"]), a)
+    for i, it in enumerate(content.get("V", {}).get("items", []), 1):
+        src[f"V_{i}"] = (it.get("full_en", ""), None)
+    n_syn = n_syn_blank = 0
+    pairs = {"〈": "〉", "［": "］", "（": "）"}
+    for k, ex in expl.items():
+        if not isinstance(ex, dict) or not ex.get("syntax"):
+            continue
+        n_syn += 1
+        syn = ex["syntax"]
+        if not ex.get("syntax_note"):
+            fail(f"[G5] {k}: 構文欄に説明（syntax_note）が無い")
+        bad = [m for m in re.findall(r"\{([^}]*)\}", syn) if not re.fullmatch(r"[SVOCM]′?", m)]
+        if bad:
+            fail(f"[G5] {k}: 構文欄に知らない記号 {bad}（使えるのは S V O C M と ′ だけ）")
+        stack = []
+        for ch in syn:
+            if ch in pairs:
+                stack.append(pairs[ch])
+            elif ch in pairs.values():
+                if not stack or stack.pop() != ch:
+                    fail(f"[G5] {k}: 構文欄の括弧の対応が崩れている『{syn[:50]}…』")
+                    break
+        else:
+            if stack:
+                fail(f"[G5] {k}: 構文欄の括弧が閉じていない『{syn[:50]}…』")
+        if k not in src:
+            fail(f"[G5] {k}: 構文欄の照合先（本文/例文/完成文）が無い設問")
+            continue
+        text, blank = src[k]
+        plain = re.sub(r"\{[^}]*\}", " ", syn)
+        plain = re.sub(r"[〈〉［］（）]", " ", plain)
+        chunks = plain.split("…")
+        tw = [(m.group(0), m.start(), m.end())
+              for m in re.finditer(r"[a-z0-9']+", text.lower().replace("’", "'"))]
+        for ci, chunk in enumerate(chunks):
+            cw = words(chunk)
+            if not cw:
+                continue
+            # ★一続きで本文にあるかだけだと、端の語が落ちても通る（実測：語を1つ消す 597 通りのうち 50 通り）。
+            #   「…」の無い端は、本文の文の端（文頭・文末）とそろっていることも見る。
+            ok = False
+            for h in range(len(tw) - len(cw) + 1):
+                if [x[0] for x in tw[h:h + len(cw)]] != cw:
+                    continue
+                st, en = tw[h][1], tw[h + len(cw) - 1][2]
+                # 引用符は文の途中にも来る（it "progress"）ので文の端に数えない
+                if ci == 0 and text[:st].rstrip()[-1:] not in ("", ".", "?", "!"):
+                    continue
+                if ci == len(chunks) - 1 and text[en:].lstrip()[:1] not in ("", ".", "?", "!"):
+                    continue
+                ok = True
+                break
+            if not ok:
+                fail(f"[G5] {k}: 構文欄の英語が本文と食い違う（語の脱落・入れ替え・文の端の欠け）『{chunk.strip()[:60]}』")
+        # 該当箇所を含んでいること（同じ大問の別の設問の構文欄が紛れ込んでも、本文照合だけでは通る）
+        qw, sw = words(ex.get("quote", "")), words(plain)
+        if qw and not any(sw[i:i + len(qw)] == qw for i in range(len(sw) - len(qw) + 1)):
+            fail(f"[G5] {k}: 構文欄が該当箇所の英文を含んでいない（別の設問の構文欄が入っている？）")
+        if blank is not None:
+            n_syn_blank += 1
+            sw, aw = words(plain), words(blank)
+            if not any(sw[i:i + len(aw)] == aw for i in range(len(sw) - len(aw) + 1)):
+                fail(f"[G5] {k}: 構文欄に空所の正解『{blank}』が入っていない")
+    print(f"  構文欄 {n_syn} 問を本文と照合（うち空所の正解入りを {n_syn_blank} 問確認）")
+    if n_syn != EXPECT_SYNTAX or n_syn_blank != EXPECT_SYNTAX_BLANK:
+        fail(f"[G5] 構文欄が {n_syn} 問・空所 {n_syn_blank} 問（{EXPECT_SYNTAX}・{EXPECT_SYNTAX_BLANK} のはず）")
 
     for w in WARNS:
         print("WARN", w)

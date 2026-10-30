@@ -2,7 +2,7 @@
  "I": {
   "label": "Ⅰ",
   "lead": "次の英文を読み、設問A・B・Cに答えよ。",
-  "source_note": "Based on The Salt in the Data: How Health Headlines Mislead Us by Margaret Ellsworth (adapted).",
+  "source_note": "（オリジナル）",
   "paragraphs": [
    "Every few weeks a new headline promises that some everyday food will either rescue your health or quietly destroy it. Coffee is a poison on Monday and a medicine by Friday; eggs are condemned one year and praised the next; a single glass of wine is dangerous and protective in the very same newspaper. Readers who try to obey this shifting advice end up bewildered, and [[BL:1]] the scientists nor the reporters seem eager to accept the blame. The real problem is not that researchers are dishonest. It is that the studies behind these stories are far weaker than the confident language used to describe [[BL:2]].",
    "Most nutrition research relies [[BL:3]] observation rather than experiment. Investigators cannot lock thousands of people in a laboratory for decades and dictate every meal, so instead they recruit volunteers, ask them what they usually eat, and then follow their health over many years. The human [[BL:4]] in these studies are never assigned a diet by the researchers; they choose one for themselves, according to taste, income, culture, and habit. That single fact, easy to overlook, [[UL:ア=undermines]] almost every dramatic claim that later appears in print. When people select their own way of living, the groups being compared come to differ in countless hidden ways that have nothing to do with the food under examination. By the time the data are gathered, a simple label such as 'coffee drinker' can conceal an entire way of life.",
@@ -162,23 +162,23 @@
   "C_items": [
    {
     "q_label": "(i)",
-    "stem": "According to the passage, the central weakness of most nutrition studies is that",
+    "stem": "In the example of leafy vegetables, which of the following does the author say is often true of the people who eat plenty of them?",
     "options": [
-     "the participants decide for themselves what to eat, so the compared groups differ in many hidden ways",
-     "researchers assign each volunteer a diet, but the volunteers rarely keep to it over so many years",
-     "the volunteers are followed for only a few months, so long-term effects on their health go unseen",
-     "the researchers record too many factors, so the effect of the food is buried under the extra data"
+     "They sleep better and see their doctors on a regular basis.",
+     "They are wealthier and drink less alcohol than other people.",
+     "They have spent more years in school and exercise more.",
+     "They smoke less and have a wider circle of close friends."
     ],
     "ans": 1
    },
    {
     "q_label": "(ii)",
-    "stem": "The \"healthy-user effect\" described in the passage refers to the tendency for",
+    "stem": "In the discussion of the healthy-user effect, which products does the author mention as ones that can appear protective merely because of the kind of person who buys them?",
     "options": [
-     "researchers who care about their own health to favor healthy foods, so their results lean toward those foods",
-     "people who follow one piece of advice carefully to neglect the rest, hiding the true benefit of a single food",
-     "people who are already ill to switch to healthier foods, making those foods look more harmful than they are",
-     "people who adopt one healthy habit to adopt many others, making a single food look more helpful than it is"
+     "a vitamin supplement and a particular brand of tea",
+     "a sports drink and a particular brand of bread",
+     "a low-fat spread and a particular brand of juice",
+     "a breakfast cereal and a particular brand of yogurt"
     ],
     "ans": 4
    },
@@ -200,7 +200,7 @@
  "II": {
   "label": "Ⅱ",
   "lead": "次の英文を読み、設問A〜Cに答えなさい。",
-  "source_note": "Based on Smoke and Certainty: A Short History of Tobacco and Public Health by Margaret E. Holloway (adapted).",
+  "source_note": "（オリジナル）",
   "paragraphs": [
    "For much of the twentieth century, the cigarette occupied a curious place in everyday life. It was marketed as a mark of sophistication, and physicians themselves appeared in advertisements praising one brand [[BL:1]] another. Glossy magazines carried images of film stars exhaling elegant curls of smoke, and the gesture came to signify glamour, independence, and calm. Few ordinary people suspected that the pleasant habit might carry a lethal cost, [[BL:2]] did the tobacco firms have any incentive to raise the alarm. Smoking was woven so deeply into social ritual that questioning it seemed almost impolite.",
    "The first cracks in this comfortable consensus appeared in statistics rather than in the clinic. During the 1930s and 1940s, doctors in several countries noticed a puzzling rise in cases of lung cancer, a disease that had once been rare. The numbers were hard to explain away, for they climbed year after year in men who had reached middle age. To many observers, [[UL:ア=the culprit]] seemed obvious: the fumes of automobiles or the tar of newly paved roads. Yet a handful of researchers suspected that the answer lay closer to home, in the pocket of nearly every adult man.",
@@ -325,12 +325,12 @@
   "C_instruction": "本文の内容と一致するものを、下のa〜fから2つ選びなさい。",
   "C_items": [],
   "C_multi_options": [
-   "The tobacco industry accepted the link at first but later funded studies to cast doubt on it.",
-   "Governments hesitated for years mainly because they doubted the scientists' statistical methods.",
-   "Before the mid-twentieth century, smoking was widely regarded as a respectable and even fashionable habit.",
-   "The rise in lung cancer was first noticed among women who had smoked since their teenage years.",
-   "To answer their critics, the British scientists turned from following healthy doctors to interviewing hospital patients.",
-   "The two British scientists found that heavier smokers faced a greater risk of lung cancer than lighter smokers."
+   "Many observers at first suspected that smoke from factories and coal fires was causing the rise in lung cancer.",
+   "Critics of the first study argued that the hospital patients had not been chosen fairly.",
+   "One reason governments were slow to act was a fear of seeming to lecture their citizens.",
+   "For a time, most people believed whichever message came from their own family doctors.",
+   "In magazine images, the act of smoking came to suggest youth, strength, and good health.",
+   "Smoking was so much a part of social customs that questioning it seemed almost rude."
   ],
   "C_multi_answers": [
    3,
@@ -340,7 +340,7 @@
  "III": {
   "label": "Ⅲ",
   "lead": "次の英文を読み、あとの設問(A・B・C)に答えなさい。",
-  "source_note": "Based on The Driverless Horizon by Malcolm A. Webb (Ashford Press, 2021)",
+  "source_note": "（オリジナル）",
   "paragraphs": [
    "For more than a century, the automobile has been guided entirely by human hands. That long-standing arrangement is now being called into question. Engineers across the globe are racing to build cars that can [[UL:1=carry out]] the entire task of driving with no human input at all. These vehicles rely on a dense web of sensors, cameras, and software that together [[DU:ア=interpret the surrounding world far faster than any human eye could manage]]. Supporters insist that such machines will eventually make our roads dramatically safer.",
    "Their confidence rests on a simple statistic: human mistakes [[UL:2=account for]] the overwhelming majority of traffic deaths. A computer never drinks, never grows sleepy at the wheel, and never glances down at a buzzing phone. In theory, then, handing control to a machine should remove the single largest cause of danger on the road. [[DU:イ=It is precisely this promise of saving tens of thousands of lives each year that keeps investors pouring money into the field]].",

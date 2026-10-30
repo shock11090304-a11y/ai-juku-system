@@ -2,9 +2,10 @@
 """
 関西学院大学2026 英語 実戦問題ビルダ（A日程・6大問・全問マーク式）
 - 実物構成: 長文Ⅰ/Ⅱ/Ⅲ + 文法語法Ⅳ + 語句整序Ⅴ + 会話Ⅵ。90分・記述ゼロ・4択(a〜d, 内容一致複数選択のみa〜f)。
-- 本文は著作権配慮で完全オリジナル。米式綴り・Based on出典風・語注(＊)付き。
+- 本文は著作権配慮で完全オリジナル。米式綴り・語注(＊)付き。出典欄は「（オリジナル）」
+  （2026-10-30 まで架空の書名・著者名の「Based on …」を刷っていたが、実在の本に見えるのでやめた）。
 - content.json = {"I":..,"II":..,"III":..,"IV":..,"V":..,"VI":..} を単一ソース。
-- 解説は explanations_seki.json({id:{quote,quote_ja,reason,distractors,point}})＋overview_seki.txt を任意注入。
+- 解説は explanations_seki.json({id:{quote,quote_ja,syntax,syntax_note,reason,distractors,point}})＋overview_seki.txt を任意注入。
 """
 import os, re, json, subprocess
 
@@ -97,6 +98,21 @@ def render_convo(s):
     return "\n".join(h)
 
 # ---------- 解答編 ----------
+# 構文欄の記号：{S} {V′} などを下付きの役割記号にする（英語の解答解説_共通作成方針 6・The Rules の凡例＋塾長指定の M）。
+# 全角括弧は halt で半角幅に組む（付けないと閉じ括弧の右の空きで、後ろの記号が次の語に付いて見える）。
+def _syn(t):
+    # いちばん内側の短いまとまり（4語まで。記号ごと）は行の途中で割らない（「［of ／ proof］」のような折り返しを防ぐ）
+    def _nw(m):
+        return f'\x00{m.group(0)}\x01' if len(m.group(2).split()) <= 4 else m.group(0)
+    t = re.sub(r"([〈［（])([^〈〉［］（）{}…]+)([〉］）])(\{[SVOCM]′?\})?", _nw, t)
+    # 閉じ括弧と役割記号のあいだでも改行させない（外側・長いまとまりで、記号だけが次の行頭に出るのを防ぐ）
+    t = re.sub(r"([〉］）])(\{[SVOCM]′?\})", "\x02\\1\\2\x03", t)
+    t = re.sub(r"([〈〉［］（）])", r'<span class="br">\1</span>', t)
+    t = re.sub(r"\{([SVOCM]′?)\}", r'<sub class="sv">\1</sub>', t)
+    for a, b in (("\x00", '<span class="nw">'), ("\x01", "</span>"), ("\x02", '<span class="nw">'), ("\x03", "</span>")):
+        t = t.replace(a, b)
+    return t
+
 def _exp_body(idkey):
     x = EXP.get(idkey)
     if not x: return ""
@@ -105,9 +121,14 @@ def _exp_body(idkey):
     if x.get("quote"):
         qja = f'<span class="qja">（{x["quote_ja"]}）</span>' if x.get("quote_ja") else ""
         parts.append(f'<div class="ep"><span class="pl">該当箇所</span><span class="ec"><span class="quo">{x["quote"]}</span> {qja}</span></div>')
+    if x.get("syntax"):
+        note = f'<br><span class="synn">{x["syntax_note"]}</span>' if x.get("syntax_note") else ""
+        parts.append(f'<div class="ep"><span class="pl sy">構文</span><span class="ec"><span class="syn">{_syn(x["syntax"])}</span>{note}</span></div>')
     if x.get("reason"): parts.append(f'<div class="ep"><span class="pl">考え方</span><span class="ec">{x["reason"]}</span></div>')
-    if x.get("distractors"): parts.append(f'<div class="ep"><span class="pl">他の選択肢</span><span class="ec">{x["distractors"]}</span></div>')
-    if x.get("point"): parts.append(f'<div class="ep"><span class="pl pt">ポイント</span><span class="ec">{x["point"]}</span></div>')
+    # 整序（大問Ⅴ）には選択肢が無いので、欄の中身（並べ方の注意）に合わせた見出しにする
+    dl = "注意点" if idkey.startswith("V_") else "他の選択肢"
+    if x.get("distractors"): parts.append(f'<div class="ep"><span class="pl">{dl}</span><span class="ec">{x["distractors"]}</span></div>')
+    if x.get("point"): parts.append(f'<div class="ep ept"><span class="pl pt">ポイント</span><span class="ec">{x["point"]}</span></div>')
     return "".join(parts)
 
 def _ans_reading(s):
@@ -139,7 +160,17 @@ def _exp_block(header, idkey):
     return f'<div class="exp"><div class="exp-head">{header}</div>{eb}</div>'
 
 def render_explanations():
-    out = ['<div class="qsec-title">解説</div>']
+    out = ['<div class="qsec-title">解説</div>',
+           '<div class="synlegend"><div class="lg1">構文欄の記号：〈 〉名詞のまとまり　［ ］形容詞のまとまり（名詞にかかる）　（ ）副詞のまとまり　'
+           '<span class="svl">S・V・O・C</span>＝文の骨組み　<span class="svl">S′・V′・O′・C′</span>＝節・準動詞の中の骨組み　'
+           '<span class="svl">M</span>＝修飾語（<span class="svl">M′</span>は節・準動詞の中）　「…」＝本文の省略</div><ul>'
+           '<li>副詞のまとまりは1語でも（ ）。1語の名詞・代名詞と、補語になる形容詞・分詞のまとまりには括弧を付けず、中心の語に記号を添える。</li>'
+           '<li>動詞・形容詞と組で使う前置詞のまとまり（rely on・result in・prevent O from・ask O for・be used to・be different from など）も（ ）<span class="svl">M</span> で示す'
+           '（動詞・形容詞の補部と見て O・C の側に含める説明もある）。</li>'
+           '<li>関係詞（that・what・where など）は括弧を付けず、節の中の働き（S′・O′・M′）だけを添える。'
+           '否定の not・never と、強調構文の It is … that には記号を付けない。</li>'
+           '<li>節・準動詞の中の記号と細かい修飾語の括弧・記号は、説明に要る所だけ付ける。節の中の節も S′・V′ などで示す。</li>'
+           '<li>カンマで区切られた説明の修飾は、名詞のまとまりの外に置く。</li></ul></div>']
     for K in ("I","II","III"):
         s = CONTENT.get(K)
         if not s: continue
@@ -183,11 +214,12 @@ u.dbl { text-decoration:underline; text-decoration-style:double; text-underline-
 sup.qn { font-weight:bold; font-size:7.6pt; }
 .bk { font-weight:bold; white-space:nowrap; }
 .glossary { font-family:'Hiragino Mincho ProN',serif; font-size:8.6pt; color:#222; background:#f5f5f0; border:1px solid #bbb; padding:5px 8px; margin:7px 0 3px; line-height:1.55; }
-.srcnote { font-size:8.2pt; color:#444; margin:3px 0; text-align:right; font-style:italic; }
+.srcnote { font-size:8.2pt; color:#444; margin:3px 0; text-align:right; }
 .qh { font-family:'Hiragino Mincho ProN','Yu Mincho',serif; font-size:9.8pt; font-weight:bold; margin:11px 0 4px; background:#eee; padding:3px 7px; border-left:3px solid #555; }
 .q { margin:2px 0 3px; font-size:9.8pt; line-height:1.55; }
 .q .ql { font-weight:bold; margin-right:6px; font-family:'Hiragino Mincho ProN',serif; }
 .q .opts .op { display:inline-block; margin:0 11px 1px 0; }
+.qc { break-inside:avoid; }   /* 設問の札と選択肢をページで分けない */
 .qc .ql { display:block; margin-bottom:2px; }
 .qc .phr { font-family:'Times New Roman',serif; font-style:italic; }
 .opts-b .opb { display:block; margin:1px 0 1px 1.5em; text-indent:-1.5em; }
@@ -208,11 +240,23 @@ sup.qn { font-weight:bold; font-size:7.6pt; }
 .arow .ac { white-space:nowrap; }
 .arow .al { flex:0 0 1.5em; font-weight:bold; background:#333; color:#fff; text-align:center; border-radius:2px; }
 .overview { font-family:'Hiragino Mincho ProN','Yu Mincho',serif; font-size:9.6pt; line-height:1.72; background:#f6f6f2; border-left:4px solid #444; padding:8px 12px; margin:4px 0 12px; text-align:justify; }
-.exp { margin:6px 0 10px; font-family:'Hiragino Mincho ProN','Yu Mincho',serif; font-size:9.2pt; line-height:1.58; break-inside:avoid; }
+/* 1問分（.exp）は割ってよい。割らないのは欄（.ep）の中だけ。構文欄を足してから .exp ごと送ると、ページ下が2〜3割空いた（20p） */
+.exp { margin:6px 0 10px; font-family:'Hiragino Mincho ProN','Yu Mincho',serif; font-size:9.2pt; line-height:1.58; }
 .exp-head { font-weight:bold; font-size:9.8pt; border-bottom:1px solid #bbb; padding-bottom:1px; margin-bottom:3px; break-inside:avoid; break-after:avoid; }
 .ep { display:flex; gap:7px; margin:2.5px 0; line-height:1.62; break-inside:avoid; }
 .ep .pl { flex:0 0 5.6em; align-self:flex-start; font-weight:bold; color:#fff; background:#555; text-align:center; padding:0.8px 0; border-radius:2px; font-size:7.8pt; white-space:nowrap; }
 .ep .pl.pt { background:#8a6d1a; }
+.ept { break-before:avoid; }
+.ep .pl.sy { background:#2f5d7c; }
+.syn { font-family:'Times New Roman','Hiragino Mincho ProN',serif; font-size:9.4pt; line-height:1.9; }
+.syn sub.sv { font-family:Arial,'Hiragino Sans',sans-serif; font-weight:bold; font-size:6.6pt; vertical-align:-0.35em; margin:0 1px 0 0.5px; color:#1d4f73; }
+.syn .br { font-feature-settings:"halt"; }
+.syn .nw { white-space:nowrap; }
+.synn { font-size:8.8pt; color:#222; }
+.synlegend { font-family:'Hiragino Mincho ProN','Yu Mincho',serif; font-size:8.6pt; line-height:1.6; border:1px solid #bbb; background:#f6f8fa; padding:4px 8px; margin:4px 0 8px; }
+.synlegend .svl { font-family:Arial,'Hiragino Sans',sans-serif; font-weight:bold; font-size:7.8pt; color:#1d4f73; }
+.synlegend ul { margin:2px 0 0; padding-left:1.3em; }
+.synlegend li { margin:0; }
 .ep .ec { flex:1; }
 .ep .quo { font-family:'Times New Roman',serif; }
 .ep .qja { color:#333; }
