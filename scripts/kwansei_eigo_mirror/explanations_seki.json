@@ -101,11 +101,11 @@
   "point": "用語の名前（healthy-user effect）から仕組みは推測できても、どの品が例に挙がっているかは本文でしか決まらない。健康を気づかう人が買いそうな品はいくらでもあるので、該当箇所の名詞（3つの例）だけを答えの範囲にする。"
  },
  "I_C_iii": {
-  "quote": "Observation is frequently the only ethical way to study what humans eat over a lifetime ... it will be confirmed again and again by different teams using different methods",
-  "quote_ja": "観察は、人が生涯に食べるものを調べる唯一の倫理的な方法であることが多い…（本当に重要な発見なら）異なる方法を使う異なるチームによって何度も確認されるだろう。",
-  "reason": "選択肢は、前半「観察研究について（倫理上ほかに方法がないことが多い／実験より安いので重んじられることが多い）」と、後半「目を引く結果を信じてよいとき（ほかのチームが追試したら／元のチームが繰り返したら）」の組み合わせ。筆者は第5段落で「観察研究は無価値ではない」と認め（None of this means that such research is worthless）、その理由を Observation is frequently the only ethical way to study what humans eat over a lifetime（生涯の食事を調べるには、観察が唯一の倫理的な方法であることが多い）と述べる（前半）。そのうえで、本当に重要な発見なら異なるチームが異なる方法で何度も確認する、一度だけの結果には服従でなく忍耐を（deserves patience, not obedience）と述べ、最終段落でも「ほかの誰かが追試に成功したか」（whether anyone else has managed to repeat the work）を問えと勧める（後半）。前半・後半とも本文に合う b「観察は生涯の食習慣を調べる唯一の倫理的な方法であることが多いが、目を引く結果はほかのチームが追試したら信じてよい」が筆者の立場。",
-  "distractors": "a「観察は実験より安いので重んじられることが多いが、目を引く結果は元のチームが繰り返したら信じてよい」は、前半の費用は本文に書かれておらず（筆者は費用に触れていない）、後半は本文の different teams using different methods／anyone else と食い違う。c「観察は実験より安いので重んじられることが多いが、目を引く結果はほかのチームが追試したら信じてよい」は、後半は合うが、前半の費用は本文に書かれていない。筆者が観察研究の価値として挙げるのは、倫理（the only ethical way）と、厳密な試験に値する問いを示すこと（point toward questions worth testing far more rigorously）の2つだ。第2段落の Investigators cannot lock thousands of people in a laboratory for decades も、実験が「できない」という話で、費用を比べているのではない。d「観察は生涯の食習慣を調べる唯一の倫理的な方法であることが多いが、目を引く結果は元のチームが繰り返したら信じてよい」は、前半は合うが、後半が本文の different teams using different methods／anyone else と食い違う（確かめる主体が違う）。",
-  "point": "選択肢が2つの要素の組み合わせになっているときは、要素ごとに本文と照らし、両方とも合うものを選ぶ。前半だけ合う選択肢（d）、後半だけ合う選択肢（c）に引っかからない。"
+  "quote": "The real problem is not that researchers are dishonest. It is that the studies behind these stories are far weaker than the confident language used to describe them. ... The real danger lies in the translation from research journal to living room. A cautious sentence about a modest statistical association becomes, by the time it reaches the front page, a blunt command",
+  "quote_ja": "本当の問題は、研究者が不誠実なことではない。こうした記事の裏にある研究が、それら（＝研究）を説明する自信たっぷりの言葉よりはるかに弱いことだ。…本当の危険は、研究誌から居間へと伝わる途中の置き換えにある。控えめな統計上の関連についての慎重な一文が、新聞の一面に届くころには、ぶっきらぼうな命令になっている。",
+  "reason": "4つの選択肢は「食事の助言がころころ変わるおもな理由」をそれぞれ別のところに置いている（研究者の示し方／伝わる途中の置き換え／研究資金／測り方の違い）。どれも一般論としてはよく言われる理由なので、筆者が本文全体でどこに理由を置いているかで選ぶ。筆者は第1段落で、助言が入れ替わる例（コーヒーは月曜と金曜で毒と薬、卵は年ごとに非難と称賛、ワインは同じ新聞の中で危険とも予防的とも）を挙げたうえで、The real problem is not that researchers are dishonest（本当の問題は研究者の不誠実さではない）とし、研究が the confident language used to describe them（研究を語る自信たっぷりの言葉）より弱いことだと述べる。第2〜4段落で観察研究の弱さ（被験者が食事を自分で選ぶので比べる集団が隠れた点で異なる・交絡因子・健康的利用者効果）を説明したあと、第5段落で The real danger lies in the translation from research journal to living room と、控えめな関連についての慎重な一文が一面に届くころには blunt command（ぶっきらぼうな命令）になると述べ、最終段落で読者に measured doubt（ほどよい疑い）を勧める。この「関連について慎重に述べられた発見が、一般の人に届くまでに断定的な決まりに変わる」を言った b が、本文全体を通した筆者の立場（控えめな発見が一つ出るたびに断定的な決まりとして届くので、助言が週ごと・年ごとに入れ替わって見える、というつながり）。",
+  "distractors": "a「研究者が、食品と健康の関連を、その食品そのものが原因だという証拠としてよく示す」は、第5段落の A cautious sentence about a modest statistical association（研究誌では、控えめな関連についての慎重な一文）と食い違う。原因だと言い切るのは研究者ではなく見出しで、第3段落でも The headline practically writes itself: greens prevent death（見出しは「青菜は死を防ぐ」と勝手にできあがる）、the tidy story of cause and effect that the headline tells（見出しが語るすっきりした因果の話）と、因果の話をするのは見出しだとしている。第4段落でも honest scientists readily admit（誠実な科学者は、一つの観察研究でほかの説明をすべて排除できることはまずないと進んで認める）と述べ、第1段落で研究者の不誠実さも否定している。c「食事の研究の多くは、都合のよい結果を望む食品会社が費用を出している」は、本文に書かれていない（筆者は研究資金に触れていない）。d「新しい研究ごとに食べたものの測り方が違うので、結果がめったに一致しない」は、本文に書かれていない。第5段落はむしろ、本当に重要な発見なら different teams using different methods（異なる方法を使う異なるチーム）によって何度も確かめられると述べ、方法の違いを、発見が本物かを確かめる手立てとして挙げている。第1段落のコーヒーなどの例も、助言が入れ替わることを示すだけで、その理由を測り方の違いに置いてはいない。",
+  "point": "全体の立場を問う設問で、選択肢がどれも一般論としてありそうなときは、筆者が「本当の問題・本当の危険」をどこに置いているかを、冒頭（第1段落）と結論部（第5・6段落）の両方で確かめる。筆者は研究誌での書き方を慎重だとし、因果の話をするのは見出しだと述べて、問題を『研究誌から一般の人に伝わる途中の置き換え』に置いている。"
  },
  "II_A_1": {
   "quote": "physicians themselves appeared in advertisements praising one brand over another",
@@ -191,7 +191,7 @@
   "quote": "human mistakes account for the overwhelming majority of traffic deaths",
   "quote_ja": "人間のミスが、交通事故死の圧倒的多数を占めている（その原因になっている）。",
   "reason": "account for のコアは「(数量の)割合を占める」と「(理由を)説明する=原因である」の2本。ここは「人間のミスが交通死の大多数を占める→その原因になっている」で are responsible for(～の原因である・責任がある)と一致。前後の「コンピュータは飲酒も居眠りもしない」から「人間のミスこそ元凶」と読める。",
-  "distractors": "make up for は「埋め合わせる」で別熟語。cover the cost of は「費用を負担」で文脈違い。cancel out は「相殺してゼロに」で、大多数を占めるのと正反対。",
+  "distractors": "make up for は「埋め合わせる」で別熟語。pay the full cost of は「費用の全額を払う」で文脈違い。cancel out は「相殺してゼロに」で、大多数を占めるのと正反対。",
   "point": "account for＝「占める／～の原因である」。この長文は「human error が主因」が柱。"
  },
  "III_A_3": {
@@ -205,7 +205,7 @@
   "quote": "On the whole, society has not yet decided how much risk it is willing to accept",
   "quote_ja": "全体として見れば、社会はどれだけのリスクを受け入れるつもりなのか、まだ決めかねている。",
   "reason": "on the whole は「(細部はさておき)全体としては・概して」というまとめ表現。前段で「国ごとに法律がバラバラ」と個々の話をした後、それを束ねて「総じて社会はまだ決めていない」と一般化する流れなので Generally speaking(一般的に言えば)が同義。",
-  "distractors": "By contrast「対照的に」は前文と対立させる語で、「概して」の意味を持たない。As a result「その結果」は因果を示す語で、on the whole(概して・全体として)の意味を持たない。For instance「例えば」は具体例を導く語でまとめに不適。",
+  "distractors": "In sharp contrast「まったく対照的に」は前文と対立させる語で、「概して」の意味を持たない。As a result「その結果」は因果を示す語で、on the whole(概して・全体として)の意味を持たない。To take a recent example「最近の例を挙げると」は具体例を導く語で、まとめに不適。",
   "point": "On the whole＝Generally speaking＝「概して」。個々→全体の「まとめ副詞」を見抜く。"
  },
  "III_B_ア": {
@@ -213,8 +213,8 @@
   "quote_ja": "人間の目にできるよりはるかに速く周囲の世界を読み取る。",
   "syntax": "〈These vehicles〉{S} rely{V} （on a dense web ［of sensors, cameras, and software ［that{S′} （together）{M′} interpret{V′} 〈the surrounding world〉{O′} （far faster）{M′} （than any human eye could manage）{M′}］］）{M}",
   "syntax_note": "二重下線部は関係詞節［that …］の中の V′ 以下。that の先行詞は、動詞が interpret（3単現の s が無い）なので、単数の a dense web ではなく複数の sensors, cameras, and software（together『いっしょになって』もこれを支える）。（far faster）は interpret にかかり、far は比較級を強める。（than …）は比べる相手で、manage は『やってのける』の意味で、後ろの to interpret it（世界を読み取ること）が省かれていると見られる（人間の目が世界を読み取れる速さよりもはるかに速く、ということ）。",
-  "reason": "interpret the surrounding world は「周囲の世界を解釈する=状況を把握する」、far faster than any human eye could manage は「人間の目より速く」。この2点をそのまま言い換えたのが d「環境を人間ドライバーより速く理解する」。interpret を「翻訳」でなく「情報を意味づけして理解する」と取れれば他は全部ズレると分かる。",
-  "distractors": "a は travel around the world「世界中を旅する」と誤読=surrounding world を地理的世界と取り違えた罠。b「人間に全く見えない物を感知」は「速さ」の話を「不可視」にすり替え、言い過ぎ。c「目の焦点合わせを真似る」は本文にない発想。",
+  "reason": "interpret the surrounding world は「周囲の世界を解釈する=状況を把握する」、far faster than any human eye could manage は「人間の目にできるよりはるかに速く」。この2点を言い換えたのが d「周囲の状況を人間のドライバーよりずっと速く理解する」。interpret を「翻訳」でなく「情報を意味づけして理解する」と取れれば、ほかは全部ずれると分かる。any human eye（人間の目）は、人間が目で見て周りを読み取る力のことで、d はそれを a human driver（人間のドライバー）と言い換えている。",
+  "distractors": "a「人間のドライバーよりも速く世界中を移動する」は、surrounding world を地理的な「世界」と取り違えた罠。b「暗い道で人間の目が見落としやすい小さな物に気づく」は、二重下線部の「速さ」の話を「見落とし」の話にすり替えている（本文は、人間の目より速く周囲を読み取ると言っているだけ）。c「人間の目が遠くの物に焦点を合わせるしくみをまねる」は本文にない発想。",
   "point": "interpret＝「解釈する=状況把握」。二重下線は「速く周囲を理解」の一点に集約。"
  },
  "III_B_イ": {
@@ -222,8 +222,8 @@
   "quote_ja": "毎年何万人もの命を救えるというまさにこの約束こそが、投資家にこの分野へ資金を注ぎ込ませ続けている。",
   "syntax": "It is （precisely）{M} 〈this promise ［of saving tens of thousands of lives each year］〉{S} that keeps{V} investors{O} pouring{C} money （into the field）",
   "syntax_note": "It is X that … の強調構文。It is と that を外すと This promise of saving … keeps investors pouring money into the field（S V O C）が残るので、強調されている X（this promise …）は keeps の主語（S）に当たる。（precisely）は X を強める（『まさにこの』）。［of saving …］は promise の中身を言う同格の of（『…を救えるという約束』）。keep O ～ing で『O に～させ続ける』で、pouring 以下が補語（C。money は pouring の目的語）。",
-  "reason": "It is ～ that … の強調構文で、this promise of saving ... lives(命を救う見込み)を強調している。keep O ~ing は「Oに～し続けさせる」、pour money into は「資金を注ぐ」。つまり「多くの命を救えるという希望が投資家に資金提供を続けさせる」。これを平易にした a が正解。",
-  "distractors": "b「手早く大儲け」は saving lives(人命救済)という動機を金儲けにすり替え。c「技術が命を救えるか疑っている」は本文と真逆(投資家は期待して出資)。d「政府が大半を出資」は本文になく investors(民間投資家)と食い違う。",
+  "reason": "It is ～ that … の強調構文で、this promise of saving ... lives(命を救えるという約束＝見込み)を強調している（precisely は『まさに』とその強調をさらに強める）。keep O ~ing は「Oに～し続けさせる」、pour money into は「資金を注ぐ」。つまり「多くの命を救えるという見込みこそが、投資家に資金を出し続けさせている」。これを「多くの死を防ぐことが、投資家が業界に資金を出し続ける一番の理由だ」と言い換えた a が正解。強調構文の「まさに～こそが」を the main reason（一番の理由）で表し、promise（見込み）の中身である「多くの命を救うこと」を Preventing many deaths（多くの死を防ぐこと）で表している（すでに防いだ実績ではなく、これから防げるという見込みの話）。",
+  "distractors": "b「投資家は主に、数年のうちに大きな利益を得る見込みに引きつけられている」は、saving lives(人命救済)という動機を金もうけにすり替えている。c「投資家は、その技術が危険にさらす以上の命をいつか救えるのかを疑っている」は本文と逆（投資家は期待して出資している）。d「民間の投資家ではなく政府が研究費の大半を出している」は、二重下線部（投資家が資金を出し続ける理由）に書かれていない内容で、二重下線部を言い換えたものではない。",
   "point": "It is X that …＝X を強調。ここの X=「人命救済の見込み」が投資の原動力。"
  },
  "III_B_ウ": {
@@ -231,15 +231,15 @@
   "quote_ja": "注意散漫な同乗者が1〜2秒で急に注意力のあるドライバーになれる、と決めてかかる、ぎこちない妥協策。",
   "syntax": "…—〈an awkward compromise ［that{S′} assumes{V′} 〈〈a distracted passenger〉{S′} can （suddenly）{M′} become{V′} 〈an alert driver〉{C′} （within a second or two）{M′}〉{O′}］〉",
   "syntax_note": "ダッシュの後ろの〈an awkward compromise …〉は、ダッシュの前（同じ文の前半）の内容（理解できない場面で人間に運転を返すように車を設計すること）を言い換えてまとめた名詞のまとまり（同格）。S・O・C のどれでもないので、外側の〈 〉には記号を付けていない。［that …］が compromise にかかる関係詞節で、that が節の主語（S′）。assumes の目的語（O′）は接続詞 that が省かれた名詞節で、その中は a distracted passenger（主語）can become（動詞）an alert driver（補語）。『注意散漫な同乗者が1〜2秒で急に注意力のあるドライバーになれる』と決めてかかる点を、筆者は awkward（無理がある）と評している。",
-  "reason": "awkward compromise は「ぎこちない・不都合な妥協案」。assume は「(証拠なく)当然そうだと決めてかかる」。distracted(気の散った)passenger が within a second or two で alert(油断のない)driver になる、という無理な前提を批判している。これを「不注意な人に即座に運転を代われと期待する不満足な取り決め」とした c が一致。",
-  "distractors": "a「全員を常に覚醒させる巧妙な設計」は awkward(不都合)を clever(巧妙)と正反対に。b「前方注視以外禁止の規則」は本文にない義務を創作。d「どんな時も人間に制御を返さない」は制御を返す本文と逆。",
+  "reason": "awkward compromise は「ぎこちない・不都合な妥協案」。assume は「(証拠なく)当然そうだと決めてかかる」。distracted(気の散った)passenger が within a second or two で alert(油断のない)driver になる、という無理な前提を批判している。これを「不注意な乗り手に即座に運転を代われと求める、ぎこちない取り決め」とした c が一致。",
+  "distractors": "a「旅のあいだ乗客全員を十分に覚醒させておく巧妙な設計」は awkward(不都合)を clever(巧妙)と正反対にしている。b「乗客に、道路を見ること以外いっさい禁じる厳しい規則」は本文にない義務を創作している。d「どんな場合にも人間に制御を返さないシステム」は、制御を人間に返すという本文と逆。",
   "point": "awkward＝「無理があって不都合」。筆者は「急に運転を代われ」という前提を批判している。"
  },
  "III_C_i": {
-  "quote": "Supporters insist that such machines will eventually make our roads dramatically safer ... human mistakes account for the overwhelming majority of traffic deaths",
-  "quote_ja": "支持者たちは、そうした機械がいずれ道路を劇的に安全にすると主張する…人間のミスが交通死の圧倒的多数を占める。",
-  "reason": "第1段落末の Supporters insist that such machines will eventually make our roads dramatically safer（支持者は、こうした機械がいずれ道路を劇的に安全にすると主張する）と、第2段落の根拠 human mistakes account for the overwhelming majority of traffic deaths（人間のミスが交通死亡の圧倒的多数を占める）を、因果でつないだ a が一致。",
-  "distractors": "b「現在試験中の自動運転車の多くは、人間より遅く走るよう設計されている」は本文に述べられていない。c「筆者は、ほとんどの人がこの先何世代も自分で車を運転し続けると予想している」は、第5段落の the coming decades will almost certainly see the human driver pushed steadily toward the margins（今後数十年で、人間の運転手はほぼ確実に隅へ追いやられていく）と食い違う。d「車は、乗客がボタンを押すたびに人間へ運転を戻すように設計されている」は本文に書かれていない。第3段落が述べる戻すきっかけは whenever they meet something they cannot understand（理解できないものに出会うたびに）。",
+  "quote": "Supporters insist that such machines will eventually make our roads dramatically safer ... In theory, then, handing control to a machine should remove the single largest cause of danger on the road",
+  "quote_ja": "支持者たちは、そうした機械がいずれ道路を劇的に安全にすると主張する…それなら理論上は、運転を機械に任せれば、道路で最も大きな危険の原因を取り除けるはずだ。",
+  "reason": "第1段落末の Supporters insist that such machines will eventually make our roads dramatically safer（支持者は、こうした機械がいずれ道路を劇的に安全にすると主張する）と、Their confidence rests on …（支持者の自信は…に基づく）で始まる第2段落の結論 handing control to a machine should remove the single largest cause of danger（運転を機械に任せれば最大の危険の原因を取り除けるはず）をつないだ a「支持者は、自動運転車が事故のおもな原因を取り除くことで道路を安全にすると期待している」が一致。最大の危険の原因とは、第2段落が挙げる人間のミス（human mistakes）のこと。a の the main cause of accidents（事故のおもな原因）は、本文の the single largest cause of danger（道路で最も大きな危険の原因）の言い換え。",
+  "distractors": "b「支持者は、自動運転車が道路を走る車の数を減らすことで道路を安全にすると期待している」は、本文に書かれていない。支持者の根拠は、第2段落の human mistakes account for the overwhelming majority of traffic deaths（人間のミスが交通死の圧倒的多数を占める）で、安全になる理由は車の数ではなく、人間のミスという最大の原因を取り除くこと。c「筆者は、ほとんどの人がこの先何世代も自分で車を運転し続けると予想している」は、第5段落の the coming decades will almost certainly see the human driver pushed steadily toward the margins（今後数十年で、人間の運転手はほぼ確実に隅へ追いやられていく）と食い違う。d「車は、乗客がボタンを押すたびに人間へ運転を戻すように設計されている」は本文に書かれていない。第3段落が述べる戻すきっかけは whenever they meet something they cannot understand（理解できないものに出会うたびに）。",
   "point": "一致問題は、選択肢の「理由・予想・きっかけ」を本文の該当箇所と照らす。本文に書かれていない事柄（b・d）と、本文と食い違う事柄（c）を区別する。"
  },
  "III_C_ii": {

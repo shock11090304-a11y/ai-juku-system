@@ -186,10 +186,10 @@
     "q_label": "(iii)",
     "stem": "Which statement best expresses the author's overall position?",
     "options": [
-     "Observation is often valued because it costs less than experiments, but a striking result should be trusted once the original team has repeated it.",
-     "Observation is often the only ethical way to study lifelong eating habits, but a striking result should be trusted once other teams have repeated it.",
-     "Observation is often valued because it costs less than experiments, but a striking result should be trusted once other teams have repeated it.",
-     "Observation is often the only ethical way to study lifelong eating habits, but a striking result should be trusted once the original team has repeated it."
+     "Food advice keeps changing mainly because researchers often present a link between a food and good health as proof that the food itself causes it.",
+     "Food advice keeps changing mainly because cautiously stated findings about links are turned into firm rules by the time they reach the public.",
+     "Food advice keeps changing mainly because much of the research on diet is paid for by food companies that want favorable results.",
+     "Food advice keeps changing mainly because each new study measures what people eat in a different way, so the results rarely agree."
     ],
     "ans": 2
    }
@@ -384,7 +384,7 @@
     "options": [
      "are responsible for",
      "make up for",
-     "cover the cost of",
+     "pay the full cost of",
      "cancel out"
     ],
     "ans": 1
@@ -402,10 +402,10 @@
    {
     "ref": "4",
     "options": [
-     "By contrast",
+     "In sharp contrast",
      "Generally speaking",
      "As a result",
-     "For instance"
+     "To take a recent example"
     ],
     "ans": 2
    }
@@ -417,10 +417,10 @@
     "ref": "ア",
     "phrase": "interpret the surrounding world far faster than any human eye could manage",
     "options": [
-     "travel around the world faster than any human could drive",
-     "detect objects that are completely invisible to the human eye",
+     "travel around the world faster than any human driver could",
+     "notice small objects that a human eye would easily miss on a dark road",
      "copy the way the human eye focuses on distant objects",
-     "make sense of their environment more quickly than a human driver could"
+     "understand their surroundings much faster than a human driver can"
     ],
     "ans": 4
    },
@@ -428,9 +428,9 @@
     "ref": "イ",
     "phrase": "It is precisely this promise of saving tens of thousands of lives each year that keeps investors pouring money into the field",
     "options": [
-     "The hope of preventing many deaths is exactly what makes investors keep funding the industry",
-     "Investors are drawn mainly by the chance to earn large profits very quickly",
-     "Investors seriously doubt whether the technology can save any lives at all",
+     "Preventing many deaths is the main reason investors keep funding the industry",
+     "Investors are attracted mainly by the chance to earn large profits within a few years",
+     "Investors doubt whether the technology will ever save more lives than it puts at risk",
      "Governments, rather than private investors, pay for most of the research"
     ],
     "ans": 1
@@ -440,8 +440,8 @@
     "phrase": "an awkward compromise that assumes a distracted passenger can suddenly become an alert driver within a second or two",
     "options": [
      "a clever design that keeps every passenger fully alert throughout the trip",
-     "a rule that forbids passengers from doing anything except watching the road",
-     "an unsatisfactory arrangement that expects an inattentive person to take control instantly",
+     "a strict rule that forbids passengers from doing anything except watching the road",
+     "a clumsy arrangement that expects an inattentive rider to take over instantly",
      "a system that under no circumstances ever returns control to the human"
     ],
     "ans": 3
@@ -454,8 +454,8 @@
     "q_label": "(i)",
     "stem": "本文の内容と一致するものはどれか。",
     "options": [
-     "Supporters expect self-driving cars to reduce road deaths greatly because human error causes most traffic deaths.",
-     "Most self-driving cars being tested today are designed to drive more slowly than human drivers do.",
+     "Supporters expect driverless cars to make roads safer by removing the main cause of accidents.",
+     "Supporters expect driverless cars to make roads safer by cutting the number of cars on the road.",
      "The author expects most people to go on driving their own cars for generations to come.",
      "Cars are being designed to give control back to a human whenever the passenger presses a button."
     ],
