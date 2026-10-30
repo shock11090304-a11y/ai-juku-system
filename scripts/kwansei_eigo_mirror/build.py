@@ -9,7 +9,10 @@
 import os, re, json, subprocess
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.expanduser("~/Desktop/関西学院大学2026_英語実戦問題")
+# ★ 出力先。2026-10-06 のデスクトップ整理で納品フォルダが移った（旧 ~/Desktop/関西学院大学2026_英語実戦問題）。
+#   旧パスのままだとデスクトップ直下に空フォルダを作り直してしまう。試し刷りは KWANSEI_OUT で別の場所へ。
+OUT = os.environ.get("KWANSEI_OUT") or os.path.expanduser(
+    "~/Desktop/📝 模試・演習/実践模試_全大学/_私大英語_2026実戦問題（同志社・明治・関学・青学）/関西学院大学2026_英語実戦問題")
 os.makedirs(OUT, exist_ok=True)
 OPT = ["a","b","c","d","e","f","g","h"]
 
@@ -126,7 +129,7 @@ def _ans_simple(s, letter=True):
     return f'<div class="qsec-title">大問{s["label"]}　解答</div><div class="arow">{cells}</div>'
 
 def _ans_order(s):
-    cells = "　".join(f'{i}.(2番目<b>{it["ans2"]}</b>/6番目<b>{it["ans6"]}</b>)' for i, it in enumerate(s["items"], 1))
+    cells = "　".join(f'<span class="ac">{i}.(2番目<b>{it["ans2"]}</b>/6番目<b>{it["ans6"]}</b>)</span>' for i, it in enumerate(s["items"], 1))
     return f'<div class="qsec-title">大問{s["label"]}　解答</div><div class="arow">{cells}</div>'
 
 def _exp_block(header, idkey):
@@ -140,7 +143,7 @@ def render_explanations():
     for K in ("I","II","III"):
         s = CONTENT.get(K)
         if not s: continue
-        out.append(f'<div class="daimon">大問{K}　解説</div>')
+        out.append(f'<div class="daimon">大問{s["label"]}　解説</div>')
         for it in s["A_items"]:
             out.append(_exp_block(f'問A（{it["ref"]}）　正解 {OPT[it["ans"]-1]}', f'{K}_A_{it["ref"]}'))
         for it in s["B_items"]:
@@ -173,7 +176,7 @@ body { font-family:'Times New Roman','Hiragino Mincho ProN','Yu Mincho',serif; c
 .exam-head { text-align:center; border-bottom:2.5px solid #000; padding-bottom:6px; margin-bottom:10px; }
 .exam-head .t1 { font-size:15pt; font-weight:bold; letter-spacing:2px; }
 .exam-head .t2 { font-size:9.5pt; margin-top:3px; }
-.daimon { font-size:12pt; font-weight:bold; border-left:6px solid #000; padding-left:8px; margin:15px 0 7px; }
+.daimon { font-size:12pt; font-weight:bold; border-left:6px solid #000; padding-left:8px; margin:15px 0 7px; break-after:avoid; }
 .passage p { margin:0 0 6px; text-align:justify; }
 u.ul { text-decoration:underline; text-underline-offset:2px; }
 u.dbl { text-decoration:underline; text-decoration-style:double; text-underline-offset:2px; }
@@ -200,12 +203,13 @@ sup.qn { font-weight:bold; font-size:7.6pt; }
 .dl { margin:3px 0; text-indent:-2.4em; padding-left:2.4em; }
 .dl .sp { font-weight:bold; }
 /* 解答編 */
-.qsec-title { font-size:11pt; font-weight:bold; margin:13px 0 5px; border-bottom:1.5px solid #000; padding-bottom:2px; }
-.arow { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; margin:4px 0; font-size:9.8pt; font-family:'Hiragino Mincho ProN','Times New Roman',serif; }
+.qsec-title { font-size:11pt; font-weight:bold; margin:13px 0 5px; border-bottom:1.5px solid #000; padding-bottom:2px; break-after:avoid; }
+.arow { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; margin:4px 0; font-size:9.8pt; font-family:'Hiragino Mincho ProN','Times New Roman',serif; break-inside:avoid; }
+.arow .ac { white-space:nowrap; }
 .arow .al { flex:0 0 1.5em; font-weight:bold; background:#333; color:#fff; text-align:center; border-radius:2px; }
 .overview { font-family:'Hiragino Mincho ProN','Yu Mincho',serif; font-size:9.6pt; line-height:1.72; background:#f6f6f2; border-left:4px solid #444; padding:8px 12px; margin:4px 0 12px; text-align:justify; }
-.exp { margin:6px 0 10px; font-family:'Hiragino Mincho ProN','Yu Mincho',serif; font-size:9.2pt; line-height:1.58; }
-.exp-head { font-weight:bold; font-size:9.8pt; border-bottom:1px solid #bbb; padding-bottom:1px; margin-bottom:3px; break-inside:avoid; }
+.exp { margin:6px 0 10px; font-family:'Hiragino Mincho ProN','Yu Mincho',serif; font-size:9.2pt; line-height:1.58; break-inside:avoid; }
+.exp-head { font-weight:bold; font-size:9.8pt; border-bottom:1px solid #bbb; padding-bottom:1px; margin-bottom:3px; break-inside:avoid; break-after:avoid; }
 .ep { display:flex; gap:7px; margin:2.5px 0; line-height:1.62; break-inside:avoid; }
 .ep .pl { flex:0 0 5.6em; align-self:flex-start; font-weight:bold; color:#fff; background:#555; text-align:center; padding:0.8px 0; border-radius:2px; font-size:7.8pt; white-space:nowrap; }
 .ep .pl.pt { background:#8a6d1a; }
