@@ -153,16 +153,34 @@ def answer_list_reading(sec, key):
         cells = "".join(f'<span class="ac"><b>{MARU[i-1]}</b></span>' for i in sec["E_answers"])
         rows.append(f'<div class="arow"><span class="al">E</span><span class="ac">合致する3つ：</span>{cells}</div>')
     if sec.get("F_model_ja"):
-        rows.append(f'<div class="arow"><span class="al">F</span><span class="ac">{sec["F_model_ja"]}</span></div>')
+        rows.append(f'<div class="arow"><span class="al">F</span><span class="ac wide">{sec["F_model_ja"]}</span></div>')
     return f'<div class="qsec-title">{sec["label"]}　解答</div>' + "".join(rows)
 
 def answer_list_convo(sec, key):
     m = {x["slot"]: x["idx"] for x in sec["A_slot_map"]}
-    cells = "".join(f'<span class="ac">（{s}）<b>{m.get(s,"?")}</b></span>' for s in sec["A_slots"])
+    cells = "".join(f'<span class="ac">（{s}）<b>{_maru(m.get(s))}</b></span>' for s in sec["A_slots"])
     rows = [f'<div class="arow"><span class="al">A</span>{cells}</div>']
     if sec.get("B_model_en"):
-        rows.append(f'<div class="arow"><span class="al">B</span><span class="ac">{sec["B_model_en"]}</span></div>')
+        rows.append(f'<div class="arow"><span class="al">B</span><span class="ac wide">{sec["B_model_en"]}</span></div>')
     return f'<div class="qsec-title">{sec["label"]}　解答</div>' + "".join(rows)
+
+def _maru(i):
+    return MARU[i - 1] if isinstance(i, int) and 1 <= i <= len(MARU) else "?"
+
+# ★「他の選択肢」欄の見出し。選択肢の無い設問は中身に合わせる（整序＝使わない語・和訳＝訳し落とし・英訳＝注意点）。
+def _dist_label(idkey):
+    if idkey.endswith("_D"):
+        return "使わない語"
+    if idkey.endswith("_F"):
+        return "訳し落とし"
+    if idkey == "III_B":
+        return "注意点"
+    return "他の選択肢"
+
+# 構文欄の記号：{S} {V′} などを下付きの役割記号にする（英語の解答解説_共通作成方針 6・The Rules の凡例＋塾長指定の M）
+def _syn(t):
+    t = re.sub(r"([〈〉［］（）])", r'<span class="br">\1</span>', t)
+    return re.sub(r"\{([SVOCM]′?)\}", r'<sub class="sv">\1</sub>', t)
 
 def _exp_body(idkey):
     s = EXP.get(idkey)
@@ -174,10 +192,13 @@ def _exp_body(idkey):
     if s.get("quote"):
         qja = f'<span class="qja">（{s["quote_ja"]}）</span>' if s.get("quote_ja") else ""
         parts.append(f'<div class="ep"><span class="pl">該当箇所</span><span class="ec"><span class="quo">{s["quote"]}</span> {qja}</span></div>')
+    if s.get("syntax"):
+        note = f'<br><span class="synn">{s["syntax_note"]}</span>' if s.get("syntax_note") else ""
+        parts.append(f'<div class="ep"><span class="pl sy">構文</span><span class="ec"><span class="syn">{_syn(s["syntax"])}</span>{note}</span></div>')
     if s.get("reason"):
         parts.append(f'<div class="ep"><span class="pl">考え方</span><span class="ec">{s["reason"]}</span></div>')
     if s.get("distractors"):
-        parts.append(f'<div class="ep"><span class="pl">他の選択肢</span><span class="ec">{s["distractors"]}</span></div>')
+        parts.append(f'<div class="ep"><span class="pl">{_dist_label(idkey)}</span><span class="ec">{s["distractors"]}</span></div>')
     if s.get("point"):
         parts.append(f'<div class="ep"><span class="pl pt">ポイント</span><span class="ec">{s["point"]}</span></div>')
     return "".join(parts)
@@ -192,7 +213,7 @@ body { font-family: 'Times New Roman','Hiragino Mincho ProN','Yu Mincho',serif; 
 .exam-head { text-align:center; border-bottom:2.5px solid #000; padding-bottom:6px; margin-bottom:12px; }
 .exam-head .t1 { font-size:15pt; font-weight:bold; letter-spacing:2px; }
 .exam-head .t2 { font-size:10pt; margin-top:3px; }
-.daimon { font-size:12pt; font-weight:bold; border-left:6px solid #000; padding-left:8px; margin:16px 0 8px; page-break-before:auto; }
+.daimon { font-size:12pt; font-weight:bold; border-left:6px solid #000; padding-left:8px; margin:16px 0 8px; page-break-before:auto; break-after:avoid; }
 .passage p { margin:0 0 7px; text-align:justify; }
 u.ul { text-decoration:underline; text-underline-offset:2px; }
 u.wv { text-decoration: underline wavy; text-underline-offset:3px; }
@@ -217,16 +238,24 @@ sup.qn { font-weight:bold; font-size:8pt; }
 .dl .sp { font-weight:bold; }
 .bja { font-family:'Hiragino Mincho ProN','Yu Mincho',serif; font-size:10.5pt; margin:3px 0 0 1em; }
 /* 解答編 */
-.qsec-title { font-size:11pt; font-weight:bold; margin:15px 0 6px; border-bottom:1.5px solid #000; padding-bottom:2px; }
+.qsec-title { font-size:11pt; font-weight:bold; margin:15px 0 6px; border-bottom:1.5px solid #000; padding-bottom:2px; break-after:avoid; }
 .arow { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 8px; margin:4px 0; font-size:10pt; break-inside:avoid; }
 .arow .al { flex:0 0 1.6em; font-weight:bold; background:#333; color:#fff; text-align:center; border-radius:2px; }
 .arow .ac { font-family:'Hiragino Mincho ProN','Times New Roman',serif; }
+.arow .ac.wide { flex:1 1 0; min-width:0; }
 .overview { font-family:'Hiragino Mincho ProN','Yu Mincho',serif; font-size:9.8pt; line-height:1.75; background:#f6f6f2; border-left:4px solid #444; padding:8px 12px; margin:4px 0 12px; text-align:justify; }
 .exp { margin:6px 0 11px; font-family:'Hiragino Mincho ProN','Yu Mincho',serif; font-size:9.4pt; line-height:1.6; }
 .exp-head { font-weight:bold; font-size:10pt; border-bottom:1px solid #bbb; padding-bottom:1px; margin-bottom:3px; break-inside:avoid; break-after:avoid; }
 .ep { display:flex; gap:7px; margin:2.5px 0; line-height:1.68; break-inside:avoid; }
 .ep .pl { flex:0 0 5.7em; align-self:flex-start; font-weight:bold; color:#fff; background:#555; text-align:center; padding:0.8px 0; border-radius:2px; font-size:8pt; white-space:nowrap; }
 .ep .pl.pt { background:#8a6d1a; }
+.ep .pl.sy { background:#2f5d7c; }
+.syn { font-family:'Times New Roman','Hiragino Mincho ProN',serif; font-size:9.6pt; line-height:1.9; }
+.syn sub.sv { font-family:Arial,'Hiragino Sans',sans-serif; font-weight:bold; font-size:6.8pt; vertical-align:-0.35em; margin:0 1px 0 0.5px; color:#1d4f73; }
+.synn { font-size:9pt; color:#222; }
+.syn .br { font-feature-settings:"halt"; }
+.synlegend .svl { font-family:Arial,'Hiragino Sans',sans-serif; font-weight:bold; font-size:8pt; color:#1d4f73; }
+.synlegend { font-family:'Hiragino Mincho ProN','Yu Mincho',serif; font-size:8.8pt; line-height:1.6; border:1px solid #bbb; background:#f6f8fa; padding:4px 8px; margin:4px 0 8px; }
 .ep .ec { flex:1; }
 .ep .quo { font-family:'Times New Roman',serif; }
 .ep .qja { color:#333; }
@@ -267,7 +296,10 @@ def _exp_block(header, idkey):
     return f'<div class="exp"><div class="exp-head">{header}</div>{eb}</div>'
 
 def render_explanations():
-    out = ['<div class="qsec-title">解説</div>']
+    out = ['<div class="qsec-title">解説</div>',
+           '<div class="synlegend">構文欄の記号：〈 〉名詞のまとまり　［ ］形容詞のまとまり（名詞にかかる）　（ ）副詞のまとまり　'
+           '<span class="svl">S・V・O・C</span>＝文の骨組み　<span class="svl">S′・V′・O′・C′</span>＝節・準動詞の中の骨組み　<span class="svl">M</span>＝修飾語（<span class="svl">M′</span>は節・準動詞の中）。'
+           '副詞のまとまりは1語でも（ ）。1語の名詞・代名詞と、補語になる形容詞・原形の動詞のまとまりには括弧を付けず、中心の語に記号を添える。大きなまとまりの中の細かい修飾語は、説明に要る所だけ括弧で示す。</div>']
     for K in ("I", "II"):
         sec = CONTENT.get(K)
         if not sec: continue
@@ -294,7 +326,7 @@ def render_explanations():
     if sec:
         out.append(f'<div class="daimon">{sec["label"]}　解説</div>')
         m = {x["slot"]: x["idx"] for x in sec["A_slot_map"]}
-        av = "　".join(f'（{s}）{m.get(s,"?")}' for s in sec["A_slots"])
+        av = "　".join(f'（{s}）{_maru(m.get(s))}' for s in sec["A_slots"])
         out.append(_exp_block(f'問A（会話補充）　正解 {av}', 'III_A'))
         if sec.get("B_model_en"):
             out.append(_exp_block(f'問B（英訳）　解答例：{sec["B_model_en"]}', 'III_B'))

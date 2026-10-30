@@ -4,28 +4,36 @@
   "quote_ja": "長い間、それ(畏敬の念)は心理学の周縁へと押しやられていた。",
   "reason": "【コアイメージ】to は『到達・方向』の矢印。ゴールにビタッと届くイメージだ。ここは push A to B(A を B へ押しやる)の受動態で、the margins(周縁)という到達点へ『向かって』押しやられている、という流れ。動詞 push/move/send の行き先(到達点)は to で示すのが基本だ(中へなら into、上へなら onto)。",
   "distractors": "【他の選択肢】①on=接触(上に乗る)で移動の行き先が出ない。②at=一点の位置を指すだけで矢印にならない。④in=内部にとどまるイメージで『〜へ動かす』方向が出せない。",
-  "point": "【一発ルール】push/move/send +to+場所=『〜へ』。to を見たら『到達の矢印』を思い浮かべよ。"
+  "point": "【一発ルール】push/move/send +to+場所=『〜へ』。to を見たら『到達の矢印』を思い浮かべよ。",
+  "syntax": "… and （for a long time）{M} it{S} was pushed{V} （to the margins ［of psychology］）{M}, （dismissed as too fuzzy and too private to measure）{M}",
+  "syntax_note": "it は awe を指す。（to the margins）は was pushed にかかり、押しやられた行き先を示す（push A to B の受動態）。［of psychology］は margins にかかる。dismissed 以下は『～として退けられて』と、it がどう扱われたかを補う分詞構文。"
  },
  "I_A_X": {
   "quote": "The scientist most closely associated with the modern study of awe is Dacher Keltner",
   "quote_ja": "畏敬の念の現代的研究と最も密接に結びついた科学者が、ダッカー・ケルトナーである。",
   "reason": "【コアイメージ】これは丸暗記でなく、associate A with B(A と B を結びつける)の受動態と見抜けば一発。with のコアは『付帯・セット』で、2 つがくっついて離れないイメージだ。associate は必ず相棒の with を連れてくる。",
   "distractors": "【他の選択肢】①to=方向、②by=手段・行為者、③for=交換・目的。いずれも associate の定位置 with を崩してしまう。",
-  "point": "【一発ルール】associate は with とセット(connect/link は to も可)。『A と B を結ぶ』の with は覚える価値あり。"
+  "point": "【一発ルール】associate は with とセット(connect/link は to も可)。『A と B を結ぶ』の with は覚える価値あり。",
+  "syntax": "〈The scientist ［most closely associated （with the modern study ［of awe］）］〉{S} is{V} 〈Dacher Keltner〉{C}, ［who defines it as …］",
+  "syntax_note": "S の中心は The scientist で、［most closely associated …］が後ろから scientist にかかる過去分詞のまとまり。（with …）は associated が求める相手（associate A with B の受動の形）。is の後ろの Dacher Keltner が補語（S＝C）。［who …］は Dacher Keltner を説明する関係詞節。"
  },
  "I_A_Y": {
   "quote": "a profound act of kindness can be just as overwhelming as a towering mountain range",
   "quote_ja": "深い親切な行為も、そびえ立つ山脈と同じくらい圧倒的でありうる。",
   "reason": "【コアイメージ】カギは直前の just as overwhelming にある as。as … as ~(~と同じくらい…)の同等比較で、as のコアは『イコール(=)』だ。前に as が出たら、後ろも as で受けて 2 つを=で結ぶ。ここは『親切な行為=山脈』を圧倒度で並べている。",
   "distractors": "【他の選択肢】②than=比較級(more 等)の相棒で、ここには more がない。③like は前置詞だが as…as の後半 as の代わりにはならない。④so は not so ~ as …(…ほど~ではない)の前半に使う語で、後半の as の代わりにはならない。",
-  "point": "【一発ルール】as+形容詞+as で『同じくらい』。前の as を見たら後ろの as を即補え。"
+  "point": "【一発ルール】as+形容詞+as で『同じくらい』。前の as を見たら後ろの as を即補え。",
+  "syntax": "〈a brilliant scientific theory, a sprawling piece ［of music］, or a profound act ［of kindness］〉{S} can be{V} just as overwhelming{C} （as a towering mountain range）{M}",
+  "syntax_note": "S は3つの名詞を or で並べたもの。can be の補語は just as overwhelming（中心は overwhelming。just と前の as〈同じくらい〉は overwhelming にかかる）。後ろの（as a towering mountain range）は前の as と組になって比べる相手を示す副詞のまとまりで、前の as にかかる（as a towering mountain range is overwhelming の is overwhelming が省かれた形と見る。この as を前置詞と見る説明もある）。as … as で『～と同じくらい…』。"
  },
  "I_A_Z": {
   "quote": "lowering levels of inflammatory chemicals that are associated with anxiety and depression",
   "quote_ja": "不安やうつと関連する炎症性の化学物質のレベルを下げる。",
   "reason": "【コアイメージ】空所直後が are(動詞)なので、主語の働きをする関係代名詞が要る。先行詞は chemicals(モノ)。『先行詞(モノ)+空所+動詞』ときたら主格の that(=which)で決まり。that が chemicals を受け、その中で are の主語になっている。",
   "distractors": "【他の選択肢】①what=先行詞を含むため、前に名詞 chemicals があると使えない。②whose=直後に名詞が必要(所有格)。④where=場所の副詞関係詞で主語になれない。",
-  "point": "【一発ルール】『名詞(モノ)+空所+動詞』=主格の that/which。直後が動詞なら主格と即断。"
+  "point": "【一発ルール】『名詞(モノ)+空所+動詞』=主格の that/which。直後が動詞なら主格と即断。",
+  "syntax": "… （slowing{V′} 〈the heart〉{O′} and lowering{V′} 〈levels ［of inflammatory chemicals ［that{S′} are associated{V′} （with anxiety and depression）{M′}］］〉{O′}）{M′}",
+  "syntax_note": "slowing … と lowering … が and で並ぶ分詞構文で、直前の can quiet the body's stress response の中身を具体的に言う。この分詞構文は have found that … の that 節の中なので M′。［that …］は意味から inflammatory chemicals（不安やうつと関連する炎症性物質）にかかる関係詞節と取る（levels を先行詞と見ても数は一致し、文意はほぼ変わらない）。that が節の中の主語（S′）。直後が動詞 are なので、主語の働きをする関係代名詞が入る。（with …）は associate A with B の受動の形で associated が求める相手だが、ここでは M′ として示した（問A（X）参照）。"
  },
  "I_B_a": {
   "quote": "awe has moved toward the center of research on human emotion, largely because psychologists have at last found reliable ways to trigger it",
@@ -116,7 +124,9 @@
   "quote_ja": "研究者は、畏敬の念が私たちの注意を自己から離し、より大きな世界へ向けるのに役立つ、と論じている。",
   "reason": "【考え方】整序は単語を眺めず『動詞から骨組み』を作る。まず述語動詞は 7=helps。help は help to do も可なので 3=to を続けて helps to do。do にあたる他動詞が 8=direct(注意などを向ける)。この意味の direct は目的語が要るので、すぐ後に 5=our + 1=attention で『私たちの注意』を置く。最後に空所直後が from the self なので、その前に 4=away を置いて direct A away from B(A を B から離れた方へ向ける)を完成させる。並びは helps(あ7)→to(い3)→direct(う8)→our(え5)→attention(お1)→away(か4)。提出スロットは い=3, う=8, お=1。なお direct は『(注意などを)向ける』の意味では目的語が要るので、help O to do の形(helps our attention to direct …)には並べられない。",
   "distractors": "【使わない語】2=because(接続詞)と 6=which(関係詞)は、この一続きの述部に入る余地がなくダミー。from は本文に既出のため、こちらでは away までを置けばよい。",
-  "point": "【一発ルール】help (to) do の型を固定→他動詞 direct の目的語(our attention)→away from で締める。direct A away from B=『A を B から離れた方へ向ける』。動詞と骨組みから並べるのが整序の鉄則。"
+  "point": "【一発ルール】help (to) do の型を固定→他動詞 direct の目的語(our attention)→away from で締める。direct A away from B=『A を B から離れた方へ向ける』。動詞と骨組みから並べるのが整序の鉄則。",
+  "syntax": "Researchers{S} argue{V} 〈that awe{S′} helps{V′} 〈to direct our attention （away from the self） and （toward the larger world）〉{O′}, （prompting us to cooperate rather than to compete）{M′}〉{O}",
+  "syntax_note": "argue の目的語（O）が that 節全体。that 節の中は awe（S′）helps（V′）で、〈to direct …〉が helps の目的語（O′、help to do）。direct our attention （away from the self） and （toward the larger world）は『注意を自己から離して、より大きな世界の方へ向ける』。（prompting …）は that 節の中で awe helps to direct … にかかり、その結果を補う分詞構文（意味上の主語は awe）。"
  },
  "I_E": {
   "quote": "dismissed as too fuzzy and too private to measure; the 'small self': the sense that one is only a minor part of something far larger; people who recalled an awe-filled memory reported feeling that they had more time available",
@@ -130,28 +140,36 @@
   "quote_ja": "言い換えれば、たった一度の驚嘆の瞬間が、その感情そのものが消え去ったずっと後まで残り続ける静かな働きをしているのかもしれない。",
   "reason": "【考え方】骨格は a single moment … may do … work(一度の瞬間が…働きをするかもしれない)。単純に do work で『働きをする・作用する』。that lingers ~ は先行詞 quiet work を修飾する関係代名詞で『~し続ける働き』。linger=居座る・長引く。long after ~=『~したずっと後まで』で、after 節内は the feeling itself has faded(その感情自体が薄れてしまった後)。itself は the feeling を強める再帰。全体を『一度の驚嘆の瞬間が、感情が消えた後も長く残る静かな作用をするのかもしれない』とまとめる。",
   "distractors": "【減点されやすい訳し落とし】①may を『~かもしれない』と訳し忘れる。②that lingers を work にかけず宙に浮かせる。③long after を単なる『後』と訳し『ずっと後まで』の時間差を出さない。",
-  "point": "【一発ルール】和訳の得点源は構文の可視化。①may=『~かもしれない』を必ず訳出、②that lingers を『~し続ける』と work にかける、③long after を『~したずっと後まで』と時のズレを明示。quiet work は『静かな働き/作用』で可。"
+  "point": "【一発ルール】和訳の得点源は構文の可視化。①may=『~かもしれない』を必ず訳出、②that lingers を『~し続ける』と work にかける、③long after を『~したずっと後まで』と時のズレを明示。quiet work は『静かな働き/作用』で可。",
+  "syntax": "（In other words）{M}, 〈a single moment ［of wonder］〉{S} may do{V} 〈quiet work ［that{S′} lingers{V′} （long after the feeling itself has faded）{M′}］〉{O}",
+  "syntax_note": "S の中心は a single moment で、［of wonder］がかかる。may do work は『働きをする』で、work に［that …］の関係詞節がかかる（that が節の主語 S′）。（long after …）は lingers にかかる副詞のまとまりで、after の中は the feeling itself（主語）has faded（動詞）。itself は the feeling を強める。"
  },
  "II_A_X": {
   "quote": "a luxury for which hard-working people supposedly had no time",
   "quote_ja": "勤勉な人々には(そのための)時間などないとされる贅沢。",
   "reason": "【考え方】土台は have time for ~(~のための時間がある)という熟語。for のコアは『方向・目的の対象』で、時間を『何に向けるか』を示す。ここは have no time for a luxury(贅沢に割く時間はない)が、関係代名詞で a luxury for which … had no time とひっくり返っただけ。前置詞 for を関係詞の前に引き出した『前置詞+関係代名詞』の典型だ。",
   "distractors": "【他の選択肢】①by=手段・近接、③at=一点、④in=内部。どれも『time ~』の相手を示せず、have time for の熟語が壊れる。空所の後ろが had no time で終わり、have time for の for が欠けている点から、その for が which の前に出たと逆算する。",
-  "point": "【一発ルール】『前置詞+関係代名詞』は元の文に戻して熟語を復元せよ。have time for → for which。for=目的・方向の対象。"
+  "point": "【一発ルール】『前置詞+関係代名詞』は元の文に戻して熟語を復元せよ。have time for → for which。for=目的・方向の対象。",
+  "syntax": "…, 〈a luxury ［（for which）{M′} 〈hard-working people〉{S′} （supposedly）{M′} had{V′} 〈no time〉{O′}］〉",
+  "syntax_note": "a luxury は直前の a habit of the idle を言い換えて並べたもの。［for which …］が luxury にかかる関係詞節で、中は hard-working people（S′）had（V′）no time（O′）。元の形 had no time for a luxury の for a luxury が、for which になって節の先頭に出ている。（for which）は had にかかる M′ と取った（no time にかかる語句と見る説明もある）。"
  },
  "II_A_Y": {
   "quote": "adenosine, a molecule whose gradual build-up over the course of the day makes us feel steadily more drowsy",
   "quote_ja": "アデノシン、つまり一日を通じて徐々に蓄積することで私たちを次第に眠くさせる分子。",
   "reason": "【考え方】空所の後ろは gradual build-up(名詞のカタマリ)+ makes(動詞)で、build-up が主語として動詞 makes を持つ。つまり関係詞の後ろが『名詞+動詞』。必要なのは『その分子の蓄積』という所有関係、すなわち a molecule + its build-up をつなぐ所有格の関係代名詞 whose だ。whose の後ろは必ず名詞、と覚えておけば一発。",
   "distractors": "【他の選択肢】①which・②that は所有関係を作れず build-up が浮く。③what は先行詞 molecule を取れない(what 自身が先行詞込み)。",
-  "point": "【一発ルール】『whose+名詞』=所有格の関係詞。空所直後が『名詞+動詞』なら whose を疑え。"
+  "point": "【一発ルール】『whose+名詞』=所有格の関係詞。空所直後が『名詞+動詞』なら whose を疑え。",
+  "syntax": "Chief{C} （among these substances） is{V} adenosine{S}, 〈a molecule ［〈whose gradual build-up ［over the course ［of the day］］〉{S′} makes{V′} us{O′} feel{C′} steadily more drowsy］〉",
+  "syntax_note": "文全体は Adenosine is chief among these substances の C と S が入れ替わった倒置（C V S）で、前に出た C は Chief among these substances 全体（among these substances は Chief にかかる）。a molecule 以下は adenosine の言い換え。［whose …］が molecule にかかる関係詞節で、whose gradual build-up が節の主語（S′）、makes us feel ～ は make O 原形『O に～させる』で、C′ は原形の feel から drowsy まで。"
  },
  "II_A_Z": {
   "quote": "A brief nap lowers adenosine levels, which is why many people wake from a short sleep feeling mentally refreshed",
   "quote_ja": "短い仮眠はアデノシン濃度を下げる。それが、多くの人が短い睡眠から頭がすっきりして目覚める理由だ。",
   "reason": "【考え方】, which is ___ の which は、前の節(短い仮眠がアデノシン濃度を下げること)全体を受ける。空所の後ろは many people wake … という完全文。which is (the reason) why S V で『それが S V の理由だ』となり、why は先行詞 the reason を省いた関係副詞。前が『下がる』→後ろが『すっきり目覚める』という原因→結果の流れが決め手だ。",
   "distractors": "【他の選択肢】②what は先行詞を含む関係代名詞で、後ろに名詞の欠けた文が要る。many people wake from a short sleep … は欠けのない完全文なので入らない。③when は『それが目覚める時だ』、④where は『それが目覚める場所だ』となり、前の節(アデノシンが下がる)→後ろ(すっきり目覚める)という原因→結果の流れに合わない。",
-  "point": "【一発ルール】, which is why S V=『だから〜なのだ』。前後が原因→結果なら why。"
+  "point": "【一発ルール】, which is why S V=『だから〜なのだ』。前後が原因→結果なら why。",
+  "syntax": "〈A brief nap〉{S} lowers{V} 〈adenosine levels〉{O}, which{S′} is{V′} 〈why many people wake （from a short sleep） （feeling mentally refreshed rather than heavy and slow）〉{C′}",
+  "syntax_note": "which は前の節全体（短い仮眠がアデノシン濃度を下げること）を受け、節の中の主語（S′）。is の補語（C′）が why 以下の名詞のまとまりで、why の前に the reason が省かれている。why 節の中は many people（主語）wake（動詞）で欠けのない文。（feeling …）は主語 many people が目覚めたときの状態を表す。ここでは副詞のまとまり（分詞構文）と取ったが、wake の補語（S V C）と見る説明もある。"
  },
  "II_B_a": {
   "quote": "Coaches, airline pilots and even surgeons are increasingly being urged to reconsider the nap",
@@ -228,7 +246,9 @@
   "quote_ja": "一日に二度練習するアスリートは、練習の合間にたまる疲労から体が回復するのを助けるために、ますます仮眠に頼っている。",
   "reason": "【考え方】骨組みは rely on a nap(仮眠に頼る)+to help …(~を助けるために)+from the fatigue(疲労から)。手順は(1)rely on a nap の後は目的『~するために』なので 4=to から始める→to help、(2)help は help+O+原形(O が~するのを助ける)の型で、O=their bodies、原形=recover を続ける→to help their bodies recover、(3)後ろが from the fatigue なので recover from(~から回復する)でぴたり接続。よって あ=4(to) い=7(help) う=3(their) え=5(bodies) お=1(recover)。提出スロットは い=7, え=5, お=1。",
   "distractors": "【使わない語】2=reduce・6=them・8=avoid はダミー。reduce/avoid は他動詞(reduce the fatigue のように from なしで目的語をとる)なので、後ろの from the fatigue とつながらない。from と結べるのは recover だけ。them だと to help them recover の4語で、5つの空所が埋まらない。",
-  "point": "【一発ルール】help+O+(to)原形=『O が~するのを助ける』が核。前置詞 from を見たら recover from(~から回復)を逆算せよ。"
+  "point": "【一発ルール】help+O+(to)原形=『O が~するのを助ける』が核。前置詞 from を見たら recover from(~から回復)を逆算せよ。",
+  "syntax": "…, 〈athletes ［who train twice a day］〉{S} （increasingly）{M} rely{V} （on a nap）{M} （to help their bodies recover （from the fatigue ［that accumulates between sessions］））{M}",
+  "syntax_note": "S の中心は athletes で、［who …］が athletes にかかる。（to help …）は『～するために』と目的を表し、rely にかかる M と取った。rely on A to do（A が～してくれるのを当てにする。help の意味上の主語は a nap）と読んでも文意はほぼ同じ。rely on をひとまとまりの他動詞と見て a nap を O とする分析もある。（to help …）の中は help O 原形（O＝their bodies、原形＝recover）で、（from the fatigue）は recover にかかり（recover from）、［that …］は fatigue にかかる。"
  },
  "II_E": {
   "quote": "A brief nap lowers adenosine levels … wake … feeling mentally refreshed; sprinters who napped after a poor night's sleep ran measurably faster than those who did not; Some companies … have installed nap pods",
@@ -249,6 +269,8 @@
   "quote_ja": "新しいことを本気で学びたいのなら、失敗を恐れるよりも、まず自分で挑戦してみるべきだ。",
   "reason": "【考え方】英作文は和文を『英語の型』に流し込む。骨組みを3つに分解する。(1)条件『〜なら』=If 節。時・条件の if の中は未来でも現在形(will 不要)なので If you want で十分。『本気で』は really を want の前に。(2)助言『〜すべきだ』=you should+動詞の原形 try。目的語は if 節の something new を受けて it、『自分で』は再帰代名詞 yourself、『まず』は first。(3)『A より むしろ B』=B rather than A の型。『恐れるより挑戦すべき』は try … rather than being afraid とする。rather than は接続詞的にも前置詞的にも働くので、①厳密な並列なら前の try(原形)に合わせて rather than be afraid、②前置詞的に見て rather than being afraid(動名詞)——どちらも自然で広く許容される。『失敗を恐れる』は be afraid of+動名詞 failing(前置詞 of の後ろは名詞・動名詞)。",
   "distractors": "【よくある誤り】(1)If you will want と未来形にする(条件の if 内は現在形が正解)。(2)『挑戦する』を challenge it とする(challenge は『人に挑む・(決定などに)異議を唱える』の意味で、『(新しいことを)やってみる』の意味はない。try it が安全)。(3)rather than の後を to be afraid や are afraid とするのは不可(be afraid〈原形〉/being afraid〈動名詞〉のいずれかにする)。(4)afraid to fail でも可だが、対比を名詞的に出すなら being afraid of failing が明快。",
-  "point": "【一発ルール】型=『If+現在形, you should+原形 … rather than+動名詞』。①条件の if 内は未来でも現在形、②rather than の後ろは be afraid(原形)か being afraid(動名詞)で自然につなぐ、③前置詞 of の後ろは動名詞。難語より『崩れない骨組み』で減点を防ぐのが同志社対策。"
+  "point": "【一発ルール】型=『If+現在形, you should+原形 … rather than+動名詞』。①条件の if 内は未来でも現在形、②rather than の後ろは be afraid(原形)か being afraid(動名詞)で自然につなぐ、③前置詞 of の後ろは動名詞。難語より『崩れない骨組み』で減点を防ぐのが同志社対策。",
+  "syntax": "（If you{S′} （really）{M′} want{V′} 〈to learn something new〉{O′}）{M}, you{S} should try{V} it{O} （yourself）{M} （first）{M} （rather than being afraid of failing）{M}",
+  "syntax_note": "If 節は条件を表す副詞のまとまり。主節は you（S）should try（V）it（O）。it は if 節の something new を受ける。yourself は主語 you を強める強調用法の再帰代名詞で、『（人任せにせず）自分で』の意味を加える（目的語ではない）。代名詞だが、ここでは副詞の働き（M）なので（ ）で示した。（rather than …）は『～するよりむしろ』と、try と比べる副詞のまとまり。"
  }
 }
