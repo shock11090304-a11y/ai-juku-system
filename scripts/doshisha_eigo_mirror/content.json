@@ -41,42 +41,42 @@
    {
     "slot": "W",
     "options": [
-     "to",
      "on",
      "at",
+     "to",
      "in"
     ],
-    "ans": 1
+    "ans": 3
    },
    {
     "slot": "X",
     "options": [
      "to",
-     "with",
      "by",
-     "for"
+     "for",
+     "with"
     ],
-    "ans": 2
+    "ans": 4
    },
    {
     "slot": "Y",
     "options": [
+     "as",
      "than",
      "like",
-     "as",
      "so"
     ],
-    "ans": 3
+    "ans": 1
    },
    {
     "slot": "Z",
     "options": [
      "what",
      "whose",
-     "where",
-     "that"
+     "that",
+     "where"
     ],
-    "ans": 4
+    "ans": 3
    }
   ],
   "B_instruction": "本文中の下線部(a)〜(i)の語に最も意味の近いものを、それぞれ次の1〜4から一つ選べ。",
@@ -85,12 +85,12 @@
     "label": "a",
     "word": "largely",
     "options": [
-     "mainly",
      "rarely",
+     "mainly",
      "barely",
      "oddly"
     ],
-    "ans": 1
+    "ans": 2
    },
    {
     "label": "b",
@@ -98,21 +98,21 @@
     "options": [
      "matches",
      "reflects",
-     "surpasses",
-     "limits"
+     "limits",
+     "surpasses"
     ],
-    "ans": 3
+    "ans": 4
    },
    {
     "label": "c",
     "word": "reactions",
     "options": [
-     "signals",
      "responses",
+     "signals",
      "questions",
      "choices"
     ],
-    "ans": 2
+    "ans": 1
    },
    {
     "label": "d",
@@ -129,34 +129,34 @@
     "label": "e",
     "word": "prompting",
     "options": [
-     "leading",
      "forcing",
      "allowing",
+     "leading",
      "warning"
     ],
-    "ans": 1
+    "ans": 3
    },
    {
     "label": "f",
     "word": "obligation",
     "options": [
      "option",
-     "reward",
      "duty",
+     "reward",
      "burden"
     ],
-    "ans": 3
+    "ans": 2
    },
    {
     "label": "g",
     "word": "reluctant",
     "options": [
-     "eager",
      "unwilling",
+     "eager",
      "likely",
      "able"
     ],
-    "ans": 2
+    "ans": 1
    },
    {
     "label": "h",
@@ -164,21 +164,21 @@
     "options": [
      "generous",
      "cautious",
-     "cheerful",
-     "tyrannical"
+     "tyrannical",
+     "cheerful"
     ],
-    "ans": 4
+    "ans": 3
    },
    {
     "label": "i",
     "word": "inclined",
     "options": [
-     "disposed",
-     "reluctant",
+     "hesitant",
      "afraid",
-     "unable"
+     "unable",
+     "disposed"
     ],
-    "ans": 1
+    "ans": 4
    }
   ],
   "C_instruction": "本文中の波線部(ア)〜(ウ)の意味に最も近いものを、それぞれ次の1〜4から一つ選べ。",
@@ -188,33 +188,33 @@
     "phrase": "stretching the boundaries of what a person believes is possible",
     "options": [
      "proving that most of our beliefs are false",
-     "widening a person's sense of what could be true",
      "setting firm limits on the imagination",
-     "recalling the boundaries drawn by earlier thinkers"
+     "recalling the boundaries drawn by earlier thinkers",
+     "widening a person's sense of what could be true"
     ],
-    "ans": 2
+    "ans": 4
    },
    {
     "label": "イ",
     "phrase": "a realization that loosens our grip on petty concerns",
     "options": [
+     "an insight that makes small worries matter less",
      "an idea that tightens our control over small problems",
      "a discovery that adds to our everyday stress",
-     "an insight that makes small worries matter less",
      "a belief that we ought to ignore other people"
     ],
-    "ans": 3
+    "ans": 1
    },
    {
     "label": "ウ",
     "phrase": "making an ordinary afternoon feel unexpectedly full",
     "options": [
-     "causing a normal afternoon to seem surprisingly rich",
      "making time appear to pass more quickly",
+     "causing a normal afternoon to seem surprisingly rich",
      "leaving people bored by their daily routine",
      "filling the day with too many obligations"
     ],
-    "ans": 1
+    "ans": 2
    }
   ],
   "D_instruction": "次の語群(1〜8)を並べ替えて本文中の空所(あ)〜(か)を補い、意味の通る英文を完成させよ。解答は(い)(う)(お)に入る語の番号のみを記せ。ただし語群には使用しない語が含まれ、同じ語を二度用いてはならない。",
@@ -226,7 +226,7 @@
    "our",
    "which",
    "helps",
-   "shift"
+   "direct"
   ],
   "D_answer_slots": [
    "い",
@@ -263,17 +263,17 @@
    2,
    6
   ],
-  "D_full_sentence": "Researchers argue that awe helps to shift our attention away from the self and toward the larger world.",
+  "D_full_sentence": "Researchers argue that awe helps to direct our attention away from the self and toward the larger world.",
   "E_instruction": "本文の内容と一致するものを、次の1〜8から三つ選べ。",
   "E_options": [
-   "According to Keltner, awe can arise only from physically enormous objects such as mountain ranges.",
+   "Keltner says music or a scientific theory can inspire awe, but less powerfully than mountains.",
    "Awe was once brushed aside by psychologists as too vague to be measured.",
-   "Studies have proven that watching films of nature cures anxiety in the majority of viewers.",
-   "People who gazed at towering trees became less willing than others to help a stranger nearby.",
+   "The calming effect of awe on the body seems to vanish as soon as the feeling itself fades.",
+   "Gazing up at tall trees made people more helpful than watching a nature film did.",
    "The 'small self' describes the feeling of being a tiny part of something far greater than oneself.",
-   "Awe has been shown to make people value money more highly and to act more competitively.",
+   "Researchers link awe's effect on generosity to a pleasant mood, not to a change in the self.",
    "Recalling an awe-inspiring memory led people to feel that they had more time to spare.",
-   "Researchers conclude that awe is invariably pleasant, whatever situation happens to trigger it."
+   "Awe mixed with fear tends to make people more willing to question those in power."
   ],
   "E_answers": [
    2,
@@ -301,31 +301,31 @@
   "glossary": [
    {
     "term": "adenosine",
-    "gloss_ja": "＊アデノシン(覚醒中に蓄積し眠気を強める神経伝達物質)"
+    "gloss_ja": "アデノシン(覚醒中に蓄積し眠気を強める神経伝達物質)"
    },
    {
     "term": "slow-wave sleep",
-    "gloss_ja": "＊徐波睡眠(脳波が緩やかになる深い睡眠段階)"
+    "gloss_ja": "徐波睡眠(脳波が緩やかになる深い睡眠段階)"
    },
    {
     "term": "internal clock",
-    "gloss_ja": "＊体内時計(概日リズムを刻む生理機構)"
+    "gloss_ja": "体内時計(概日リズムを刻む生理機構)"
    },
    {
     "term": "siesta",
-    "gloss_ja": "＊シエスタ(昼下がりの休息・昼寝の習慣)"
+    "gloss_ja": "シエスタ(昼下がりの休息・昼寝の習慣)"
    },
    {
     "term": "nap pod",
-    "gloss_ja": "＊仮眠用ポッド(オフィス等に置く個室型の仮眠設備)"
+    "gloss_ja": "仮眠用ポッド(オフィス等に置く個室型の仮眠設備)"
    },
    {
     "term": "sleep-deprived",
-    "gloss_ja": "＊慢性的に睡眠不足の"
+    "gloss_ja": "睡眠不足の"
    },
    {
     "term": "cruise phase",
-    "gloss_ja": "＊巡航段階(航空機が一定高度で安定飛行する局面)"
+    "gloss_ja": "巡航段階(航空機が一定高度で安定飛行する局面)"
    }
   ],
   "A_instruction": "空所 ( X )〜( Z ) に入れるのに最も適切なものを、それぞれ次の1〜4から一つ選びなさい。",
@@ -333,32 +333,32 @@
    {
     "slot": "X",
     "options": [
-     "for",
      "by",
+     "for",
      "at",
      "in"
     ],
-    "ans": 1
+    "ans": 2
    },
    {
     "slot": "Y",
     "options": [
      "which",
      "that",
-     "whose",
-     "what"
+     "what",
+     "whose"
     ],
-    "ans": 3
+    "ans": 4
    },
    {
     "slot": "Z",
     "options": [
-     "how",
      "why",
+     "what",
      "when",
      "where"
     ],
-    "ans": 2
+    "ans": 1
    }
   ],
   "B_instruction": "下線部 (a)〜(g) の語の意味に最も近いものを、それぞれ次の1〜4から一つ選びなさい。",
@@ -368,22 +368,22 @@
     "word": "reconsider",
     "options": [
      "reject",
-     "rethink",
      "recall",
+     "rethink",
      "resemble"
     ],
-    "ans": 2
+    "ans": 3
    },
    {
     "label": "b",
     "word": "brief",
     "options": [
-     "short",
      "rare",
+     "short",
      "quiet",
      "plain"
     ],
-    "ans": 1
+    "ans": 2
    },
    {
     "label": "c",
@@ -391,54 +391,54 @@
     "options": [
      "delay",
      "dismiss",
-     "disturb",
-     "detect"
+     "detect",
+     "disturb"
     ],
-    "ans": 3
+    "ans": 4
    },
    {
     "label": "d",
     "word": "striking",
     "options": [
+     "remarkable",
      "temporary",
      "doubtful",
-     "confusing",
-     "remarkable"
+     "confusing"
     ],
-    "ans": 4
+    "ans": 1
    },
    {
     "label": "e",
     "word": "crucial",
     "options": [
-     "essential",
      "optional",
+     "essential",
      "obvious",
      "flexible"
     ],
-    "ans": 1
+    "ans": 2
    },
    {
     "label": "f",
     "word": "persuaded",
     "options": [
      "reminded",
-     "convinced",
      "warned",
+     "convinced",
      "promised"
     ],
-    "ans": 2
+    "ans": 3
    },
    {
     "label": "g",
     "word": "constant",
     "options": [
-     "instant",
      "continual",
+     "instant",
      "distant",
      "pleasant"
     ],
-    "ans": 2
+    "ans": 1
    }
   ],
   "C_instruction": "波線部 (ア)〜(ウ) の意味に最も近いものを、それぞれ次の1〜4から一つ選びなさい。",
@@ -448,33 +448,33 @@
     "phrase": "during which the body clears out chemical by-products that build up while we are awake",
     "options": [
      "a time when the body produces the very chemicals that keep us alert",
-     "a stage in which the body removes waste substances that gather while we are conscious",
      "a period during which the brain stores chemicals for later use",
+     "a stage in which the body removes waste substances that gather while we are conscious",
      "a phase in which the body slows down its removal of waste"
     ],
-    "ans": 2
+    "ans": 3
    },
    {
     "label": "イ",
     "phrase": "less demanding than it actually was",
     "options": [
-     "easier than it truly was",
      "harder than they had expected",
      "as tiring as it usually felt",
-     "impossible for them to keep up"
+     "impossible for them to keep up",
+     "easier than it truly was"
     ],
-    "ans": 1
+    "ans": 4
    },
    {
     "label": "ウ",
     "phrase": "moving it from temporary storage into more lasting form",
     "options": [
      "erasing older memories to make room for new ones",
-     "keeping them in short-term memory a little longer",
-     "transferring them from short-term into long-term memory",
+     "transferring it from short-term into long-term memory",
+     "keeping it in short-term memory a little longer",
      "mixing new information with unrelated older facts"
     ],
-    "ans": 3
+    "ans": 2
    }
   ],
   "D_instruction": "本文中の空所 ( あ )〜( お ) を埋めるのに最も適切な語を下の語群1〜8から選び、( い )・( え )・( お ) に入る語の番号を答えなさい。ただし語群には本文で使わない語が含まれており、同じ語を二度使ってはならない。",
@@ -523,14 +523,14 @@
   "D_full_sentence": "Athletes who train twice a day increasingly rely on a nap to help their bodies recover from the fatigue that accumulates between sessions.",
   "E_instruction": "本文の内容と一致するものを、次の1〜8から三つ選びなさい。",
   "E_options": [
-   "Throughout the twentieth century, scientists broadly agreed that a midday nap improved athletic performance.",
+   "Sleep labs first studied the benefits of naps and have only recently turned to the harms of sleep loss.",
    "A nap of about twenty minutes helps lower adenosine, so people are more likely to wake up feeling refreshed.",
-   "Sleeping for more than thirty minutes guarantees that a person will wake up feeling clear-headed and energetic.",
-   "In one study, sprinters who napped after sleeping badly not only ran faster but also felt that the effort was easier than it really was.",
-   "Experts advise that anyone who feels a constant need to nap should simply nap more often to cure the problem.",
+   "Specialists advise napping in the late afternoon, when alertness naturally dips.",
+   "In one study, sprinters who napped after sleeping badly ran faster than those who did not nap.",
+   "In a landmark study, hospital staff who napped on night shifts made far fewer costly mistakes.",
    "Some companies have set up nap pods so that their employees can rest during the afternoon.",
-   "Research now shows that, for the chronically sleep-deprived, napping can completely take the place of a full night's sleep.",
-   "Napping late in the day is recommended because it strengthens the sleep of the following night."
+   "Sleep experts advise people short of sleep to make it up with several short naps a day.",
+   "In sports such as tennis, reactions tend to slow down for a while after a short nap."
   ],
   "E_answers": [
    2,
@@ -552,7 +552,7 @@
    },
    {
     "sp": "Sophie",
-    "text": "I just signed up for a weekend cooking class down by the river, and honestly I can hardly wait for it to start. [[K:a]]"
+    "text": "I just signed up for a weekend cooking class down by the river after trying a free trial lesson there last week, and honestly I can hardly wait for it to start. [[K:a]]"
    },
    {
     "sp": "Dan",
@@ -592,27 +592,19 @@
    },
    {
     "sp": "Sophie",
-    "text": "I felt exactly the same way before my very first lesson, believe me. [[K:f]] By the time we had finished, every single one of us was laughing and swapping bites of what we had made."
+    "text": "I felt exactly the same way before my trial lesson, believe me. [[K:f]] By the time we had finished, every single one of us was laughing and swapping bites of what we had made."
    },
    {
     "sp": "Dan",
-    "text": "That actually sounds like it could be genuinely fun when you put it that way."
-   },
-   {
-    "sp": "Dan",
-    "text": "I always just assumed cooking classes were only for people who were already good at it in the first place."
+    "text": "That actually sounds like it could be genuinely fun when you put it that way. I always just assumed cooking classes were only for people who were already good at it in the first place."
    },
    {
     "sp": "Sophie",
-    "text": "Not at all — most of us could barely boil an egg when we started, and that is precisely the point of going."
-   },
-   {
-    "sp": "Sophie",
-    "text": "And here is the part that I love the most of all. [[K:g]] Whenever you make some silly mistake, the instructor is standing right there beside you to correct it on the spot."
+    "text": "Not at all — most of the people in my trial lesson could barely boil an egg, and that is precisely the point of going. And here is another thing I really love. [[K:g]] Whenever you make some silly mistake, the instructor is standing right there beside you to correct it on the spot."
    },
    {
     "sp": "Dan",
-    "text": "I'll admit it — no video has ever once managed to tell me why my tomato sauce keeps splitting every single time I try to make it."
+    "text": "I'll admit it — not one video has ever managed to tell me why my tomato sauce keeps splitting every single time I try to make it."
    },
    {
     "sp": "Sophie",
@@ -626,15 +618,15 @@
   "A_instruction": "会話が自然に成り立つように、空所( a )〜( h )に入れるのに最も適切な発話を、下の選択肢1〜10から一つずつ選び、その番号を書きなさい。ただし、同じ選択肢を二度用いてはならない。また、選択肢の中には用いないものが二つ含まれている。",
   "A_options": [
    "You get instant feedback from someone who really knows what they're doing.",
-   "I've decided to quit cooking altogether and just order takeout from now on.",
+   "The one catch is that you have to bring your own equipment.",
    "There's something you simply can't pick up unless you're standing at the stove yourself.",
    "Actually, it turns out to be far cheaper than you'd ever expect.",
    "It's the very first time I've ever signed up for anything like this.",
    "But the strange thing is, everyone in the room relaxes almost immediately.",
-   "The little restaurant near my house finally reopened last month.",
+   "Most of the other people at the trial lesson were experienced cooks, so I learned a lot from them.",
    "You make it sound as if it were a complete waste of both time and money.",
    "The class pushes you to try dishes you'd never dare attempt at home.",
-   "Unlike any video, a real teacher can pinpoint exactly what's going wrong."
+   "A teacher could have told you why the very first time it happened."
   ],
   "A_slots": [
    "a",

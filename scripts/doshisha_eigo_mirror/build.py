@@ -10,7 +10,10 @@
 import os, re, json, subprocess
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.expanduser("~/Desktop/同志社大学2026_英語実戦問題")
+# ★ 出力先。2026-10-06 のデスクトップ整理で納品フォルダが移った（旧 ~/Desktop/同志社大学2026_英語実戦問題）。
+#   旧パスのままだとデスクトップ直下に空フォルダを作り直してしまう。試し刷りは DOSHISHA_OUT で別の場所へ。
+OUT = os.environ.get("DOSHISHA_OUT") or os.path.expanduser(
+    "~/Desktop/📝 模試・演習/実践模試_全大学/_私大英語_2026実戦問題（同志社・明治・関学・青学）/同志社大学2026_英語実戦問題")
 os.makedirs(OUT, exist_ok=True)
 MARU = ["①","②","③","④","⑤","⑥","⑦","⑧","⑨","⑩"]
 
@@ -196,7 +199,7 @@ u.wv { text-decoration: underline wavy; text-underline-offset:3px; }
 u.ful { text-decoration:underline; text-decoration-thickness:1.5px; text-underline-offset:2px; }
 sup.qn { font-weight:bold; font-size:8pt; }
 .bk { font-weight:bold; white-space:nowrap; }
-.glossary { font-family:'Hiragino Mincho ProN',serif; font-size:8.8pt; color:#222; background:#f5f5f0; border:1px solid #bbb; padding:5px 8px; margin:8px 0 4px; line-height:1.6; }
+.glossary { font-family:'Hiragino Mincho ProN',serif; font-size:8.8pt; color:#222; background:#f5f5f0; border:1px solid #bbb; padding:5px 8px; margin:8px 0 4px; line-height:1.6; break-inside:avoid; }
 .srcnote { font-size:8.4pt; color:#444; margin:4px 0; text-align:right; }
 .qh { font-family:'Hiragino Mincho ProN','Yu Mincho',serif; font-size:10pt; font-weight:bold; margin:12px 0 5px; background:#eee; padding:3px 7px; border-left:3px solid #555; }
 .q { margin:2px 0 4px; font-size:10pt; line-height:1.6; }
@@ -205,7 +208,7 @@ sup.qn { font-weight:bold; font-size:8pt; }
 .qc .ql { display:block; margin-bottom:2px; }
 .qc .phr { font-family:'Times New Roman',serif; font-style:italic; }
 .opts-b .opb { display:block; margin:1px 0 1px 1.4em; text-indent:-1.4em; }
-.elist .opb { font-family:'Hiragino Mincho ProN','Times New Roman',serif; }
+.elist .opb { font-family:'Hiragino Mincho ProN','Times New Roman',serif; line-height:1.6; }
 .dbank { background:#f4f4ef; border:1px solid #999; padding:5px 9px; margin:3px 0; font-size:10pt; }
 .dnote { font-family:'Hiragino Mincho ProN',serif; font-size:9pt; color:#333; margin:2px 0 4px; }
 .setting { font-family:'Hiragino Mincho ProN',serif; font-size:9.4pt; background:#f5f5f0; border:1px solid #bbb; padding:5px 9px; margin:6px 0; }
@@ -215,12 +218,12 @@ sup.qn { font-weight:bold; font-size:8pt; }
 .bja { font-family:'Hiragino Mincho ProN','Yu Mincho',serif; font-size:10.5pt; margin:3px 0 0 1em; }
 /* 解答編 */
 .qsec-title { font-size:11pt; font-weight:bold; margin:15px 0 6px; border-bottom:1.5px solid #000; padding-bottom:2px; }
-.arow { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 8px; margin:4px 0; font-size:10pt; }
+.arow { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 8px; margin:4px 0; font-size:10pt; break-inside:avoid; }
 .arow .al { flex:0 0 1.6em; font-weight:bold; background:#333; color:#fff; text-align:center; border-radius:2px; }
 .arow .ac { font-family:'Hiragino Mincho ProN','Times New Roman',serif; }
 .overview { font-family:'Hiragino Mincho ProN','Yu Mincho',serif; font-size:9.8pt; line-height:1.75; background:#f6f6f2; border-left:4px solid #444; padding:8px 12px; margin:4px 0 12px; text-align:justify; }
 .exp { margin:6px 0 11px; font-family:'Hiragino Mincho ProN','Yu Mincho',serif; font-size:9.4pt; line-height:1.6; }
-.exp-head { font-weight:bold; font-size:10pt; border-bottom:1px solid #bbb; padding-bottom:1px; margin-bottom:3px; break-inside:avoid; }
+.exp-head { font-weight:bold; font-size:10pt; border-bottom:1px solid #bbb; padding-bottom:1px; margin-bottom:3px; break-inside:avoid; break-after:avoid; }
 .ep { display:flex; gap:7px; margin:2.5px 0; line-height:1.68; break-inside:avoid; }
 .ep .pl { flex:0 0 5.7em; align-self:flex-start; font-weight:bold; color:#fff; background:#555; text-align:center; padding:0.8px 0; border-radius:2px; font-size:8pt; white-space:nowrap; }
 .ep .pl.pt { background:#8a6d1a; }
