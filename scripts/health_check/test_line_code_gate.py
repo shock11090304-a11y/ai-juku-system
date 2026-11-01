@@ -190,7 +190,14 @@ def main():
     mod._line_build_todo_text = lambda row: (todo_calls.append(row["id"]) or "TODO-STUB")
     mod._line_handle_question = lambda row, content, rt: question_calls.append((row["id"], content))
     mod.log.addHandler(ERRORS)
-    mod.log.error("probe")
+    # 試しの 1 行は標準エラーに出さない: run_all_gates.py (material-gates) は終了コード 0 でも
+    #   「ERROR:…」の行を印字したゲートを INCONSISTENT で落とす (2026-11-01 の push で実際に落ちた)
+    _propagate = mod.log.propagate
+    mod.log.propagate = False
+    try:
+        mod.log.error("probe")
+    finally:
+        mod.log.propagate = _propagate
     check("ERROR ログを拾える", ERRORS.records == ["probe"], ERRORS.records)
 
     cand = mod._line_code_candidate
