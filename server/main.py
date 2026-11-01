@@ -34984,6 +34984,21 @@ def _normalize_link_code(s: str) -> str:
     return re.sub(r"[^A-Za-z0-9_-]", "", unicodedata.normalize("NFKC", s))
 
 
+def _line_code_candidate(text: str) -> str:
+    """LINE のトーク本文が「連携コードだけ」のときに限り、照合用のコードを返す。それ以外は "" (= コード判定に入れない)。
+    2026-11-01: webhook は本文全体を _normalize_link_code に通していた。英数字以外を全部消すので、保護者のふつうの
+      トーク (日本語の文＋メールアドレス abcdefg1234@example.jp → abcdefg1234examplejp) が 20〜28 字に縮んで
+      _LINE_CODE_LIKE に当たり、「連携コードが無効または期限切れです」と返していた (本番で発生)。
+    いまは NFKC (全角→半角) のあと、ゼロ幅スペース・BOM などの書式文字 (Cf) をどこでも消し、前後の空白・改行だけを落とす。
+      残りが [A-Za-z0-9_-] だけのときがコード。日本語・@・.・記号が 1 字でも残る自然文は "" で、bot は今までどおり沈黙する。
+      文の途中の空白も許さない: "See you next week teacher" のような英文は空白を消すと 21 字になり、同じ誤判定になるため。"""
+    if not text:
+        return ""
+    s = unicodedata.normalize("NFKC", text)
+    s = "".join(ch for ch in s if unicodedata.category(ch) != "Cf").strip()
+    return s if re.fullmatch(r"[A-Za-z0-9_-]+", s) else ""
+
+
 def _create_line_link_token(student_id: int, ttl_seconds: int = None) -> str:
     """生徒 ↔ LINE 紐付け用のワンタイムコードを発行し DB 保存。
     2026-06-13 [line-link-noexpiry] 塾長指示「LINE 連携コードは期限なしに」:
@@ -35611,9 +35626,10 @@ def _handle_line_event(event: dict):
             msg = event.get("message") or {}
             if msg.get("type") == "text":
                 text = (msg.get("text") or "").strip()
-                # 連携コード照合は正規化版で行う (コピペの前後空白・改行・ゼロ幅スペース・全角を吸収)。
+                # 連携コード照合は本文が「コードだけ」のときに限る (コピペの前後空白・改行・ゼロ幅スペース・全角は吸収)。
+                #   日本語や @ . の混ざる自然文は "" になり、下のコード判定に入らない (2026-11-01 _line_code_candidate)。
                 # コマンド (やること/質問) や有人チャット判定は元の text を使う。
-                code_text = _normalize_link_code(text)
+                code_text = _line_code_candidate(text)
                 # 先に消費せず peek → 別生徒に紐付く LINE なら有効コードを burn せず案内 (リトライ余地を残す)
                 peek_sid = _peek_line_link_token(code_text) if code_text else None
                 if peek_sid and user_id:

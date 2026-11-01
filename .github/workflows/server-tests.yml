@@ -750,3 +750,12 @@ jobs:
           python3 -m pip install --quiet httpx
           node --version || echo "node が無い (テストが「JS の実行環境がある」で FAIL する)"
           python3 scripts/health_check/test_line_bind_guard.py
+
+      # 🔒 LINE webhook が保護者のふつうのトークを連携コードと取り違えない (2026-11-01 本番で発生)。
+      #   日本語の文＋メールアドレスが英数字 20〜28 字に縮んで「連携コードが無効」を返していた。
+      #   コードとして扱うのは本文がコードだけのとき (前後空白・全角・ゼロ幅文字は吸収)。自然文には何も返さない (LINE は偽物)。
+      - name: LINE webhook 連携コードの判定 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_line_code_gate.py
