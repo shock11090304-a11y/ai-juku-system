@@ -34990,13 +34990,73 @@ def _line_code_candidate(text: str) -> str:
       トーク (日本語の文＋メールアドレス abcdefg1234@example.jp → abcdefg1234examplejp) が 20〜28 字に縮んで
       _LINE_CODE_LIKE に当たり、「連携コードが無効または期限切れです」と返していた (本番で発生)。
     いまは NFKC (全角→半角) のあと、ゼロ幅スペース・BOM などの書式文字 (Cf) をどこでも消し、前後の空白・改行だけを落とす。
-      残りが [A-Za-z0-9_-] だけのときがコード。日本語・@・.・記号が 1 字でも残る自然文は "" で、bot は今までどおり沈黙する。
+      残りが [A-Za-z0-9_-] だけのときがコード。日本語・@・.・記号が 1 字でも残る自然文は "" で、bot は今までどおり沈黙する
+      (文の中に有効なコードがあるときだけ、_line_embedded_link_code_sid で見つけて「コードだけを送り直す」を返す)。
       文の途中の空白も許さない: "See you next week teacher" のような英文は空白を消すと 21 字になり、同じ誤判定になるため。"""
     if not text:
         return ""
     s = unicodedata.normalize("NFKC", text)
     s = "".join(ch for ch in s if unicodedata.category(ch) != "Cf").strip()
     return s if re.fullmatch(r"[A-Za-z0-9_-]+", s) else ""
+
+
+def _line_spaced_code_candidate(text: str) -> str:
+    """本文が英数字・_- と空白・改行だけでできているとき、空白・改行を詰めた形を返す (20〜28 字のときだけ)。それ以外は ""。
+    2026-11-01: コードを 4 字ごとに区切って手で打った形・写真から文字を読み取って途中で改行が入った形は、_line_code_candidate
+      では "" になる。webhook はこれを peek して有効なコードと一致したときだけ、コードだけの本文として連携に回す。
+      英文 ("See you next week teacher") も詰めると 21 字になるが、DB の完全一致でしか使わないので「無効」の返事には入らない。
+      連携に回るのは詰めた本文全体が有効なコードと完全に一致するとき (= 本文がコードと空白・改行だけ) なので、
+      保護者の質問文 ("Should I give this code to my child XXXX") の中のコードが連携されることはない。"""
+    if not text:
+        return ""
+    s = "".join(ch for ch in unicodedata.normalize("NFKC", text) if unicodedata.category(ch) != "Cf")
+    if not re.fullmatch(r"[A-Za-z0-9_\-\s]+", s):
+        return ""
+    s = re.sub(r"\s+", "", s)
+    return s if 20 <= len(s) <= 28 else ""
+
+
+# 文の中の連携コードの候補: 前後が [A-Za-z0-9_-] でない 20〜28 字のかたまり (_LINE_CODE_LIKE と同じ長さ)。
+_LINE_CODE_CHUNK = re.compile(r"(?<![A-Za-z0-9_-])[A-Za-z0-9_-]{20,28}(?![A-Za-z0-9_-])")
+# 1 通あたりの照合 (DB の SELECT) の上限。かたまりを大量に並べたトークでも問い合わせが増えすぎないように。
+_LINE_EMBEDDED_CODE_MAX_TRIES = 5
+
+
+def _line_embedded_link_code_sid(text: str) -> Optional[int]:
+    """自然文の中に有効 (未使用・期限内) な連携コードがあれば、その生徒 id を返す。消費はしない (peek だけ)。無ければ None。
+    2026-11-01: _line_code_candidate で「本文がコードだけ」に絞ったので、「連携コード：XXXX」「XXXX よろしくお願いします」
+      のような送り方は連携されない (保護者が質問の中にお子さまのコードを書いても保護者の LINE に付けないため)。
+      何も返さないと送った人は連携できたと思って待つので、webhook はこれで見つけたときだけ返事をする
+      (連携の状態に合わせて「コードだけを送り直す」の案内か、コードだけを送ったときと同じ「すでに連携済み」など)。
+    候補は ① 前後が英数字・_- でない 20〜28 字のかたまり (25 字以上なら先頭 24 字と末尾 24 字: 「連携コード－XXXX」「①XXXX」の
+      －・① が NFKC で - ・1 になってくっついた形) ② 英数字・_- 以外を全部消した本文 (コードの途中に空白・改行が入った形)。
+      実コードは常に 24 字 (token_urlsafe(18)) なので、照合するのは 24 字の候補だけ (ほかの長さは決して当たらず、
+      照合の上限を使い切って後ろの有効なコードにたどり着けなくなる)。照合は DB の完全一致 (144 ビット) なので、
+      アドレスや英文がたまたま当たることはない。"""
+    if not text:
+        return None
+    s = "".join(ch for ch in unicodedata.normalize("NFKC", text) if unicodedata.category(ch) != "Cf")
+    cands = []
+    for m in _LINE_CODE_CHUNK.finditer(s):
+        chunk = m.group(0)
+        if len(chunk) == 24:
+            cands.append(chunk)
+        elif len(chunk) > 24:
+            cands += [chunk[:24], chunk[-24:]]
+    whole = re.sub(r"[^A-Za-z0-9_-]", "", s)
+    if len(whole) == 24:
+        cands.append(whole)
+    tried = []
+    for cand in cands:
+        if cand in tried:
+            continue
+        if len(tried) >= _LINE_EMBEDDED_CODE_MAX_TRIES:
+            break
+        tried.append(cand)
+        sid = _peek_line_link_token(cand)
+        if sid:
+            return sid
+    return None
 
 
 def _create_line_link_token(student_id: int, ttl_seconds: int = None) -> str:
@@ -35409,6 +35469,15 @@ _LINE_QUESTION_NOT_LINKED = (
     "塾生の方: マイページにログイン → 「LINE連携」でコードを発行し、このトークに送ると、質問を受け付けられます。\n"
     "体験授業・入塾のご相談は、このトークにそのまま送ってください。塾長が確認してお返事します。"
 )
+# 📮 2026-11-01: 文の中に有効な連携コードがあったとき (「連携コード：…」「… よろしくお願いします」)。連携も消費もしない。
+#   送ってくるのは主に文を書く保護者 → 「お子さまに渡す」を先に置く (保護者がそのまま自分の LINE から送り直すと、
+#   先に連携した LINE が勝つので子どもが連携できなくなる)。「1つだけ」は入塾承認メールの注意書きと同じ言い方。
+_LINE_CODE_ONLY_GUIDE = (
+    "⚠️ まだLINE連携は完了していません（コードの前後にほかの文字があると連携されません）。\n"
+    "※連携できるLINEは1つだけで、ログインコードやお知らせはそのLINEに届きます。\n"
+    "・お子さまのLINEで受け取る場合: コードをお子さまに渡し、お子さまのLINEから送ってもらってください。\n"
+    "・このLINEで受け取る場合: 連携コードだけを1通で送り直してください。"
+)
 
 
 def _line_student_by_user(user_id: str):
@@ -35630,6 +35699,11 @@ def _handle_line_event(event: dict):
                 #   日本語や @ . の混ざる自然文は "" になり、下のコード判定に入らない (2026-11-01 _line_code_candidate)。
                 # コマンド (やること/質問) や有人チャット判定は元の text を使う。
                 code_text = _line_code_candidate(text)
+                if not code_text:
+                    # コードの途中に空白・改行が入った形 (手打ち・写真の読み取り) は、有効なコードと一致したときだけコードとして扱う
+                    _spaced = _line_spaced_code_candidate(text)
+                    if _spaced and _peek_line_link_token(_spaced):
+                        code_text = _spaced
                 # 先に消費せず peek → 別生徒に紐付く LINE なら有効コードを burn せず案内 (リトライ余地を残す)
                 peek_sid = _peek_line_link_token(code_text) if code_text else None
                 if peek_sid and user_id:
@@ -35694,6 +35768,28 @@ def _handle_line_event(event: dict):
                         _line_handle_question(_cmd_row, _LINE_CMD_QUESTION.sub("", text, count=1), reply_token)
                     else:
                         _line_reply_text(reply_token, _LINE_QUESTION_NOT_LINKED)
+                elif text and user_id and not code_text:
+                    # 📮 2026-11-01: 文の中に有効な連携コードがあるときだけ 1 回返す (連携も消費もしない)。
+                    #   有効なコードが無い自然文 (アドレス・URL・英文・無効なコードらしき英数字) は下の沈黙のまま。
+                    #   入塾承認メールのコードは、子どもが別のコードで連携した後も未使用のまま残る → 「まだ完了していません」と
+                    #   言い切らず、コードだけを送ったときと同じ順で事前判定し、送り直したときと同じ返事にそろえる。
+                    _embedded_sid = _line_embedded_link_code_sid(text)
+                    if _embedded_sid:
+                        if _line_user_taken_by_other(user_id, _embedded_sid):
+                            _embedded_state = "taken"
+                            _line_reply_text(reply_token, "⚠️ このLINEは既に別の生徒アカウントに連携済みです。\nお心当たりがなければ塾までご連絡ください。")
+                        elif _line_student_linked_other(_embedded_sid, user_id):
+                            _embedded_state = "linked_other"
+                            _line_record_bind_refused(_embedded_sid, "text")
+                            _line_reply_text(reply_token, _LINE_STUDENT_LINKED_OTHER)
+                        elif _line_student_by_user(user_id):
+                            _embedded_state = "already"
+                            _line_reply_text(reply_token, "✅ このLINEはすでに連携済みです。\n「やること」と送ると今日のまとめが届きます。")
+                        else:
+                            _embedded_state = "guide"
+                            _line_reply_text(reply_token, _LINE_CODE_ONLY_GUIDE)
+                        log.info(f"[LINE link] valid code inside text (not linked/consumed): {_embedded_state} "
+                                 f"student_id={_embedded_sid} userId ...{user_id[-6:]}")
                 # それ以外の通常トーク (挨拶・質問・チャット) には bot は沈黙する。
                 #   チャット:オン の有人対応・応答メッセージ運用と干渉しないため (2026-06-11 塾長指示)。
             return
