@@ -2434,6 +2434,11 @@ def init_db():
         ("vp_last_interval", "ALTER TABLE vocab_progress ADD COLUMN last_interval REAL"),
         # 🏫 [塾生アプリ登録 2026-06-26] 自己登録フォームで「現在受講科目」を収集・申込待ち一覧に表示。
         ("course_app_subjects", "ALTER TABLE course_applications ADD COLUMN subjects TEXT"),
+        # 🎥 [月額講座 解約予定 2026-11-02] 期間末解約 (cancel_at_period_end) のサブスクは期間末まで active のままなので、
+        #   解約を申し出た人にも新着のお知らせが届いていた。ending = {講座: 終了予定 UTC ISO} (お知らせを止める・視聴は期間末まで可)、
+        #   notify_off = 塾長が CEO で止めたお知らせ (1 = 送らない)。
+        ("course_members_ending", "ALTER TABLE course_members ADD COLUMN ending TEXT DEFAULT '{}'"),
+        ("course_members_notify_off", "ALTER TABLE course_members ADD COLUMN notify_off INTEGER DEFAULT 0"),
         # 📎 [クラス別ファイル配布 2026-06-26] class_files を時間割クラスに紐づけ (全通塾生に表示・クラス名で整理)
         ("class_files_class_label", "ALTER TABLE class_files ADD COLUMN class_label TEXT"),
         # 🎒 [受講クラス 2026-06-26] 生徒の受講クラス (時間割 label の JSON 配列)。出欠を所属クラスに限定。
@@ -56232,6 +56237,49 @@ def _course_keys_from_subscription(sub) -> list:
     return sorted(keys)
 
 
+def _course_sub_end_ts(sub) -> Optional[int]:
+    """解約予約済みのサブスクの終了時刻 (unix 秒)。予約が無ければ None。
+    students の [cancel-period-end] と同じ取り方 + 新しい API 版では current_period_end が items 側にある。"""
+    cap = bool(sub.get("cancel_at_period_end"))
+    ts = sub.get("cancel_at")
+    if not ts and cap:
+        ts = sub.get("current_period_end")
+        if not ts:
+            try:
+                items = (sub.get("items") or {}).get("data") or []
+                ts = max(int(it.get("current_period_end") or 0) for it in items) if items else None
+            except Exception:
+                ts = None
+        if not ts:
+            return 0   # 期間末解約なのに時刻が取れない → 「解約予定 (日付不明)」として扱う
+    try:
+        return int(ts) if ts else None
+    except Exception:
+        return None
+
+
+class _CourseEnding:
+    """講座ごとに「解約予約のサブスクしか無い」ものを集める。同じ講座を予約なしのサブスクでも持っていれば続く扱い。"""
+    def __init__(self):
+        self.cont, self.end = set(), {}
+
+    def add(self, keys, sub):
+        ts = _course_sub_end_ts(sub)
+        for k in keys:
+            if ts is None:
+                self.cont.add(k)
+            else:
+                self.end[k] = max(self.end.get(k, 0), ts)
+
+    def result(self) -> dict:
+        out = {}
+        for k, ts in self.end.items():
+            if k in self.cont:
+                continue
+            out[k] = datetime.fromtimestamp(ts, timezone.utc).replace(tzinfo=None).isoformat() if ts else ""
+        return out
+
+
 def _course_fetch_from_stripe(email: str, customer_id: str = "") -> Optional[dict]:
     """Stripe に問い合わせて {courses:[...], customer_id, name, found} を返す。Stripe 未設定/失敗は None (= 判断保留)。
     found=False は「そのメールの顧客が Stripe に 1 件も無い」(= 未知のメール)。テストでは monkeypatch する。
@@ -56277,6 +56325,7 @@ def _course_fetch_from_stripe(email: str, customer_id: str = "") -> Optional[dic
                 exact.append(cu)
         customers = exact
         keys, cust_id, name = set(), "", ""
+        ends = _CourseEnding()
         for cu in customers:
             cid = cu.get("id") if isinstance(cu, dict) else getattr(cu, "id", None)
             if not cid:
@@ -56289,9 +56338,10 @@ def _course_fetch_from_stripe(email: str, customer_id: str = "") -> Optional[dic
                 ks = _course_keys_from_subscription(sub)
                 if ks:
                     keys.update(ks)
+                    ends.add(ks, sub)
                     cust_id = cust_id or cid
                     name = name or ((cu.get("name") if isinstance(cu, dict) else getattr(cu, "name", "")) or "")
-        return {"courses": sorted(keys), "customer_id": cust_id, "name": name, "found": bool(customers)}
+        return {"courses": sorted(keys), "customer_id": cust_id, "name": name, "found": bool(customers), "ending": ends.result()}
     except Exception as e:
         log.warning(f"[course] Stripe lookup failed for member: {type(e).__name__}: {str(e)[:200]}")
         return None
@@ -56302,17 +56352,41 @@ def _course_row_to_member(row) -> dict:
         courses = json.loads(row["courses"] or "[]")
     except Exception:
         courses = []
+    keys = [k for k in courses if k in COURSE_KEYS]
+    # ending / notify_off は後付け列 (init_db の ALTER が飛ばされうる) → 無ければ「予定なし・通知する」
+    try:
+        ending = json.loads(row["ending"] or "{}")
+        ending = {k: (v or "") for k, v in ending.items() if k in keys} if isinstance(ending, dict) else {}
+    except Exception:
+        ending = {}
+    try:
+        notify_off = bool(row["notify_off"])
+    except Exception:
+        notify_off = False
     return {"id": row["id"], "email": row["email"], "name": row["name"] or "", "customer_id": row["stripe_customer_id"] or "",
-            "courses": [k for k in courses if k in COURSE_KEYS], "status": row["status"] or "canceled",
-            "verified_at": row["verified_at"]}
+            "courses": keys, "status": row["status"] or "canceled",
+            "verified_at": row["verified_at"], "ending": ending, "notify_off": notify_off}
 
 
-def _course_upsert_member(email: str, courses: list, customer_id: str = "", name: str = "") -> dict:
-    """course_members を作成/更新して member dict を返す。courses が空なら status='canceled'。"""
+def _course_member_wants_notice(member: dict, course_key: str) -> bool:
+    """新着のお知らせを送る相手か。講座を受講中で、その講座が解約予定でなく、塾長がお知らせを止めていない人だけ。
+    (解約予定でも期間末までは視聴ページに入れる。止めるのはメールだけ)"""
+    return (course_key in member["courses"] and course_key not in (member.get("ending") or {})
+            and not member.get("notify_off"))
+
+
+def _course_upsert_member(email: str, courses: list, customer_id: str = "", name: str = "", ending: Optional[dict] = None) -> dict:
+    """course_members を作成/更新して member dict を返す。courses が空なら status='canceled'。
+    ending (講座→終了予定) は Stripe で確かめたときだけ渡す。None なら今の値を据え置く。"""
     email = _course_norm_email(email)
     courses = sorted({k for k in (courses or []) if k in COURSE_KEYS})
     status = "active" if courses else "canceled"
     now = _utc_naive_iso()
+    if not courses:
+        ending = {}   # 解約したら終了予定も消す (再契約したときに古い予定が残ってお知らせが止まらないように)
+    # ★列の確認は INSERT の前に (行ロックを持ったまま別接続で SELECT すると、起動時の ALTER 待ちと行き詰まる)
+    has_ending = ending is not None and _table_has_column("course_members", "ending")
+    reset_off = not courses and _table_has_column("course_members", "notify_off")   # 解約したら「止める」も解く (再契約で黙って届かないままにしない)
     conn = db()
     try:
         c = conn.cursor()
@@ -56325,6 +56399,11 @@ def _course_upsert_member(email: str, courses: list, customer_id: str = "", name
             "stripe_customer_id = CASE WHEN excluded.stripe_customer_id = '' THEN course_members.stripe_customer_id ELSE excluded.stripe_customer_id END, "
             "name = CASE WHEN excluded.name = '' THEN course_members.name ELSE excluded.name END",
             (email, (name or "")[:100], customer_id or "", json.dumps(courses), status, now, now, now))
+        if has_ending:
+            ending = {k: (v or "") for k, v in (ending or {}).items() if k in courses}
+            c.execute("UPDATE course_members SET ending = ? WHERE email = ?", (json.dumps(ending, sort_keys=True), email))
+        if reset_off:
+            c.execute("UPDATE course_members SET notify_off = 0 WHERE email = ?", (email,))
         conn.commit()
         c.execute("SELECT * FROM course_members WHERE email = ?", (email,))
         return _course_row_to_member(c.fetchone())
@@ -56399,7 +56478,8 @@ def _course_member_refresh(email: str, force: bool = False) -> Optional[dict]:
             return None
         if member.get("customer_id"):
             return member
-    return _course_upsert_member(email, fetched.get("courses") or [], fetched.get("customer_id") or "", fetched.get("name") or "")
+    return _course_upsert_member(email, fetched.get("courses") or [], fetched.get("customer_id") or "", fetched.get("name") or "",
+                                 ending=fetched.get("ending") if isinstance(fetched.get("ending"), dict) else None)
 
 
 def _course_send_email(to_email: str, subject: str, body_text: str) -> dict:
@@ -56476,7 +56556,7 @@ def _course_notify_targets(video_id: int, course_key: str, resend_all: bool = Fa
             done = {r["email"] for r in c.fetchall()}
     finally:
         conn.close()
-    return [m for m in members if course_key in m["courses"] and m["email"] not in done]
+    return [m for m in members if _course_member_wants_notice(m, course_key) and m["email"] not in done]
 
 
 def _course_notice_mail(member: dict, course_key: str, videos: list) -> tuple:
@@ -56956,7 +57036,33 @@ def admin_course_members(authorization: Optional[str] = Header(None)):
         conn.close()
     for m in members:
         m["course_names"] = [COURSE_KEYS[k] for k in m["courses"]]
-    return {"members": members}
+        m["ending_list"] = [{"key": k, "name": COURSE_KEYS[k], "end": m["ending"][k]} for k in m["courses"] if k in m["ending"]]
+    return {"members": members, "notify_toggle": _table_has_column("course_members", "notify_off")}
+
+
+class CourseMemberNotifyIn(BaseModel):
+    off: bool
+
+
+@app.post("/api/admin/course/members/{member_id}/notify")
+def admin_course_member_notify(member_id: int, payload: CourseMemberNotifyIn, request: Request, authorization: Optional[str] = Header(None)):
+    """塾長が CEO で受講者ごとに新着のお知らせメールを止める/再開する (視聴ページへの入室は変えない)。"""
+    _check_rate_limit_ip(request, bucket="course_member_notify", limit=30, window=60)
+    _verify_admin_required(authorization)
+    if not _table_has_column("course_members", "notify_off"):
+        raise HTTPException(status_code=503, detail="データベースの準備がまだです。少し待ってからもう一度押してください")
+    conn = db()
+    try:
+        c = conn.cursor()
+        # updated_at は変えない (一覧が updated_at 順なので、押した行が先頭へ飛んで消えたように見える)
+        c.execute("UPDATE course_members SET notify_off = ? WHERE id = ?", (1 if payload.off else 0, int(member_id)))
+        n = c.rowcount
+        conn.commit()
+    finally:
+        conn.close()
+    if not n:
+        raise HTTPException(status_code=404, detail="受講者が見つかりません")
+    return {"ok": True, "member": _course_member_by_id(member_id)}
 
 
 def _course_sync_all_from_stripe() -> dict:
@@ -56977,8 +57083,9 @@ def _course_sync_all_from_stripe() -> dict:
                 email = _course_norm_email((cu.get("email") if isinstance(cu, dict) else getattr(cu, "email", "")) or "")
                 if not email:
                     continue
-                ent = seen.setdefault(email, {"courses": set(), "customer_id": "", "name": ""})
+                ent = seen.setdefault(email, {"courses": set(), "customer_id": "", "name": "", "ending": _CourseEnding()})
                 ent["courses"].update(ks)
+                ent["ending"].add(ks, sub)
                 ent["customer_id"] = ent["customer_id"] or ((cu.get("id") if isinstance(cu, dict) else getattr(cu, "id", "")) or "")
                 ent["name"] = ent["name"] or ((cu.get("name") if isinstance(cu, dict) else getattr(cu, "name", "")) or "")
     except HTTPException:
@@ -56986,21 +57093,23 @@ def _course_sync_all_from_stripe() -> dict:
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Stripe の取得に失敗しました: {type(e).__name__}: {str(e)[:200]}")
     for email, ent in seen.items():
-        _course_upsert_member(email, sorted(ent["courses"]), ent["customer_id"], ent["name"])
+        _course_upsert_member(email, sorted(ent["courses"]), ent["customer_id"], ent["name"], ending=ent["ending"].result())
     canceled = 0
     conn = db()
     try:
         c = conn.cursor()
+        _end_col = (", ending = '{}'" if _table_has_column("course_members", "ending") else "") + (", notify_off = 0" if _table_has_column("course_members", "notify_off") else "")
         c.execute("SELECT email FROM course_members WHERE status = 'active'")
         for r in c.fetchall():
             if r["email"] not in seen:
-                c.execute("UPDATE course_members SET status = 'canceled', courses = '[]', verified_at = ?, updated_at = ? WHERE email = ?",
+                c.execute("UPDATE course_members SET status = 'canceled', courses = '[]'" + _end_col + ", verified_at = ?, updated_at = ? WHERE email = ?",
                           (_utc_naive_iso(), _utc_naive_iso(), r["email"]))
                 canceled += 1
         conn.commit()
     finally:
         conn.close()
-    return {"active": len(seen), "canceled": canceled}
+    ending_n = sum(1 for ent in seen.values() if ent["ending"].result())
+    return {"active": len(seen), "canceled": canceled, "ending": ending_n}
 
 
 @app.post("/api/admin/course/members/sync")
@@ -57039,7 +57148,9 @@ def _course_webhook_touch(session_or_sub: dict, source: str) -> None:
             if keys:
                 existing = _course_member_by_email(email)
                 merged = sorted(set(keys) | set(existing["courses"] if existing else []))
-                member = _course_upsert_member(email, merged, obj.get("customer") or "", name)
+                # 今買った講座は解約予定ではない (以前の予定が残っていればここで外す)
+                ending = {k: v for k, v in ((existing or {}).get("ending") or {}).items() if k not in keys}
+                member = _course_upsert_member(email, merged, obj.get("customer") or "", name, ending=ending)
                 # 🎥 決済完了と同時に、視聴ページへ直接入れるログインリンクを送る (受講案内メールは Vercel 側が別に送る)。
                 #   Stripe の再送は processed_events (event.id) で弾かれるので二重送信にならない。
                 if member and member["status"] == "active" and os.getenv("COURSE_WELCOME_ENABLED", "1").strip().lower() not in ("0", "false", "off"):
@@ -57279,7 +57390,7 @@ def _course_notify_import_prepare(course_key: str, videos: list):
             conn.close()
         jobs = []
         for m in members:
-            if course_key not in m["courses"]:
+            if not _course_member_wants_notice(m, course_key):
                 continue
             pending = [v for v in videos if (int(v["id"]), m["email"]) not in done]
             if pending:

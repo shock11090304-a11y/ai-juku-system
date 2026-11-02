@@ -3177,9 +3177,9 @@
       <h3 style="margin:1.2rem 0 0.4rem; font-size:0.95rem;">受講者（Stripe の有効な契約）</h3>
       <div style="display:flex; align-items:center; gap:0.7rem; flex-wrap:wrap; margin-bottom:0.5rem;">
         <button id="cvSyncBtn" type="button" style="padding:0.45rem 0.9rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:7px; color:#fff; font-weight:700; cursor:pointer; font-size:0.82rem;">🔄 Stripe から再取得</button>
-        <span id="cvSyncMsg" style="font-size:0.8rem; color:#a1a1aa;">決済・解約のたびに自動で同期されます。ずれていると感じたら押してください。</span>
+        <span id="cvSyncMsg" style="font-size:0.8rem; color:#a1a1aa;">決済・解約のたびに自動で同期されます。ずれていると感じたら押してください。解約予定（Stripe の「○/○ でキャンセル」）の人には新着のお知らせを送りません。</span>
       </div>
-      <p style="font-size:0.75rem; color:#71717a; margin:0 0 0.4rem;">「ログインできない」と言われたら → ①この表にそのメールがあるか（決済に使ったアドレスと違うことが多い）②状態が「有効」か ③無ければ「Stripe から再取得」。</p>
+      <p style="font-size:0.75rem; color:#71717a; margin:0 0 0.4rem;">「ログインできない」と言われたら → ①この表にそのメールがあるか（決済に使ったアドレスと違うことが多い）②状態が「有効」か「○/○ で解約」（その日までは入れます）か ③無ければ「Stripe から再取得」。</p>
       <div id="cvMembers" style="font-size:0.84rem; color:#a1a1aa; overflow-x:auto;"></div>
     </section>
 
@@ -14559,15 +14559,34 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         }).join('');
       } catch (e) { list.innerHTML = '<div style="color:#fca5a5;">読み込めませんでした: ' + esc(e.message) + '</div>'; }
     }
+    // 解約予定 (Stripe の期間末解約) は期間末まで「有効」のまま視聴できる。お知らせメールは自動で止まる (2026-11-02)
+    function endDay(iso) { if (!iso) return '日付不明'; var d = new Date(String(iso).replace(' ', 'T') + (String(iso).endsWith('Z') ? '' : 'Z')); return isNaN(d) ? '日付不明' : d.toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' }); }
+    function memberState(m) {
+      if (m.status !== 'active') return '解約';
+      var el = m.ending_list || [];
+      if (!el.length) return '<span style="color:#6ee7b7;">有効</span>';
+      var all = el.length === (m.course_names || []).length;
+      var past = el.some(function (x) { return x.end && new Date(String(x.end).replace(' ', 'T') + 'Z').getTime() < Date.now(); });
+      return '<span style="color:#fcd34d;">' + el.map(function (x) { return (all && el.length === 1 ? '' : esc(x.name) + ' ') + esc(endDay(x.end)) + ' で解約'; }).join('<br>') + '</span>'
+        + '<div style="font-size:0.7rem; color:#71717a;">' + (past ? '終了日を過ぎています →「Stripe から再取得」を押してください' : (all ? 'それまでは視聴できます' : 'その講座はそれまで視聴できます')) + '</div>';
+    }
+    function memberNotify(m, canToggle) {
+      if (m.status !== 'active') return '<span style="color:#71717a;">—</span>';
+      var el = m.ending_list || [];
+      var auto = el.length && el.length === (m.course_names || []).length;
+      var label = m.notify_off ? '<span style="color:#fca5a5;">停止中</span>' + (auto ? '<span style="color:#71717a;">（解約予定のため、再開しても送りません）</span>' : '') : auto ? '<span style="color:#fcd34d;">解約予定のため送らない</span>' : el.length ? '<span style="color:#6ee7b7;">送る</span><span style="color:#71717a;">（解約予定の講座は除く）</span>' : '<span style="color:#6ee7b7;">送る</span>';
+      if (!canToggle) return label;
+      return label + ' <button type="button" data-cv-notify="' + esc(m.id) + '" data-off="' + (m.notify_off ? '0' : '1') + '" style="' + BTN + ' white-space:nowrap;">' + (m.notify_off ? '再開する' : '止める') + '</button>';
+    }
     async function loadMembers() {
       var box = document.getElementById('cvMembers');
       try {
         var d = await cvJson('/api/admin/course/members');
         var ms = (d.members || []);
         if (!ms.length) { box.innerHTML = '<div>受講者はまだいません。</div>'; return; }
-        box.innerHTML = '<table style="width:100%; min-width:560px; border-collapse:collapse; font-size:0.8rem;"><thead><tr style="color:#71717a; text-align:left;"><th style="padding:0.3rem;">メール</th><th style="padding:0.3rem;">氏名</th><th style="padding:0.3rem;">講座</th><th style="padding:0.3rem;">状態</th><th style="padding:0.3rem;">Stripe 確認</th></tr></thead><tbody>'
+        box.innerHTML = '<table style="width:100%; min-width:720px; border-collapse:collapse; font-size:0.8rem;"><thead><tr style="color:#71717a; text-align:left;"><th style="padding:0.3rem;">メール</th><th style="padding:0.3rem;">氏名</th><th style="padding:0.3rem;">講座</th><th style="padding:0.3rem;">状態</th><th style="padding:0.3rem;">お知らせメール</th><th style="padding:0.3rem;">Stripe 確認</th></tr></thead><tbody>'
           + ms.map(function (m) {
-            return '<tr style="border-top:1px solid rgba(255,255,255,0.08);' + (m.status !== 'active' ? ' color:#71717a;' : '') + '"><td style="padding:0.3rem;">' + esc(m.email) + '</td><td style="padding:0.3rem;">' + esc(m.name) + '</td><td style="padding:0.3rem;">' + esc((m.course_names || []).join('・')) + '</td><td style="padding:0.3rem;">' + (m.status === 'active' ? '<span style="color:#6ee7b7;">有効</span>' : '解約') + '</td><td style="padding:0.3rem; color:#71717a;">' + esc(fmtTs(m.verified_at)) + '</td></tr>';
+            return '<tr style="border-top:1px solid rgba(255,255,255,0.08);' + (m.status !== 'active' ? ' color:#71717a;' : '') + '"><td style="padding:0.3rem;">' + esc(m.email) + '</td><td style="padding:0.3rem;">' + esc(m.name) + '</td><td style="padding:0.3rem;">' + esc((m.course_names || []).join('・')) + '</td><td style="padding:0.3rem;">' + memberState(m) + '</td><td style="padding:0.3rem;">' + memberNotify(m, d.notify_toggle) + '</td><td style="padding:0.3rem; color:#71717a;">' + esc(fmtTs(m.verified_at)) + '</td></tr>';
           }).join('') + '</tbody></table>';
       } catch (e) { box.innerHTML = '<div style="color:#fca5a5;">読み込めませんでした: ' + esc(e.message) + '</div>'; }
     }
@@ -14753,9 +14772,18 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         loadVideos();
       } catch (err) { alert('失敗しました: ' + err.message); loadVideos(); }
     });
+    document.getElementById('cvMembers').addEventListener('click', async function (ev) {
+      var b = ev.target.closest('button[data-cv-notify]'); if (!b) return;
+      var off = b.getAttribute('data-off') === '1';
+      var row = b.closest('tr'); var who = row ? row.cells[0].textContent : '';
+      if (!confirm(who + ' への新着動画のお知らせメールを' + (off ? '止めます（視聴ページにはこれまでどおり入れます）' : '再開します') + '。よろしいですか？')) return;
+      b.disabled = true;
+      try { await cvJson('/api/admin/course/members/' + encodeURIComponent(b.getAttribute('data-cv-notify')) + '/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ off: off }) }); loadMembers(); }
+      catch (e) { alert('変更できませんでした: ' + e.message); b.disabled = false; }
+    });
     document.getElementById('cvSyncBtn').addEventListener('click', async function () {
       var m = document.getElementById('cvSyncMsg'); this.disabled = true; m.textContent = 'Stripe から取得中…';
-      try { var r = await cvJson('/api/admin/course/members/sync', { method: 'POST' }); m.textContent = '同期しました（有効 ' + r.active + ' 名・解約に変更 ' + r.canceled + ' 名）'; loadAll(); }
+      try { var r = await cvJson('/api/admin/course/members/sync', { method: 'POST' }); m.textContent = '同期しました（有効 ' + r.active + ' 名' + (r.ending ? '（うち解約予定 ' + r.ending + ' 名）' : '') + '・解約に変更 ' + r.canceled + ' 名）'; loadAll(); }
       catch (e) { m.textContent = '同期できませんでした: ' + e.message; }
       finally { this.disabled = false; }
     });

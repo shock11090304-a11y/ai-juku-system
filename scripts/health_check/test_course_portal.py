@@ -10,6 +10,7 @@ Stripe は _course_fetch_from_stripe を偽物に、メールは _course_send_em
   6. 解約: Stripe が講座なしを返す → 次のアクセスで 401、ログインリンクも送らない
   7. webhook 同期: checkout (course tag) で course_members が作られ students は増えない・視聴ページのログインリンクを自動送信 / subscription.deleted で解約に
   8. 管理 API は admin Bearer 無しで 401
+  9. 解約予定 (期間末解約) の人には新着のお知らせを送らない (視聴は期間末まで可)・CEO の「止める/再開する」
 """
 import base64
 import datetime
@@ -242,6 +243,67 @@ def main():
         codes.append(client.post("/api/course/login/request", json={"email": f"rl{_}@example.invalid"}).status_code)
     check("6c. 同一 IP 6 回目のログイン要求はまだ 429 にならない (共有 IP 対策)", codes[5] != 429, codes[:8])
     check("6c2. 同一 IP 61 回目は 429", codes[-1] == 429, codes[-5:])
+
+    # ---- 9. 解約予定 (期間末解約) と CEO の「お知らせを止める」 (2026-11-02) ----
+    # 期間末解約のサブスクは期間末まで active → 視聴は続けられるが、新着のお知らせは送らない
+    end_ts = int(datetime.datetime(2026, 11, 4, 3, 0, tzinfo=datetime.timezone.utc).timestamp())
+    E = mod._CourseEnding()
+    E.add(["kyotsu"], {"cancel_at_period_end": True, "items": {"data": [{"current_period_end": end_ts}]}})
+    E.add(["bunpo"], {"cancel_at": end_ts})
+    E.add(["bunpo"], {"cancel_at_period_end": False})   # 同じ講座を予約なしでも持っている → 続く
+    check("9a. 終了予定は予約だけの講座に付く (items 側の期間末も読む・予約なしが 1 本でもあれば続く)",
+          E.result() == {"kyotsu": "2026-11-04T03:00:00"}, E.result())
+    STRIPE["end@example.invalid"] = {"courses": ["kyotsu", "bunpo"], "customer_id": "cus_e1", "name": "", "ending": {"kyotsu": "2026-11-04T03:00:00"}}
+    STRIPE["keep@example.invalid"] = {"courses": ["kyotsu"], "customer_id": "cus_k1", "name": "", "ending": {}}
+    m_end = mod._course_member_refresh("end@example.invalid", force=True)
+    mod._course_member_refresh("keep@example.invalid", force=True)
+    check("9b. 解約予定でも状態は有効のまま (視聴できる)・ending が保存される",
+          m_end and m_end["status"] == "active" and m_end["ending"] == {"kyotsu": "2026-11-04T03:00:00"}, m_end)
+    MAILS.clear()
+    vk = client.post("/api/admin/course/videos", headers=ADMIN, json={"course_key": "kyotsu", "title": "共テ第2回", "youtube_url": "https://youtu.be/GGGGGGGGGGG"})
+    to = sorted(x["to"] for x in MAILS)
+    check("9c. 解約予定の講座の新着は送らない・続く人には送る", vk.status_code == 200 and to == ["keep@example.invalid"], (vk.text, to))
+    MAILS.clear()
+    client.post("/api/admin/course/videos", headers=ADMIN, json={"course_key": "bunpo", "title": "第2回 助動詞", "youtube_url": "https://youtu.be/HHHHHHHHHHH"})
+    check("9d. 解約予定でない講座 (bunpo) のお知らせは届く", "end@example.invalid" in [x["to"] for x in MAILS], MAILS)
+    jobs, rel = mod._course_notify_import_prepare("kyotsu", [{"id": vk.json()["id"], "title": "共テ第2回"}]) or (None, None)
+    if rel: rel()
+    check("9e. 再生リスト取り込みの宛先にも解約予定の人は入らない", jobs is not None and "end@example.invalid" not in [m["email"] for m, _ in jobs], jobs)
+    lst_m = client.get("/api/admin/course/members", headers=ADMIN).json()
+    row_end = next(m for m in lst_m["members"] if m["email"] == "end@example.invalid")
+    row_keep = next(m for m in lst_m["members"] if m["email"] == "keep@example.invalid")
+    check("9f. 受講者一覧に解約予定 (講座名・終了日) と停止ボタンの可否",
+          lst_m.get("notify_toggle") is True and row_end["ending_list"] == [{"key": "kyotsu", "name": mod.COURSE_KEYS["kyotsu"], "end": "2026-11-04T03:00:00"}] and row_keep["ending_list"] == [], row_end)
+    # 解約をやめた (Stripe で予約を取り消し) → 次の同期で ending が消えてお知らせが戻る
+    STRIPE["end@example.invalid"]["ending"] = {}
+    check("9g. 解約予約の取り消しで ending が消える", mod._course_member_refresh("end@example.invalid", force=True)["ending"] == {})
+    # 塾長が CEO で止める → 有効受講者でも送らない・再開で戻る
+    kid = row_keep["id"]
+    r_off = client.post(f"/api/admin/course/members/{kid}/notify", headers=ADMIN, json={"off": True})
+    MAILS.clear()
+    client.post("/api/admin/course/videos", headers=ADMIN, json={"course_key": "kyotsu", "title": "共テ第3回", "youtube_url": "https://youtu.be/JJJJJJJJJJJ"})
+    to3 = sorted(x["to"] for x in MAILS)
+    check("9h. 「止める」を押した人には送らない (視聴はそのまま)", r_off.status_code == 200 and r_off.json()["member"]["notify_off"] is True
+          and r_off.json()["member"]["status"] == "active" and "keep@example.invalid" not in to3 and "end@example.invalid" in to3, (r_off.text, to3))
+    r_on = client.post(f"/api/admin/course/members/{kid}/notify", headers=ADMIN, json={"off": False})
+    check("9i. 再開で notify_off が戻る・Stripe の再同期でも消えない", r_on.status_code == 200 and r_on.json()["member"]["notify_off"] is False)
+    client.post(f"/api/admin/course/members/{kid}/notify", headers=ADMIN, json={"off": True})
+    check("9i2. 停止は Stripe からの再取得 (upsert) で上書きされない", mod._course_member_refresh("keep@example.invalid", force=True)["notify_off"] is True)
+    check("9j. 停止 API: Bearer 無し 401・存在しない id 404",
+          client.post(f"/api/admin/course/members/{kid}/notify", json={"off": True}).status_code == 401
+          and client.post("/api/admin/course/members/999999/notify", headers=ADMIN, json={"off": True}).status_code == 404)
+
+    # 解約したら ending と「止める」を解く → 再契約で黙って届かないままにならない
+    mod._course_upsert_member("keep@example.invalid", ["kyotsu"], "cus_k1", "", ending={"kyotsu": "2026-11-04T03:00:00"})
+    gone_m = mod._course_upsert_member("keep@example.invalid", [], "cus_k1", "")
+    back = mod._course_upsert_member("keep@example.invalid", ["kyotsu"], "cus_k1", "")
+    check("9k. 解約で ending と notify_off が消え、再契約後はお知らせ対象に戻る",
+          gone_m["status"] == "canceled" and back["ending"] == {} and back["notify_off"] is False and mod._course_member_wants_notice(back, "kyotsu"), back)
+    # 解約予定の講座を支払いリンクで買い直す → checkout で今買った講座の ending が外れる
+    mod._course_upsert_member("end@example.invalid", ["kyotsu", "bunpo"], "cus_e1", "", ending={"kyotsu": "2026-11-04T03:00:00", "bunpo": "2026-11-04T03:00:00"})
+    mod._course_webhook_touch({"livemode": True, "customer_email": "end@example.invalid", "customer": "cus_e2", "metadata": {"combo": "kyotsu"}}, "checkout")
+    rb = mod._course_member_by_email("end@example.invalid")
+    check("9l. 買い直した講座だけ解約予定が外れる", rb["ending"] == {"bunpo": "2026-11-04T03:00:00"}, rb)
 
     # ---- YouTube ID 抽出 ----
     f = mod._course_youtube_id
