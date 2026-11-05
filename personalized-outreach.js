@@ -169,7 +169,7 @@ ${benefits.map(b => `・${b}`).join('\n')}
 
 【開始方法】
 下記URLから30秒で登録できます👇
-https://ai-juku.jp/lp.html?ref=existing_${student.id}
+https://trillion-ai-juku.com/lp.html?ref=existing_${student.id}
 
 ご質問・ご不明点があれば、このメッセージに返信か、お気軽にLINEでお問い合わせください。
 
@@ -189,7 +189,7 @@ ${focusBenefit.replace(/<strong>/g, '').replace(/<\/strong>/g, '').substring(0, 
 追加料金: ${tier.addFee === 0 ? '¥0（既存料金に含む）' : `月¥${tier.addFee.toLocaleString()} (初月無料)`}
 
 登録URL👇
-https://ai-juku.jp/lp.html?ref=existing_${student.id}
+https://trillion-ai-juku.com/lp.html?ref=existing_${student.id}
 
 質問はいつでも！`;
 

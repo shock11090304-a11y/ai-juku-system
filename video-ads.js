@@ -47,7 +47,7 @@ const DEMO_FRAMES = [
   { emoji: '📷', title: '模試写真から分析', sub: 'Vision AIで自動採点・弱点抽出', duration: 2500 },
   { emoji: '🎓', title: '24時間 AI 個別最適化', sub: '月 ¥24,980〜', duration: 3000 },
   { emoji: '🎖', title: '🔥 創設メンバー 50名限定', sub: '7日間 完全無料 → 創設メンバー¥14,500/月（永年）', duration: 3500 },
-  { emoji: '🚀', title: '今すぐ始めよう', sub: 'ai-juku.jp', duration: 3000 },
+  { emoji: '🚀', title: '今すぐ始めよう', sub: 'trillion-ai-juku.com', duration: 3000 },
 ];
 
 function playDemo() {
