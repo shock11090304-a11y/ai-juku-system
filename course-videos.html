@@ -6,7 +6,7 @@
   <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#0B2545">
-  <title>月額講座 視聴ページ | Trillion English Academy</title>
+  <title>講座 視聴ページ | Trillion English Academy</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Serif+JP:wght@500;600&display=swap" rel="stylesheet">
@@ -58,14 +58,14 @@
   <header class="site-header">
     <div class="brand">Trillion English Academy</div>
     <div class="brand-jp">トリリオン英語塾</div>
-    <div class="title">月額講座 視聴ページ</div>
+    <div class="title">講座 視聴ページ</div>
   </header>
 
   <main>
     <!-- ログイン -->
     <section id="loginView" class="card" hidden>
       <h2>ログイン</h2>
-      <p class="muted">月額講座（英文解釈／英文法／共通テスト対策）をお申し込みの方専用のページです。</p>
+      <p class="muted">月額講座（英文解釈／英文法／共通テスト対策）・冬期講習2026をお申し込みの方専用のページです。</p>
       <p class="muted" style="margin-top:0.4rem;">お支払い時（決済画面）のメールアドレスを入力してください。ログイン用のリンクをメールでお送りします（パスワードは不要です）。</p>
       <form id="loginForm" style="margin-top:0.9rem;">
         <label for="email">メールアドレス</label>
@@ -90,10 +90,11 @@
       <div class="card">
         <div class="courses-bar" id="coursesBar"></div>
         <p class="muted" id="portalNote">各講座とも毎週月曜に 2 本ずつ動画を追加します（月 8 本）。追加したときは、お支払い時のメールアドレスへお知らせします。新しい動画が上に並びます。はじめての方は一番下の第1回からご覧ください。</p>
+        <p class="muted" id="winterNote" hidden style="margin-top:0.4rem;"></p>
         <p class="muted" style="margin-top:0.4rem;">このページはブックマークかホーム画面への追加をおすすめします（同じブラウザなら 30 日間、次回からメールなしで開けます）。</p>
       </div>
       <div id="videoList"></div>
-      <p class="foot">ご質問は <a href="https://lin.ee/ZHlrRjh" target="_blank" rel="noopener" id="lineLink">公式 LINE</a> またはメール（<a href="mailto:info@trillion-ai-juku.com" id="contactLink">info@trillion-ai-juku.com</a>）へ。<br>解約・講座の変更も同じ窓口で、次回決済日の前日までにご連絡ください。<br><button type="button" class="btn-link" id="logoutBtn">ログアウト</button></p>
+      <p class="foot">ご質問は <a href="https://lin.ee/ZHlrRjh" target="_blank" rel="noopener" id="lineLink">公式 LINE</a> またはメール（<a href="mailto:info@trillion-ai-juku.com" id="contactLink">info@trillion-ai-juku.com</a>）へ。<span id="monthlyFoot"><br>解約・講座の変更（月額講座）も同じ窓口で、次回決済日の前日までにご連絡ください。</span><br><button type="button" class="btn-link" id="logoutBtn">ログアウト</button></p>
     </section>
   </main>
 
@@ -165,14 +166,27 @@
         $('coursesBar').innerHTML = (me.courses || []).map(function (c) { return '<span class="chip">' + esc(c.name) + '</span>'; }).join('');
         if (me.contact) { $('contactLink').textContent = me.contact; $('contactLink').href = 'mailto:' + me.contact; }
         if (me.line_url && /^https:\/\/(lin\.ee|line\.me)\//.test(me.line_url)) { $('lineLink').href = me.line_url; }
+        // ❄️ 冬期講習 (me.winter): 配信日・視聴期限を出し、動画は第1回から順 (古い順) に並べる
+        var winter = {};
+        (me.winter || []).forEach(function (w) { winter[w.key] = w; });
+        var hasMonthly = (me.courses || []).some(function (c) { return !winter[c.key]; });
+        $('portalNote').hidden = !hasMonthly;
+        $('monthlyFoot').hidden = !hasMonthly;
+        $('winterNote').hidden = !(me.winter || []).length;
+        if ((me.winter || []).length) {
+          $('winterNote').textContent = '冬期講習2026の動画は、配信日から順に並びます（上から第1回）。配信した日の朝にメールでお知らせします。視聴は ' + fmtDateJp(me.winter_view_until) + ' までです。';
+        }
         var byCourse = {};
         (me.courses || []).forEach(function (c) { byCourse[c.key] = { name: c.name, videos: [] }; });
         (me.videos || []).forEach(function (v) { if (byCourse[v.course_key]) byCourse[v.course_key].videos.push(v); });
+        Object.keys(winter).forEach(function (k) { if (byCourse[k]) byCourse[k].videos.reverse(); });
         var html = '';
         Object.keys(byCourse).forEach(function (k) {
           var b = byCourse[k];
           html += '<div class="course-block"><h3>' + esc(b.name) + '</h3>';
-          if (!b.videos.length) {
+          if (!b.videos.length && winter[k]) {
+            html += '<div class="empty">' + esc(fmtDateJp(winter[k].delivery)) + ' に配信します。配信した日の朝にメールでお知らせします。</div>';
+          } else if (!b.videos.length) {
             html += '<div class="empty">まだ動画はありません。初回の動画は ' + esc(me.first_delivery ? fmtDateJp(me.first_delivery) : 'お支払いの翌週の月曜') + ' に追加する予定です。追加したときはメールでお知らせします。</div>';
           } else {
             b.videos.forEach(function (v) {

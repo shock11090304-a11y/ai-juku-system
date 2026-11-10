@@ -5394,6 +5394,10 @@ function chargesToRows(charges) {
   const skipped = charges.filter(c => ((c.metadata || {}).first_charge === '1'));
   if (skipped.length) console.info(`stripe import: 入塾の初回決済 ${skipped.length} 件は除外 (webhook で反映済み)`);
   charges = charges.filter(c => !((c.metadata || {}).first_charge === '1'));
+  // ❄️ 冬期講習2026 の買い切り (metadata.system=juku-payment-winter) は月謝ではない。塾生が買っても月謝の入金にしない (2026-11-10)
+  const winter = charges.filter(c => ((c.metadata || {}).system === 'juku-payment-winter'));
+  if (winter.length) console.info(`stripe import: 冬期講習の決済 ${winter.length} 件は除外 (月謝ではない)`);
+  charges = charges.filter(c => !((c.metadata || {}).system === 'juku-payment-winter'));
   return charges.map(c => {
     const d = new Date((c.created || 0) * 1000);
     const yyyy = d.getFullYear();

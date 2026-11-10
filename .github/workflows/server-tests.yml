@@ -280,6 +280,13 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_course_portal.py
 
+      # ❄️ 冬期講習2026 (/api/winter/checkout・webhook の記録・視聴ページの講習対応・配信のお知らせ) (2026-11-10)。Stripe とメールは偽物。
+      - name: 冬期講習 決済と視聴 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_winter_course.py
+
       # 📺 月額講座「再生リストから取り込む」(2026-10-05)。YouTube (class_recording_assign.http_get) とメールは偽物。
       - name: 月額講座 再生リスト取り込み 回帰テスト
         if: ${{ !cancelled() }}

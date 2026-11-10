@@ -2204,6 +2204,25 @@ def init_db():
         sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_course_video_notices_uniq ON course_video_notices(video_id, email);
+    -- ❄️ 冬期講習2026 (単発の買い切り・/api/winter/checkout の Checkout) の購入記録。1 決済 = 1 行。
+    --   item_keys は視聴できる講座 (セットは中身の講座に展開済み)。視聴ページ (course_members と同じ身元) の入室判定に使う。
+    --   status: paid / refunded (返金は塾長が CEO の API で切り替える)。student_id 列なし (_ORPHAN_SWEEP_TABLES 対象外)。
+    CREATE TABLE IF NOT EXISTS winter_purchases (
+        id {pk},
+        session_id TEXT NOT NULL,
+        email TEXT NOT NULL,
+        name TEXT DEFAULT '',
+        plan TEXT DEFAULT '[]',
+        item_keys TEXT DEFAULT '[]',
+        amount INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'paid',
+        app_id TEXT DEFAULT '',
+        livemode INTEGER DEFAULT 1,
+        paid_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_winter_purchases_session ON winter_purchases(session_id);
+    CREATE INDEX IF NOT EXISTS idx_winter_purchases_email ON winter_purchases(email);
     -- 出欠: 生徒の自己申告。(student_id, session_id) ユニークで再申告は UPDATE 上書き。
     CREATE TABLE IF NOT EXISTS class_attendance (
         id {pk},
@@ -3921,6 +3940,11 @@ async def _start_background_tasks():
     # 🎬 授業録画の自動割り当て scheduler (毎日 JST 7:00・2026-10-08 塾長決定「毎日自動にしたい」):
     #   CEO の再生リスト画面のボタン (① 確認 → ② 登録) と同じ処理を「取れた分だけ登録」で回す。
     #   CLASS_REC_AUTO_ASSIGN_ENABLED が 0 / false / off / no なら登録しない (= 実行履歴が増えないだけ。監視の対象からも外れる)。
+    # ❄️ 冬期講習の配信お知らせ (毎日 JST 8:00・視聴期間が終わると止まる)。WINTER_NOTIFY_ENABLED=0 で止める
+    if os.getenv("WINTER_NOTIFY_ENABLED", "1").strip().lower() not in ("0", "false", "off", "no") and _winter_today() <= WINTER_VIEW_UNTIL:
+        task = asyncio.create_task(_winter_notify_scheduler())
+        _BACKGROUND_TASKS.append(task)
+        log.info("[Startup] Winter course notify scheduler launched")
     if CRON_SECRET and CLASS_REC_AUTO_ASSIGN_ENABLED:
         task = asyncio.create_task(_class_rec_auto_assign_scheduler())
         _BACKGROUND_TASKS.append(task)
@@ -33744,6 +33768,22 @@ def stripe_webhook(
         if _meta_system == COURSE_SYSTEM_TAG and session.get("payment_status") in ("paid", "no_payment_required"):
             # 🎥 月額講座: students には触れず course_members だけ同期 (案内メールは Vercel 側が送る)
             _course_webhook_touch(session, "checkout")
+        if _meta_system == WINTER_SYSTEM_TAG and session.get("payment_status") in ("paid", "no_payment_required"):
+            # ❄️ 冬期講習: students には触れず winter_purchases に記録して視聴ページのログインリンクを送る。
+            #   ★記録できなかった (DB 障害・表が無い) ときは processed_events を消して 500 を返し、Stripe に再送させる
+            #     (講習は Stripe のサブスクから取り直せないので、200 で握ると「払ったのに見られない」が誰にも見えない)
+            if not _winter_webhook_record(session):
+                try:
+                    if event_id:
+                        _c = db()
+                        try:
+                            _c.cursor().execute("DELETE FROM processed_events WHERE event_id = ?", (event_id,))
+                            _c.commit()
+                        finally:
+                            _c.close()
+                except Exception as _e:
+                    log.error(f"[winter] processed_events cleanup failed: {type(_e).__name__}")
+                raise HTTPException(status_code=500, detail="winter purchase record failed (Stripe will retry)")
         if _meta_system.startswith("juku-payment"):
             log.info(f"[Stripe webhook] Skipping juku-payment event (system={_meta_system}) - handled by Vercel /payment/api/stripe-webhook")
             return JSONResponse({"received": True, "skipped_reason": "juku-payment system tag"}, status_code=200)
@@ -56524,9 +56564,8 @@ def _get_course_member(authorization: Optional[str]) -> Optional[dict]:
         return None
     if member["status"] != "active" or not _course_member_is_fresh(member):
         member = _course_member_refresh(member["email"]) or member
-    if member["status"] != "active" or not member["courses"]:
-        return None
-    return member
+    # ❄️ 月額講座が有効、または冬期講習の購入があり視聴期間内なら入れる (member["winter"] に講習の講座キーが付く)
+    return _course_member_with_access(member)
 
 
 def _course_today_jst() -> str:
@@ -56534,7 +56573,7 @@ def _course_today_jst() -> str:
 
 
 def _course_video_row(row) -> dict:
-    return {"id": row["id"], "course_key": row["course_key"], "course_name": COURSE_KEYS.get(row["course_key"], row["course_key"]),
+    return {"id": row["id"], "course_key": row["course_key"], "course_name": _course_key_name(row["course_key"]),
             "title": row["title"], "youtube_id": row["youtube_id"], "note": row["note"] or "",
             "publish_date": row["publish_date"] or "", "is_published": bool(row["is_published"]),
             "notified_at": row["notified_at"], "notified_count": row["notified_count"] or 0, "created_at": row["created_at"]}
@@ -56544,7 +56583,20 @@ COURSE_NOTIFY_INLINE_MAX = 15   # これを超える宛先はバックグラウ�
 
 
 def _course_notify_targets(video_id: int, course_key: str, resend_all: bool = False) -> list:
-    """お知らせの宛先 = その講座の有効受講者。resend_all=False なら、この動画をまだ受け取っていない人だけ。"""
+    """お知らせの宛先 = その講座の有効受講者。resend_all=False なら、この動画をまだ受け取っていない人だけ。
+    ❄️ 冬期講習の講座 (w26-…) は、その講座を買った人 (paid・視聴期間内) が宛先。"""
+    if _winter_is_video_key(course_key):
+        buyers = _winter_buyers()
+        done = set()
+        if not resend_all:
+            conn = db()
+            try:
+                c = conn.cursor()
+                c.execute("SELECT email FROM course_video_notices WHERE video_id = ?", (int(video_id),))
+                done = {r["email"] for r in c.fetchall()}
+            finally:
+                conn.close()
+        return [{"email": e, "name": b["name"]} for e, b in buyers.items() if course_key in b["keys"] and e not in done]
     conn = db()
     try:
         c = conn.cursor()
@@ -56562,7 +56614,7 @@ def _course_notify_targets(video_id: int, course_key: str, resend_all: bool = Fa
 def _course_notice_mail(member: dict, course_key: str, videos: list) -> tuple:
     """お知らせメールの (件名, 本文)。videos は 1 本 (手登録・「📧 通知」) か、再生リストの取り込みをまとめた複数本。
     ★1 本のときの文面は 2026-09-16 からの手登録と一字一句同じにする (テスト 4b が件名を固定している)。"""
-    course_name = COURSE_KEYS.get(course_key, course_key)
+    course_name = _course_key_name(course_key)
     greeting = f"{member['name']} 様" if member.get("name") else "受講者の皆さま"
     if len(videos) == 1:
         v = videos[0]
@@ -56680,7 +56732,7 @@ def _course_send_login_link(member: dict, intro: str = "") -> dict:
     token = _sign_session_token(member["id"], ttl_seconds=COURSE_MAGIC_TTL_SEC, token_type="coursemagic")
     link = f"{_course_portal_url()}?t={token}"
     body = "トリリオン英語塾です。\n\n" + ((intro + "\n\n") if intro else "") + (
-        f"下のリンクを開くと、月額講座の視聴ページにログインできます（7 日間有効・同じリンクを何度でも使えます）。\n\n{link}\n\n"
+        f"下のリンクを開くと、講座の視聴ページにログインできます（7 日間有効・同じリンクを何度でも使えます）。\n\n{link}\n\n"
         f"開いた端末では、同じブラウザでは 30 日間そのまま開けます。生徒さんの端末でも開く場合は、このメールを転送してください。\n\n"
         f"このメールに心当たりがない場合は、そのまま無視してください。\n\n"
         f"ご不明な点は 公式 LINE（{COURSE_LINE_URL}）またはメール（{COURSE_CONTACT_EMAIL}）までご連絡ください。\nトリリオン英語塾（Trillion English Academy）")
@@ -56826,10 +56878,18 @@ def course_login_request(payload: CourseLoginRequest, request: Request):
         try:
             _check_rate_limit_value("*", bucket="course_login_stripe", limit=30, window=60)
         except HTTPException:
+            # ❄️ 講習の購入者は Stripe に聞かなくても入れる (配信日の朝に依頼が集中しても黙って送らないことにしない)
+            _wm = _course_member_with_access(existing) if existing else None
+            if _wm:
+                _course_send_login_link(_wm)
+                return generic
             log.warning("[course] login lookup budget exceeded (no Stripe call)")
             return generic
     member = _course_member_refresh(email)
-    if not member or member["status"] != "active" or not member["courses"]:
+    if not member and _winter_keys_for_email(email):
+        member = _winter_ensure_member(email)   # ❄️ 講習の購入はあるのに行が無い (記録の途中で落ちた等) → ここで用意
+    member = _course_member_with_access(member)
+    if not member:
         log.info("[course] login requested for non-member (no mail)")
         return generic
     _course_send_login_link(member)
@@ -56846,11 +56906,12 @@ def course_login_verify(payload: CourseVerifyRequest, request: Request):
     member = _course_member_by_id(claims["student_id"])
     if member:
         member = _course_member_refresh(member["email"]) or member
-    if not member or member["status"] != "active" or not member["courses"]:
-        raise HTTPException(status_code=403, detail="有効な受講契約が見つかりません。解約済みの場合は再度お申し込みください。")
+    member = _course_member_with_access(member)
+    if not member:
+        raise HTTPException(status_code=403, detail="有効な受講契約が見つかりません。解約済み・視聴期間が終わった場合は、もう一度お申し込みください。")
     session = _sign_session_token(member["id"], ttl_seconds=COURSE_SESSION_TTL_SEC, token_type="course")
     return {"ok": True, "token": session, "expires_in": COURSE_SESSION_TTL_SEC,
-            "email": member["email"], "courses": [{"key": k, "name": COURSE_KEYS[k]} for k in member["courses"]]}
+            "email": member["email"], "courses": [{"key": k, "name": _course_key_name(k)} for k in _course_member_all_keys(member)]}
 
 
 @app.get("/api/course/me")
@@ -56867,9 +56928,10 @@ def course_me(authorization: Optional[str] = Header(None)):
         rows = c.fetchall()
     finally:
         conn.close()
+    allowed = set(_course_member_all_keys(member))
     videos = []
     for r in rows:
-        if r["course_key"] not in member["courses"]:
+        if r["course_key"] not in allowed:
             continue
         if r["publish_date"] and str(r["publish_date"])[:10] > today:
             continue
@@ -56877,9 +56939,13 @@ def course_me(authorization: Optional[str] = Header(None)):
         videos.append({"id": v["id"], "course_key": v["course_key"], "course_name": v["course_name"], "title": v["title"],
                        "youtube_id": v["youtube_id"], "note": v["note"], "publish_date": str(v["publish_date"])[:10]})
     return {"email": member["email"], "name": member["name"],
-            "courses": [{"key": k, "name": COURSE_KEYS[k]} for k in member["courses"]], "videos": videos,
+            "courses": [{"key": k, "name": _course_key_name(k)} for k in _course_member_all_keys(member)], "videos": videos,
             "contact": COURSE_CONTACT_EMAIL, "line_url": COURSE_LINE_URL,
-            "first_delivery": _course_first_delivery_date().isoformat()}
+            "first_delivery": _course_first_delivery_date().isoformat(),
+            # ❄️ 冬期講習: 購入した講座と最初の配信日 (配信前の講座は視聴ページに「○月○日配信」と出す)
+            "winter": [{"key": k, "name": _course_key_name(k), "delivery": WINTER_ITEMS[k[len(WINTER_VIDEO_PREFIX):]]["delivery"]}
+                       for k in (member.get("winter") or [])],
+            "winter_view_until": WINTER_VIEW_UNTIL if member.get("winter") else None}
 
 
 @app.post("/api/admin/course/videos")
@@ -56888,7 +56954,7 @@ def admin_course_video_create(payload: CourseVideoCreateRequest, request: Reques
     _check_rate_limit_ip(request, bucket="course_admin", limit=60, window=60)
     _verify_admin_required(authorization)
     key = (payload.course_key or "").strip()
-    if key not in COURSE_KEYS:
+    if key not in COURSE_KEYS and not _winter_is_video_key(key):
         raise HTTPException(status_code=400, detail="講座の指定が不正です")
     title = _sanitize_text(payload.title, 200)
     if not title:
@@ -56916,6 +56982,12 @@ def admin_course_video_create(payload: CourseVideoCreateRequest, request: Reques
     finally:
         conn.close()
     result = {"ok": True, "id": vid, "youtube_id": yid, "publish_date": pub, "notified": None}
+    if _winter_is_video_key(key) and payload.notify is False:
+        # ❄️ 「知らせる」を外して登録した講習の動画は、配信日の朝のまとめでも知らせない (印を台帳に残す)
+        try:
+            _winter_mark_noticed(_WINTER_NOAUTO, [vid])
+        except Exception as e:
+            log.warning(f"[winter] no-auto mark failed: {type(e).__name__}")
     if (payload.notify is None or payload.notify) and pub <= _course_today_jst():
         result["notified"] = _course_notify_video({"id": vid, "course_key": key, "title": title, "note": note})
     return result
@@ -56940,7 +57012,16 @@ def admin_course_video_list(authorization: Optional[str] = Header(None)):
                 pass
     finally:
         conn.close()
-    return {"videos": videos, "courses": [{"key": k, "name": v, "active_members": counts[k]} for k, v in COURSE_KEYS.items()]}
+    try:
+        _wb = _winter_buyers()
+    except Exception:
+        _wb = {}
+    # ❄️ 冬期講習の講座は別の欄 (CEO の講座の選択肢に「冬期講習2026」として足す。active_members = 視聴期間内の購入者)
+    winter_courses = [{"key": WINTER_VIDEO_PREFIX + k, "name": v["name"], "delivery": v["delivery"],
+                       "active_members": sum(1 for b in _wb.values() if WINTER_VIDEO_PREFIX + k in b["keys"])}
+                      for k, v in WINTER_ITEMS.items()]
+    return {"videos": videos, "courses": [{"key": k, "name": v, "active_members": counts[k]} for k, v in COURSE_KEYS.items()],
+            "winter_courses": winter_courses}
 
 
 @app.patch("/api/admin/course/videos/{video_id}")
@@ -57034,8 +57115,14 @@ def admin_course_members(authorization: Optional[str] = Header(None)):
         members = [_course_row_to_member(r) for r in c.fetchall()]
     finally:
         conn.close()
+    try:
+        _wb = _winter_buyers()
+    except Exception:
+        _wb = {}
     for m in members:
         m["course_names"] = [COURSE_KEYS[k] for k in m["courses"]]
+        _wk = (_wb.get(m["email"]) or {}).get("keys") or set()
+        m["winter_names"] = [_course_key_name(WINTER_VIDEO_PREFIX + k) for k in WINTER_ITEMS if WINTER_VIDEO_PREFIX + k in _wk]
         m["ending_list"] = [{"key": k, "name": COURSE_KEYS[k], "end": m["ending"][k]} for k in m["courses"] if k in m["ending"]]
     return {"members": members, "notify_toggle": _table_has_column("course_members", "notify_off")}
 
@@ -57171,6 +57258,748 @@ def _course_webhook_touch(session_or_sub: dict, source: str) -> None:
         _course_member_refresh(email, force=True)
     except Exception as e:
         log.warning(f"[course] webhook touch failed ({source}): {type(e).__name__}: {str(e)[:200]}")
+
+
+# ==========================================================================
+# ❄️ 冬期講習2026 (単発の買い切り・2026-11-10 塾長が「案B 講習用の決済の入口」を選択)
+# ==========================================================================
+#   - 申込ページ (Netlify の winter.html / winter-chugaku.html) は、Netlify Forms で申込内容を送ったあと
+#     POST /api/winter/checkout へ「講座の sku・メール・申込ID」だけを**ふつうのフォーム送信**で送る (fetch ではない
+#     = CORS 不要)。サーバが金額と締切を確かめ直し、Stripe Checkout (mode=payment) を作って 303 で飛ばす。
+#     ★金額・締切の正はここ (WINTER_ITEMS / WINTER_BUNDLES)。ページの CATALOG は表示用で同じ値
+#       (生成元は塾長のデスクトップの build_winter_forms.py。値を変えるときは両方)。
+#     何を組み合わせても 1 回の決済。締切を過ぎた講座はサーバが断る (ページを開きっぱなしでも買えない)。
+#   - metadata.system = juku-payment-winter (session と payment_intent の両方)。本体 webhook は students に触れず
+#     _winter_webhook_record だけを呼んで skip。Vercel の webhook は reg_id / month が無いので何もしない。
+#     月謝アプリ (payment/app.js) は Stripe 取込でこのタグの入金を除外する (月謝の入金と取り違えない)。
+#   - 視聴は月額講座の視聴ページ (course-videos.html) を共用 (塾長決定)。身元は course_members (メール単位)。
+#     入室できるのは「月額講座が有効」または「講習の購入 (paid) があり、今日 (JST) が WINTER_VIEW_UNTIL 以前」。
+#     ★講習だけの人の course_members 行は status='canceled'・courses=[] のまま (月額講座の判定・同期を変えない)。
+#     講習の動画は course_videos に course_key = "w26-<講座の sku>" で登録する (CEO の 🎥 欄で選べる)。
+#   - お知らせ: 配信日の朝 (JST 8:00) に、その日までに公開された講習の動画のうち、まだ知らせていないものを
+#     購入者 1 人 1 通にまとめて送る (_winter_notify_due・台帳は月額講座と同じ course_video_notices)。
+#     購入した時点で公開済みの動画は購入直後の案内メールで知らせ、台帳にも付ける (同じ動画で 2 通目を送らない)。
+#   - 返金は Stripe で返金したうえで、CEO の API (/api/admin/winter/purchases/{id}/status) で refunded にする
+#     (refunded の講座は視聴ページから消える)。
+WINTER_SYSTEM_TAG = "juku-payment-winter"
+WINTER_VIDEO_PREFIX = "w26-"
+WINTER_LABEL = "冬期講習2026"
+WINTER_VIEW_UNTIL = os.getenv("WINTER_VIEW_UNTIL", "2027-03-31")
+WINTER_SITE_URL = os.getenv("WINTER_SITE_URL", "https://graceful-eclair-56bdac.netlify.app").rstrip("/")
+WINTER_NOTIFY_HOUR_JST = 8
+_WINTER_DL_KYOTSU = "2027-01-12"   # 共通テストの4講座とセット
+_WINTER_DL_LATE = "2027-01-31"     # 私大文法・学年別パック
+# sku → {name, price, deadline (この日の 23:59 JST まで), delivery (最初の配信日)}。並び順 = 決済画面の並び順。
+WINTER_ITEMS = {
+    "h3-r": {"name": "共通テスト英語リーディング 本番形式演習", "price": 7500, "deadline": _WINTER_DL_KYOTSU, "delivery": "2026-12-12"},
+    "h3-l": {"name": "共通テスト英語リスニング 直前演習", "price": 7500, "deadline": _WINTER_DL_KYOTSU, "delivery": "2026-12-12"},
+    "h3-k": {"name": "共通テスト国語 古文・漢文 直前演習", "price": 7500, "deadline": _WINTER_DL_KYOTSU, "delivery": "2026-12-12"},
+    "h3-m": {"name": "共通テスト数学ⅠA 直前演習", "price": 7500, "deadline": _WINTER_DL_KYOTSU, "delivery": "2026-12-12"},
+    "h3-b": {"name": "私大英語 文法・語法の頻出総点検", "price": 7500, "deadline": _WINTER_DL_LATE, "delivery": "2026-12-12"},
+    "pack-h1": {"name": "高1パック（英語・数学 2講座10本）", "price": 13000, "deadline": _WINTER_DL_LATE, "delivery": "2026-12-19"},
+    "pack-h2": {"name": "高2パック（英語・数学 2講座10本）", "price": 14500, "deadline": _WINTER_DL_LATE, "delivery": "2026-12-19"},
+    "pack-c3": {"name": "中3パック（英数国理社 5教科25本）", "price": 15000, "deadline": _WINTER_DL_LATE, "delivery": "2026-12-19"},
+}
+# 大学別パック (締切 = その大学のいちばん早い試験日の 1 週間前・塾長決定 2026-11-10)
+for _sku, _name, _dl, _dv in [
+    ("u-kansai", "関西大学（全学部）", "2027-01-25", "2026-12-19"),
+    ("u-kwansei", "関西学院大学（全学部日程＋学部個別日程の記述）", "2027-01-25", "2026-12-19"),
+    ("u-doshisha", "同志社大学（全日程同じ形式）", "2027-01-28", "2026-12-19"),
+    ("u-ritsumei", "立命館大学（全方式共通・IR方式を除く）", "2027-01-25", "2026-12-19"),
+    ("u-nihon", "日本大学 N方式（全学統一）", "2027-01-25", "2027-01-09"),
+    ("u-toyo", "東洋大学（全学統一問題）", "2027-02-01", "2027-01-09"),
+    ("u-komazawa", "駒澤大学（全学部統一＋T方式・GMSを除く）", "2027-01-28", "2027-01-09"),
+    ("u-senshu", "専修大学（全学部共通）", "2027-01-25", "2027-01-09"),
+    ("u-meiji-zen", "明治大学 全学部統一入試", "2027-01-29", "2027-01-09"),
+    ("u-aogaku", "青山学院大学 全学部日程", "2027-01-31", "2027-01-09"),
+    ("u-chuo", "中央大学 5学部共通（法・経済・商・文・総合政策）", "2027-02-02", "2027-01-09"),
+    ("u-hosei", "法政大学 T日程＋A方式（文系）", "2027-01-29", "2027-01-09"),
+    ("u-meiji-sho", "明治大学 商学部（学部別）", "2027-02-09", "2027-01-18"),
+    ("u-waseda-bun", "早稲田大学 文学部・文化構想学部（同じ形式）", "2027-02-05", "2027-01-18"),
+    ("u-waseda-edu", "早稲田大学 教育学部", "2027-02-12", "2027-01-18"),
+    ("u-waseda-sho", "早稲田大学 商学部", "2027-02-14", "2027-01-18"),
+    ("u-keio-sho", "慶應義塾大学 商学部", "2027-02-07", "2027-01-18"),
+    ("u-keio-kei", "慶應義塾大学 経済学部", "2027-02-06", "2027-01-18"),
+]:
+    WINTER_ITEMS[_sku] = {"name": "大学別パック " + _name, "price": 14500, "deadline": _dl, "delivery": _dv}
+# 高3のセット割 (中身はすべて h3-*)。締切は中の講座でいちばん早い日 (どれも共通テストを含むので 1/12)
+WINTER_BUNDLES = {
+    "h3-set-ei": {"name": "共テ英語セット（リーディング＋リスニング）", "items": ["h3-r", "h3-l"], "price": 13800, "deadline": _WINTER_DL_KYOTSU},
+    "h3-set-kt4": {"name": "共テ4講座セット（英語R・英語L・古文漢文・数学ⅠA）", "items": ["h3-r", "h3-l", "h3-k", "h3-m"], "price": 24800, "deadline": _WINTER_DL_KYOTSU},
+    "h3-set-all5": {"name": "全5講座セット", "items": ["h3-r", "h3-l", "h3-k", "h3-m", "h3-b"], "price": 29800, "deadline": _WINTER_DL_KYOTSU},
+}
+_WINTER_PAGES = ("winter", "winter-chugaku")
+_WINTER_APP_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
+_WINTER_EMAIL_RE = re.compile(r"^[^@\s<>\"',;]+@[^@\s<>\"',;]+\.[^@\s<>\"',;]+$")
+
+
+def _winter_today() -> str:
+    return datetime.now(JST).strftime("%Y-%m-%d")
+
+
+def _winter_is_video_key(key: str) -> bool:
+    return isinstance(key, str) and key.startswith(WINTER_VIDEO_PREFIX) and key[len(WINTER_VIDEO_PREFIX):] in WINTER_ITEMS
+
+
+def _course_key_name(key: str) -> str:
+    """視聴ページ・お知らせメールに出す講座名 (月額講座 or 冬期講習の講座)。"""
+    if key in COURSE_KEYS:
+        return COURSE_KEYS[key]
+    if _winter_is_video_key(key):
+        return WINTER_ITEMS[key[len(WINTER_VIDEO_PREFIX):]]["name"]
+    return key
+
+
+def _winter_fmt_date(iso: str) -> str:
+    try:
+        return _course_fmt_date_jp(date.fromisoformat(iso))
+    except Exception:
+        return iso
+
+
+def _winter_plan(skus: list, today: Optional[str] = None) -> dict:
+    """選んだ講座 → {items, parts, total, closed, unknown}。
+    parts = 決済の明細 (セット or 講座の sku)。高3の講座は「いちばん安いセット 1 つ＋残りはバラ」(申込ページの h3Plan と同じ規則。
+    セットは入れ子 (英語 ⊂ 4講座 ⊂ 全5) なので 2 つ組み合わせる必要はない)。締切を過ぎたセットは使わない。"""
+    today = today or _winter_today()
+    seen, items, unknown = set(), [], []
+    for k in skus or []:
+        k = (k or "").strip()
+        if not k or k in seen:
+            continue
+        seen.add(k)
+        (items if k in WINTER_ITEMS else unknown).append(k)
+    order = list(WINTER_ITEMS)
+    items.sort(key=order.index)
+    closed = [k for k in items if today > WINTER_ITEMS[k]["deadline"]]
+    h3 = [k for k in items if any(k in b["items"] for b in WINTER_BUNDLES.values())]
+    others = [k for k in items if k not in h3]
+    best_cost, best_parts = sum(WINTER_ITEMS[k]["price"] for k in h3), list(h3)
+    for bk, b in WINTER_BUNDLES.items():
+        if today > b["deadline"] or not set(b["items"]) <= set(h3):
+            continue
+        rest = [k for k in h3 if k not in b["items"]]
+        cost = b["price"] + sum(WINTER_ITEMS[k]["price"] for k in rest)
+        if cost < best_cost:
+            best_cost, best_parts = cost, [bk] + rest
+    parts = best_parts + others
+    total = best_cost + sum(WINTER_ITEMS[k]["price"] for k in others)
+    return {"items": items, "parts": parts, "total": total, "closed": closed, "unknown": unknown}
+
+
+def _winter_part_name(part: str) -> str:
+    return (WINTER_BUNDLES.get(part) or WINTER_ITEMS.get(part) or {}).get("name") or part
+
+
+def _winter_part_price(part: str) -> int:
+    return int((WINTER_BUNDLES.get(part) or WINTER_ITEMS.get(part) or {}).get("price") or 0)
+
+
+def _winter_error_page(message: str, page: str = "winter", status: int = 400):
+    from fastapi.responses import HTMLResponse
+    def _esc(s):
+        return (str(s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;"))
+    back = f"{WINTER_SITE_URL}/{page if page in _WINTER_PAGES else 'winter'}.html"
+    html = ("<!DOCTYPE html><html lang=\"ja\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
+            "<meta name=\"robots\" content=\"noindex\"><title>お手続きを続けられませんでした | 冬期講習2026</title></head>"
+            "<body style=\"font-family:system-ui,sans-serif;background:#F8F9FB;color:#1A1A1A;line-height:1.8;margin:0;\">"
+            "<div style=\"background:#0B2545;color:#fff;text-align:center;padding:1.2rem;\">トリリオン英語塾　冬期講習2026</div>"
+            "<div style=\"max-width:600px;margin:1.5rem auto;padding:1.2rem;background:#fff;border:1px solid #E5E7EB;border-radius:6px;\">"
+            "<h1 style=\"font-size:1.1rem;color:#991B1B;\">お支払いの画面へ進めませんでした</h1>"
+            f"<p>{_esc(message)}</p>"
+            f"<p style=\"margin-top:1rem;\"><a href=\"{_esc(back)}\">申込ページへ戻る</a></p>"
+            f"<p style=\"font-size:0.85rem;color:#6B7280;\">解決しない場合は、公式 LINE（{_esc(COURSE_LINE_URL)}）またはメール（{_esc(COURSE_CONTACT_EMAIL)}）までご連絡ください。</p>"
+            "</div></body></html>")
+    return HTMLResponse(content=html, status_code=status)
+
+
+def _winter_dup_page(names: list, fields: dict, page: str):
+    """同じ講座をすでに支払い済みのときの確認画面 (このまま進む = 同じ内容を confirm_dup=1 で送り直す)。"""
+    from fastapi.responses import HTMLResponse
+    def _esc(s):
+        return (str(s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;"))
+    back = f"{WINTER_SITE_URL}/{page if page in _WINTER_PAGES else 'winter'}.html"
+    hidden = "".join(f'<input type="hidden" name="{_esc(k)}" value="{_esc(v)}">' for k, v in fields.items())
+    html = ("<!DOCTYPE html><html lang=\"ja\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
+            "<meta name=\"robots\" content=\"noindex\"><title>お支払い済みの講座があります | 冬期講習2026</title></head>"
+            "<body style=\"font-family:system-ui,sans-serif;background:#F8F9FB;color:#1A1A1A;line-height:1.8;margin:0;\">"
+            "<div style=\"background:#0B2545;color:#fff;text-align:center;padding:1.2rem;\">トリリオン英語塾　冬期講習2026</div>"
+            "<div style=\"max-width:600px;margin:1.5rem auto;padding:1.2rem;background:#fff;border:1px solid #E5E7EB;border-radius:6px;\">"
+            "<h1 style=\"font-size:1.1rem;color:#92400E;\">このメールアドレスで、すでにお支払い済みの講座があります</h1><ul>"
+            + "".join(f"<li>{_esc(n)}</li>" for n in names) +
+            "</ul><p>同じ講座を2回お支払いいただく必要はありません。視聴ページ（ご案内メールのリンク）からご覧ください。"
+            "別のお子さまの分など、もう一度お支払いになる場合だけ「このまま支払いへ進む」を押してください。</p>"
+            f"<form method=\"POST\" action=\"\" style=\"margin-top:1rem;\">{hidden}<input type=\"hidden\" name=\"confirm_dup\" value=\"1\">"
+            "<button type=\"submit\" style=\"padding:0.7rem 1.2rem;border:0;border-radius:4px;background:#0B2545;color:#fff;font:inherit;cursor:pointer;\">このまま支払いへ進む</button></form>"
+            f"<p style=\"margin-top:1rem;\"><a href=\"{_esc(back)}\">申込ページへ戻る</a></p>"
+            f"<p style=\"font-size:0.85rem;color:#6B7280;\">ご不明な点は 公式 LINE（{_esc(COURSE_LINE_URL)}）またはメール（{_esc(COURSE_CONTACT_EMAIL)}）までご連絡ください。</p>"
+            "</div></body></html>")
+    return HTMLResponse(content=html, status_code=200)
+
+
+def _winter_expires_at(parts: list, now_ts: Optional[int] = None) -> int:
+    """Checkout の有効期限 (unix 秒)。Stripe の許す範囲 (30 分〜24 時間) で、明細の締切 (その日の 23:59:59 JST) を越えない。
+    締切まで 31 分を切っていたら 31 分 (Stripe の下限)。"""
+    import time as _t
+    now_ts = int(now_ts if now_ts is not None else _t.time())
+    hi = now_ts + 23 * 3600   # 24 時間ちょうどは Stripe の時計とのずれで弾かれることがあるので余裕を見る
+    lo = now_ts + 31 * 60
+    for p in parts:
+        dl = (WINTER_BUNDLES.get(p) or WINTER_ITEMS.get(p) or {}).get("deadline")
+        if not dl:
+            continue
+        end = int(datetime.fromisoformat(dl + "T23:59:59").replace(tzinfo=JST).timestamp())
+        hi = min(hi, end)
+    return max(lo, hi)
+
+
+@app.post("/api/winter/checkout")
+def winter_checkout(request: Request, body: bytes = Depends(_raw_body_dep)):
+    """❄️ 申込ページの「カードでお支払いへ進む」(フォーム送信) → Stripe Checkout へ 303。だめなときは日本語の HTML。"""
+    try:
+        form = urllib.parse.parse_qs((body or b"")[:8192].decode("utf-8", "replace"), keep_blank_values=True)
+    except Exception:
+        form = {}
+    def _f(name):
+        v = form.get(name) or [""]
+        return (v[0] or "").strip()
+    page = _f("page") if _f("page") in _WINTER_PAGES else "winter"
+    try:
+        # ★Netlify のページから Vercel の rewrite 経由で届くので IP は共有される → 上限は緩め。本当の歯止めはメール単位
+        _check_rate_limit_ip(request, bucket="winter_checkout", limit=60, window=60)
+    except HTTPException:
+        return _winter_error_page("混み合っています。1 分ほど待ってから、申込ページの「カードでお支払いへ進む」をもう一度押してください。", page, 429)
+    if os.getenv("WINTER_CHECKOUT_ENABLED", "1").strip().lower() in ("0", "false", "off", "no"):
+        return _winter_error_page("ただいまお支払いの受付を止めています。公式 LINE またはメールでお問い合わせください。", page, 503)
+    if not STRIPE_SECRET_KEY:
+        return _winter_error_page("お支払いの準備ができていません（設定の不足）。お手数ですが公式 LINE またはメールでご連絡ください。", page, 503)
+    email = _course_norm_email(_f("email"))
+    if not email or not _WINTER_EMAIL_RE.match(email):
+        return _winter_error_page("メールアドレスの形が正しくありません。申込ページに戻って入力し直してください。", page)
+    try:
+        _check_rate_limit_value(email, bucket="winter_checkout", limit=10, window=600)
+    except HTTPException:
+        return _winter_error_page("短い時間に何度もお手続きがありました。10 分ほど待ってからもう一度お試しください。", page, 429)
+    raw_items = []
+    for v in form.get("items") or []:
+        raw_items.extend((v or "").split(","))
+    plan = _winter_plan(raw_items[:60])
+    if plan["unknown"]:
+        return _winter_error_page("講座の指定が正しくありません。申込ページを開き直して、もう一度お選びください。", page)
+    if not plan["items"]:
+        return _winter_error_page("講座が選ばれていません。申込ページに戻って講座を選んでください。", page)
+    if plan["closed"]:
+        names = "、".join(WINTER_ITEMS[k]["name"] for k in plan["closed"])
+        return _winter_error_page(f"申込の締切を過ぎた講座が含まれています（{names}）。申込ページを開き直して、受付中の講座だけをお選びください。", page)
+    app_id = _f("app_id")
+    if not _WINTER_APP_ID_RE.match(app_id):
+        app_id = ""
+    # 二重払いの歯止め: 同じメールで支払い済みの講座が含まれていたら、一度確かめてもらう (「このまま進む」で confirm_dup=1)
+    if _f("confirm_dup") != "1":
+        owned = {k[len(WINTER_VIDEO_PREFIX):] for k in _winter_keys_for_email(email)}
+        dup = [k for k in plan["items"] if k in owned]
+        if dup:
+            return _winter_dup_page([WINTER_ITEMS[k]["name"] for k in dup],
+                                    {"items": ",".join(plan["items"]), "email": email, "app_id": app_id, "page": page}, page)
+    meta = {"system": WINTER_SYSTEM_TAG, "items": ",".join(plan["items"]), "plan": ",".join(plan["parts"]),
+            "total": str(plan["total"]), "app_id": app_id, "page": page}
+    line_items = [{"price_data": {"currency": "jpy", "unit_amount": _winter_part_price(p),
+                                  "product_data": {"name": f"{WINTER_LABEL} {_winter_part_name(p)}"[:250]}},
+                   "quantity": 1} for p in plan["parts"]]
+    params = {
+        "mode": "payment",
+        "line_items": line_items,
+        "customer_email": email,
+        "locale": "ja",
+        "payment_method_types": ["card"],
+        "success_url": f"{WINTER_SITE_URL}/winter-thanks.html?session_id={{CHECKOUT_SESSION_ID}}",
+        "cancel_url": f"{WINTER_SITE_URL}/{page}.html?canceled=1",
+        "expires_at": _winter_expires_at(plan["parts"]),
+        "metadata": meta,
+        "payment_intent_data": {"metadata": meta, "description": WINTER_LABEL},
+    }
+    if app_id:
+        params["client_reference_id"] = f"winter-{app_id}"
+    try:
+        sess = get_stripe().checkout.Session.create(**params)
+        url = sess.get("url") if isinstance(sess, dict) else getattr(sess, "url", None)
+    except Exception as e:
+        log.error(f"[winter] checkout create failed: {type(e).__name__}: {str(e)[:200]}")
+        return _winter_error_page("お支払いの画面を用意できませんでした。少し時間をおいて、もう一度お試しください。", page, 502)
+    if not url:
+        return _winter_error_page("お支払いの画面を用意できませんでした。少し時間をおいて、もう一度お試しください。", page, 502)
+    log.info(f"[winter] checkout created parts={plan['parts']} total={plan['total']}")
+    return RedirectResponse(url=url, status_code=303)
+
+
+def _winter_ensure_member(email: str, name: str = "") -> Optional[dict]:
+    """講習の購入者の course_members 行を用意する。★既存の行 (月額講座の受講者) は一切変えない
+    (_course_upsert_member に courses=[] を渡すと月額講座が解約扱いになるため使わない)。"""
+    email = _course_norm_email(email)
+    if not email:
+        return None
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("INSERT INTO course_members (email, name, stripe_customer_id, courses, status, created_at, updated_at) "
+                  "VALUES (?,?,'','[]','canceled',?,?) ON CONFLICT (email) DO NOTHING",
+                  (email, (name or "")[:100], _utc_naive_iso(), _utc_naive_iso()))
+        conn.commit()
+    finally:
+        conn.close()
+    _COURSE_NEG_CACHE.pop(email, None)
+    return _course_member_by_email(email)
+
+
+def _winter_keys_for_email(email: str, today: Optional[str] = None) -> list:
+    """そのメールが視聴できる講習の動画キー ("w26-<sku>")。視聴期間 (WINTER_VIEW_UNTIL) を過ぎたら []。"""
+    email = _course_norm_email(email)
+    if not email or (today or _winter_today()) > WINTER_VIEW_UNTIL:
+        return []
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT item_keys FROM winter_purchases WHERE email = ? AND status = 'paid'", (email,))
+        rows = c.fetchall()
+    except Exception as e:
+        log.warning(f"[winter] keys lookup failed: {type(e).__name__}")
+        return []
+    finally:
+        conn.close()
+    keys = set()
+    for r in rows:
+        try:
+            keys.update(k for k in json.loads(r["item_keys"] or "[]") if k in WINTER_ITEMS)
+        except Exception:
+            pass
+    order = list(WINTER_ITEMS)
+    return [WINTER_VIDEO_PREFIX + k for k in sorted(keys, key=order.index)]
+
+
+def _course_member_with_access(member: Optional[dict]) -> Optional[dict]:
+    """member に講習の視聴キー (winter) を付けて、視聴ページに入れるなら返す (入れなければ None)。"""
+    if not member:
+        return None
+    member["winter"] = _winter_keys_for_email(member["email"])
+    if (member["status"] == "active" and member["courses"]) or member["winter"]:
+        return member
+    return None
+
+
+def _course_member_all_keys(member: dict) -> list:
+    return list(member.get("courses") or []) + list(member.get("winter") or [])
+
+
+def _winter_buyers() -> dict:
+    """{email: {name, keys:set("w26-…")}} — 視聴期間中の paid の購入者 (お知らせの宛先)。"""
+    if _winter_today() > WINTER_VIEW_UNTIL:
+        return {}
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT email, name, item_keys FROM winter_purchases WHERE status = 'paid' ORDER BY id")
+        rows = c.fetchall()
+    finally:
+        conn.close()
+    out = {}
+    for r in rows:
+        ent = out.setdefault(r["email"], {"name": "", "keys": set()})
+        ent["name"] = ent["name"] or (r["name"] or "")
+        try:
+            ent["keys"].update(WINTER_VIDEO_PREFIX + k for k in json.loads(r["item_keys"] or "[]") if k in WINTER_ITEMS)
+        except Exception:
+            pass
+    return out
+
+
+def _winter_published_videos(keys, today: Optional[str] = None) -> list:
+    """keys の講座で、今日までに公開された講習の動画 (course_videos の行 dict)。"""
+    keys = set(keys or [])
+    if not keys:
+        return []
+    today = today or _winter_today()
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM course_videos WHERE is_published = 1 AND course_key LIKE ? ORDER BY publish_date, id",
+                  (WINTER_VIDEO_PREFIX + "%",))
+        rows = c.fetchall()
+    finally:
+        conn.close()
+    return [_course_video_row(r) for r in rows
+            if r["course_key"] in keys and not (r["publish_date"] and str(r["publish_date"])[:10] > today)]
+
+
+def _winter_mark_noticed(email: str, video_ids: list) -> None:
+    if not video_ids:
+        return
+    conn = db()
+    try:
+        c = conn.cursor()
+        for vid in video_ids:
+            c.execute("INSERT INTO course_video_notices (video_id, email, sent_at) VALUES (?,?,?) "
+                      "ON CONFLICT (video_id, email) DO UPDATE SET sent_at = excluded.sent_at",
+                      (int(vid), email, _utc_naive_iso()))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _winter_items_text(items: list) -> str:
+    return "".join(f"・{WINTER_ITEMS[k]['name']}（配信 {_winter_fmt_date(WINTER_ITEMS[k]['delivery'])}〜）\n" for k in items if k in WINTER_ITEMS)
+
+
+def _winter_webhook_record(session: dict) -> bool:
+    """本体 webhook から呼ぶ: 講習の決済完了を winter_purchases に記録し、視聴ページのログインリンクを送る。
+    同じ Checkout が 2 回届いても (Stripe の再送・別イベント・取りこぼしの補い) session_id の一意制約で 1 行・1 通。
+    戻り値: False = 記録そのものに失敗した (呼び出し側が Stripe に再送させる)。中身が講習として不正・記録済み・
+    メールの失敗は True (再送しても直らない / 記録はできている)。"""
+    try:
+        meta = session.get("metadata") or {}
+        sid = (session.get("id") or "").strip()
+        cd = session.get("customer_details") or {}
+        email = _course_norm_email(cd.get("email") or session.get("customer_email") or "")
+        items = [k for k in (meta.get("items") or "").split(",") if k in WINTER_ITEMS]
+        plan = [p for p in (meta.get("plan") or "").split(",") if p in WINTER_ITEMS or p in WINTER_BUNDLES]
+        if not sid or not email or not items:
+            log.warning(f"[winter] webhook missing fields (sid={bool(sid)} email={bool(email)} items={len(items)})")
+            return True
+        if session.get("livemode") is False and os.getenv("WINTER_RECORD_TEST", "0").strip().lower() not in ("1", "true", "on", "yes"):
+            log.info("[winter] test-mode checkout ignored (WINTER_RECORD_TEST が無い)")
+            return True   # 月額講座と同じく、テストモードの決済で本物の受講者を作らない
+        name = (cd.get("name") or "").strip()[:100]
+        try:
+            amount = int(session.get("amount_total") or 0)
+        except Exception:
+            amount = 0
+        app_id = (meta.get("app_id") or "")[:40]
+        try:
+            conn = db()
+            try:
+                c = conn.cursor()
+                c.execute("INSERT INTO winter_purchases (session_id, email, name, plan, item_keys, amount, status, app_id, livemode, paid_at, created_at) "
+                          "VALUES (?,?,?,?,?,?,'paid',?,?,?,?) ON CONFLICT (session_id) DO NOTHING RETURNING id",
+                          (sid, email, name, json.dumps(plan), json.dumps(items), amount, app_id,
+                           0 if session.get("livemode") is False else 1, _utc_naive_iso(), _utc_naive_iso()))
+                row = c.fetchone()
+                conn.commit()
+            finally:
+                conn.close()
+        except Exception as e:
+            log.error(f"[winter] purchase record FAILED: {type(e).__name__}: {str(e)[:200]}")
+            try:
+                _record_ai_critical_event("winter_purchase_record_failed", {"session_id": sid, "error": f"{type(e).__name__}"[:100]})
+            except Exception:
+                pass
+            return False
+        if not row:
+            log.info("[winter] purchase already recorded (duplicate webhook)")
+            return True
+        member = _winter_ensure_member(email, name)
+        log.info(f"[winter] purchase recorded id={row['id']} items={items} amount={amount}")
+        if not member or os.getenv("WINTER_WELCOME_ENABLED", "1").strip().lower() in ("0", "false", "off", "no"):
+            return True
+        today = _winter_today()
+        ready = _winter_published_videos([WINTER_VIDEO_PREFIX + k for k in items], today)
+        lines = [f"{WINTER_LABEL}のお申し込みとお支払い（合計 {amount:,}円・税込）を確認しました。ありがとうございます。", "",
+                 "■ お申し込みの講座", _winter_items_text(items).rstrip("\n"), ""]
+        if ready:
+            lines.append(f"すでに配信している動画（{len(ready)}本）は、下のリンクから視聴ページを開くとすぐにご覧いただけます。"
+                         "まだの講座は、配信日の朝にメールでお知らせします。")
+        else:
+            lines.append("動画は配信日から視聴ページに並びます。配信日の朝にメールでお知らせします。")
+        lines.append(f"視聴は {_winter_fmt_date(WINTER_VIEW_UNTIL)} までです。")
+        res = _course_send_login_link(member, intro="\n".join(lines))
+        if res.get("sent") and ready:
+            _winter_mark_noticed(email, [v["id"] for v in ready])
+        log.info(f"[winter] welcome mail sent={res.get('sent')}")
+        return True
+    except Exception as e:
+        # 記録の後 (会員行・メール) の失敗。記録はできているので再送させない (ログインリンクは視聴ページから取り直せる)
+        log.warning(f"[winter] after-record step failed: {type(e).__name__}: {str(e)[:200]}")
+        return True
+
+
+def _winter_sync_from_stripe(days: int = 3, dry_run: bool = True) -> dict:
+    """Stripe の Checkout Session (直近 days 日・支払い済み・metadata.system=juku-payment-winter) のうち、
+    winter_purchases に無いものを補って記録する (webhook の取りこぼし対策・毎朝の自動でも走る)。dry_run は数えるだけ。"""
+    import time as _t
+    if not STRIPE_SECRET_KEY:
+        return {"skipped": "no stripe key"}
+    since = int(_t.time()) - max(1, min(int(days), 60)) * 86400
+    found, missing = 0, []
+    for s_ in get_stripe().checkout.Session.list(created={"gte": since}, limit=100).auto_paging_iter():
+        s_ = s_.to_dict() if hasattr(s_, "to_dict") else dict(s_)
+        if ((s_.get("metadata") or {}).get("system") or "") != WINTER_SYSTEM_TAG:
+            continue
+        if s_.get("payment_status") not in ("paid", "no_payment_required"):
+            continue
+        found += 1
+        conn = db()
+        try:
+            c = conn.cursor()
+            c.execute("SELECT id FROM winter_purchases WHERE session_id = ?", (s_.get("id") or "",))
+            exists = c.fetchone() is not None
+        finally:
+            conn.close()
+        if not exists:
+            missing.append(s_)
+    recorded = 0
+    if not dry_run:
+        for s_ in missing:
+            if _winter_webhook_record(s_):
+                recorded += 1
+    if missing:
+        log.warning(f"[winter] stripe sync: {len(missing)} paid checkout(s) were not recorded (dry_run={dry_run})")
+    return {"paid_sessions": found, "missing": len(missing), "recorded": recorded, "dry_run": dry_run}
+
+
+class WinterSyncIn(BaseModel):
+    days: Optional[int] = 7
+    dry_run: Optional[bool] = True
+
+
+@app.post("/api/admin/winter/sync")
+def admin_winter_sync(request: Request, payload: Optional[WinterSyncIn] = None,
+                      authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """塾長/Claude: Stripe の支払い済みの講習で、記録が漏れているものを補う (既定は dry_run=true で数だけ)。"""
+    _check_rate_limit_ip(request, bucket="winter_admin", limit=20, window=60)
+    if not _admin_or_cron_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    p = payload or WinterSyncIn()
+    try:
+        return {"ok": True, **_winter_sync_from_stripe(days=p.days or 7, dry_run=bool(p.dry_run is None or p.dry_run))}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Stripe の取得に失敗しました: {type(e).__name__}")
+
+
+_WINTER_NOTIFY_LOCK = threading.Lock()
+_WINTER_NOAUTO = "*no-auto-notice*"   # course_video_notices の印: この動画は朝のまとめで自動で知らせない (CEO で「知らせる」を外して登録)
+
+
+def _winter_notify_due(dry_run: bool = False) -> dict:
+    """今日までに公開された講習の動画のうち、購入者にまだ知らせていないものを 1 人 1 通にまとめて送る。
+    dry_run=True なら送らずに宛先の数と本数だけ返す。二重に走らない (錠)・同じ動画を同じ人に 2 回知らせない (台帳)。"""
+    if not _WINTER_NOTIFY_LOCK.acquire(blocking=False):
+        return {"in_progress": True}
+    try:
+        buyers = _winter_buyers()
+        all_keys = set().union(*[b["keys"] for b in buyers.values()]) if buyers else set()
+        videos = _winter_published_videos(all_keys)
+        if not videos:
+            return {"recipients": 0, "videos": 0, "sent": 0, "failed": 0, "dry_run": dry_run}
+        conn = db()
+        try:
+            c = conn.cursor()
+            c.execute("SELECT video_id, email FROM course_video_notices WHERE video_id IN (" + ",".join("?" * len(videos)) + ")",
+                      tuple(int(v["id"]) for v in videos))
+            done = {(int(r["video_id"]), r["email"]) for r in c.fetchall()}
+        finally:
+            conn.close()
+        noauto = {vid for vid, e in done if e == _WINTER_NOAUTO}
+        videos = [v for v in videos if int(v["id"]) not in noauto]
+        jobs = []
+        for email, b in buyers.items():
+            vids = [v for v in videos if v["course_key"] in b["keys"] and (int(v["id"]), email) not in done]
+            if vids:
+                jobs.append(({"email": email, "name": b["name"]}, vids))
+        result = {"recipients": len(jobs), "videos": len({v["id"] for _, vs in jobs for v in vs}), "sent": 0, "failed": 0, "dry_run": dry_run}
+        if dry_run:
+            return result
+        per_video = {}
+        for m, vids in jobs:
+            try:
+                _mm = _course_member_by_email(m["email"]) or _winter_ensure_member(m["email"], m.get("name") or "")
+                if _mm:
+                    m["id"] = _mm["id"]   # 本文にログインリンクを入れる (メールを入れてリンクを取り直す手間と Stripe 照会を省く)
+            except Exception:
+                pass
+            subject, body = _winter_notice_mail(m, vids)
+            try:
+                res = _course_send_email(m["email"], subject, body)
+            except Exception as e:
+                res = {"sent": False, "error": str(e)[:100]}
+            if res.get("sent"):
+                result["sent"] += 1
+                try:
+                    _winter_mark_noticed(m["email"], [v["id"] for v in vids])
+                except Exception as e:
+                    log.warning(f"[winter] notice record failed: {e}")
+                for v in vids:
+                    per_video[int(v["id"])] = per_video.get(int(v["id"]), 0) + 1
+            else:
+                result["failed"] += 1
+            try:
+                _email_rate_limit()
+            except Exception:
+                pass
+        if per_video:
+            conn = db()
+            try:
+                c = conn.cursor()
+                for vid, n in per_video.items():
+                    c.execute("UPDATE course_videos SET notified_at = ?, notified_count = COALESCE(notified_count, 0) + ? WHERE id = ?",
+                              (_utc_naive_iso(), n, vid))
+                conn.commit()
+            finally:
+                conn.close()
+        log.info(f"[winter] notify due recipients={result['recipients']} sent={result['sent']} failed={result['failed']}")
+        return result
+    finally:
+        _WINTER_NOTIFY_LOCK.release()
+
+
+def _winter_notice_mail(member: dict, videos: list) -> tuple:
+    greeting = f"{member['name']} 様" if member.get("name") else "受講者の皆さま"
+    by_course = {}
+    for v in videos:
+        by_course.setdefault(v["course_key"], []).append(v)
+    listing = ""
+    for key, vs in by_course.items():
+        listing += f"【{_course_key_name(key)}】\n" + "".join(f"・{v['title']}\n" for v in vs)
+    subject = f"【{WINTER_LABEL}】動画を配信しました（{len(videos)}本）"
+    if member.get("id"):
+        token = _sign_session_token(member["id"], ttl_seconds=COURSE_MAGIC_TTL_SEC, token_type="coursemagic")
+        how = (f"■ 視聴はこちら（このリンクを開くとそのままログインできます・7 日間有効）\n{_course_portal_url()}?t={token}\n"
+               f"（リンクの期限が切れたら {_course_portal_url()} でお支払い時のメールアドレスを入力すると、新しいリンクが届きます）\n")
+    else:
+        how = (f"■ 視聴はこちら\n{_course_portal_url()}\n（お支払い時のメールアドレスを入力すると、ログイン用のリンクが届きます。"
+               f"一度ログインすると、同じブラウザでは 30 日間そのまま開けます）\n")
+    body = (f"{greeting}\n\nトリリオン英語塾です。\n{WINTER_LABEL}の動画を配信しました。\n\n■ 今回の動画\n{listing}\n" + how +
+            f"視聴は {_winter_fmt_date(WINTER_VIEW_UNTIL)} までです。\n\n"
+            f"ご不明な点は 公式 LINE（{COURSE_LINE_URL}）またはメール（{COURSE_CONTACT_EMAIL}）までご連絡ください。\n\n"
+            f"トリリオン英語塾（Trillion English Academy）")
+    return subject, body
+
+
+async def _winter_notify_scheduler():
+    """❄️ 毎日 JST 8:00 に _winter_notify_due (視聴期間が終わったら止まる)。8 時を過ぎて起動したらすぐ 1 回 (台帳があるので二重にならない)。"""
+    log.info(f"[Winter] notify scheduler started (JST {WINTER_NOTIFY_HOUR_JST}:00 daily until {WINTER_VIEW_UNTIL})")
+    await asyncio.sleep(150)
+    while True:
+        try:
+            now_jst = datetime.now(JST)
+            if now_jst.strftime("%Y-%m-%d") > WINTER_VIEW_UNTIL:
+                log.info("[Winter] view period ended — scheduler stops")
+                return
+            target = now_jst.replace(hour=WINTER_NOTIFY_HOUR_JST, minute=0, second=0, microsecond=0)
+            if now_jst >= target:
+                try:
+                    sres = await asyncio.to_thread(_winter_sync_from_stripe, 3, False)   # 取りこぼしを先に補う
+                    log.info(f"[Winter] stripe sync: {sres}")
+                except Exception as _e:
+                    log.warning(f"[Winter] stripe sync failed: {type(_e).__name__}")
+                res = await asyncio.to_thread(_winter_notify_due)
+                log.info(f"[Winter] notify due: {res}")
+                target += timedelta(days=1)
+            await asyncio.sleep(max(60.0, (target - datetime.now(JST)).total_seconds()))
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            log.error(f"[Winter] scheduler loop error: {type(e).__name__}", exc_info=True)
+            await asyncio.sleep(3600)
+
+
+class WinterNotifyDueIn(BaseModel):
+    dry_run: Optional[bool] = True
+
+
+@app.post("/api/admin/winter/notify-due")
+def admin_winter_notify_due(request: Request, payload: Optional[WinterNotifyDueIn] = None,
+                            authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """塾長/Claude: 講習の配信お知らせをいま送る (既定は dry_run=true で数だけ)。毎朝 8 時の自動と同じ処理。"""
+    _check_rate_limit_ip(request, bucket="winter_admin", limit=20, window=60)
+    if not _admin_or_cron_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    dry = bool(payload is None or payload.dry_run)
+    if dry:
+        return {"ok": True, **_winter_notify_due(dry_run=True)}
+    # 送るときは裏で (1 通 0.6 秒ずつ。人数が多いと応答が時間切れになる)。結果は Railway のログと動画一覧の「通知 累計」
+    preview = _winter_notify_due(dry_run=True)
+    threading.Thread(target=_winter_notify_due, daemon=True, name="winter-notify-due").start()
+    return {"ok": True, "background": True, **preview}
+
+
+@app.get("/api/admin/winter/purchases")
+def admin_winter_purchases(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """塾長: 講習の購入一覧と講座ごとの人数。"""
+    if not _admin_or_cron_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM winter_purchases ORDER BY id DESC")
+        rows = c.fetchall()
+    finally:
+        conn.close()
+    out, counts, total = [], {k: 0 for k in WINTER_ITEMS}, 0
+    for r in rows:
+        try:
+            items = [k for k in json.loads(r["item_keys"] or "[]") if k in WINTER_ITEMS]
+            plan = json.loads(r["plan"] or "[]")
+        except Exception:
+            items, plan = [], []
+        if r["status"] == "paid":
+            total += int(r["amount"] or 0)
+            for k in items:
+                counts[k] += 1
+        out.append({"id": r["id"], "email": r["email"], "name": r["name"] or "", "items": items,
+                    "item_names": [WINTER_ITEMS[k]["name"] for k in items], "plan": plan, "amount": int(r["amount"] or 0),
+                    "status": r["status"], "app_id": r["app_id"] or "", "livemode": bool(r["livemode"]),
+                    "session_id": r["session_id"], "paid_at": r["paid_at"]})
+    return {"purchases": out, "paid_total": total, "view_until": WINTER_VIEW_UNTIL,
+            "items": [{"key": WINTER_VIDEO_PREFIX + k, "sku": k, "name": v["name"], "buyers": counts[k],
+                       "delivery": v["delivery"], "deadline": v["deadline"]} for k, v in WINTER_ITEMS.items()]}
+
+
+class WinterPurchaseStatusIn(BaseModel):
+    status: Optional[str] = None
+    remove_items: Optional[List[str]] = None   # 講座ごとの返金: この講座だけ視聴できなくする (残りが無くなれば refunded)
+
+
+@app.post("/api/admin/winter/purchases/{purchase_id}/status")
+def admin_winter_purchase_status(purchase_id: int, payload: WinterPurchaseStatusIn, request: Request, authorization: Optional[str] = Header(None)):
+    """塾長: Stripe で返金したあとに視聴を止める。
+    - status=refunded: その決済の講座をすべて止める (paid で戻す)
+    - remove_items=[sku…]: 講座ごとの返金。その講座だけ外す (外した講座は removed_items に残る・残りが無くなれば refunded)"""
+    _check_rate_limit_ip(request, bucket="winter_admin", limit=20, window=60)
+    _verify_admin_required(authorization)
+    st = (payload.status or "").strip()
+    rm = [k for k in (payload.remove_items or []) if isinstance(k, str)]
+    if not st and not rm:
+        raise HTTPException(status_code=400, detail="status か remove_items を指定してください")
+    if st and st not in ("paid", "refunded"):
+        raise HTTPException(status_code=400, detail="status は paid か refunded です")
+    if any(k not in WINTER_ITEMS for k in rm):
+        raise HTTPException(status_code=400, detail="remove_items に知らない講座があります")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM winter_purchases WHERE id = ?", (int(purchase_id),))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="購入記録が見つかりません")
+        items = [k for k in json.loads(row["item_keys"] or "[]") if k in WINTER_ITEMS]
+        if rm:
+            missing = [k for k in rm if k not in items]
+            if missing:
+                raise HTTPException(status_code=400, detail=f"この購入に含まれない講座です: {', '.join(missing)}")
+            items = [k for k in items if k not in rm]
+            try:
+                plan = json.loads(row["plan"] or "[]")
+            except Exception:
+                plan = []
+            plan = plan + [f"removed:{k}" for k in rm]   # 何を外したかを明細の側に残す (列は増やさない)
+            new_st = st or ("refunded" if not items else row["status"])
+            c.execute("UPDATE winter_purchases SET item_keys = ?, plan = ?, status = ? WHERE id = ?",
+                      (json.dumps(items), json.dumps(plan), new_st, int(purchase_id)))
+        else:
+            new_st = st
+            c.execute("UPDATE winter_purchases SET status = ? WHERE id = ?", (st, int(purchase_id)))
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True, "id": int(purchase_id), "status": new_st, "items": items}
 
 
 # ==========================================================================
