@@ -396,6 +396,21 @@
   .materials-teaser li::before{content:"❖";position:absolute;left:0;color:var(--gold-ink)}
   .materials-teaser li b{color:var(--navy);font-weight:800;margin-right:.6em}
   @media(max-width:520px){.materials-teaser .btn{width:100%}}
+  /* 冬期講習2026 (2026-11-10・申込は Netlify の winter.html / winter-chugaku.html・料金の正はサーバの WINTER_ITEMS) */
+  .winter{padding:2.6rem 0 2.6rem}
+  .winter-card{max-width:960px;margin:0 auto;background:var(--paper);border:1px solid var(--line);border-top:4px solid var(--gold);border-radius:16px;padding:1.6rem 1.8rem;box-shadow:var(--shadow)}
+  .winter-card .w-k{font-size:.78rem;letter-spacing:.14em;color:var(--gold-ink);font-weight:800}
+  .winter-card h2{font-size:clamp(1.25rem,2.6vw,1.6rem);color:var(--navy);margin:.3rem 0 .5rem;line-height:1.45}
+  .winter-card .w-lede{font-size:.93rem;color:var(--ink-soft);line-height:1.75;margin-bottom:1rem}
+  .winter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:1rem}
+  .winter-grid > div{border:1px solid var(--line);border-radius:12px;padding:1rem 1.1rem;display:flex;flex-direction:column;gap:.55rem}
+  .winter-grid h3{font-size:1rem;color:var(--navy);font-weight:800}
+  .winter-grid ul{list-style:none;display:grid;gap:.35rem;flex:1}
+  .winter-grid li{font-size:.88rem;color:var(--ink-soft);padding-left:1.2em;position:relative;line-height:1.6}
+  .winter-grid li::before{content:"❖";position:absolute;left:0;color:var(--gold-ink)}
+  .winter-grid .btn{align-self:flex-start}
+  .winter-card .w-note{font-size:.8rem;color:var(--ink-soft);margin-top:.9rem;line-height:1.7}
+  @media(max-width:520px){.winter-card{padding:1.3rem 1.1rem}.winter-grid .btn{width:100%;text-align:center}}
 
   /* ===== 最終CTA ===== */
   .final{background:linear-gradient(160deg,var(--navy),#0a1830 60%,#0e2246);color:#fff;text-align:center;padding:88px 0}
@@ -418,6 +433,7 @@
   .js .reveal.in{opacity:1;transform:none}
 
   /* ===== レスポンシブ ===== */
+  @media(max-width:1000px){nav.links{gap:.75rem}nav.links a{font-size:.82rem}} /* 冬期講習のリンクを足した分 (2026-11-10) */
   @media(max-width:980px){
     .hero-grid{grid-template-columns:1fr;gap:2.2rem}
     .hero-proof{max-width:520px}
@@ -466,6 +482,7 @@
     <a href="#ai">AI学習</a>
     <a href="#courses">コース</a>
     <a href="#pricing">料金</a>
+    <a href="#winter">冬期講習</a>
     <a href="materials.html">PDF教材</a>
     <a href="taiken.html" class="btn btn-gold">体験授業</a>
     <details class="m-menu">
@@ -479,6 +496,7 @@
         <a href="#courses">コース</a>
         <a href="#pricing">料金</a>
         <a href="#flow">入塾の流れ</a>
+        <a href="#winter">冬期講習2026（動画）</a>
         <a href="materials.html">PDF教材（オンライン販売）</a>
         <a href="https://graceful-eclair-56bdac.netlify.app/">入塾申込</a>
       </div>
@@ -518,6 +536,37 @@
           <div><b>32</b><span>英検</span></div>
         </div>
       </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 冬期講習2026 (2026-11-10 掲載・講習が終わったら外す) ===== -->
+<section class="winter" id="winter">
+  <div class="wrap">
+    <div class="winter-card reveal">
+      <div class="w-k">WINTER INTENSIVE 2026</div>
+      <h2>冬期講習2026（動画配信）の申し込みを受け付けています</h2>
+      <p class="w-lede">ライブ授業ではなく、好きな時間に何度でも見られる動画の講習です（1本 約40〜45分）。演習問題は当塾のオリジナルで、問題と解答解説は PDF でお渡しします。視聴は 2027年3月31日（水）まで。入塾金はなく、講習だけのお申し込みができます。</p>
+      <div class="winter-grid">
+        <div>
+          <h3>高校生・受験生</h3>
+          <ul>
+            <li>高3・受験生：共通テスト（英語リーディング・リスニング・古文漢文・数学ⅠA）と私大英語の5講座　各7,500円（セット割あり）</li>
+            <li>志望校別の大学別パック　14,500円</li>
+            <li>高1パック 13,000円・高2パック 14,500円</li>
+          </ul>
+          <a href="https://graceful-eclair-56bdac.netlify.app/winter.html" class="btn btn-gold">高校生の申込書を開く</a>
+        </div>
+        <div>
+          <h3>中学生</h3>
+          <ul>
+            <li>中3パック：英語・数学・国語・理科・社会の5教科25本　15,000円</li>
+            <li>高校入試に出る要点を、書き下ろしの演習問題で総点検します</li>
+          </ul>
+          <a href="https://graceful-eclair-56bdac.netlify.app/winter-chugaku.html" class="btn btn-gold">中学生の申込書を開く</a>
+        </div>
+      </div>
+      <p class="w-note">料金はすべて税込・カードで一括払いです。配信は 12月12日（土）から講座ごとに順に始まり、申込締切も講座ごとに違います。講座の中身・配信日・締切は申込書でご確認ください。</p>
     </div>
   </div>
 </section>
