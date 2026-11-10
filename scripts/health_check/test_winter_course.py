@@ -208,6 +208,7 @@ def main():
           and "28,300円" in MAILS[0]["body"] and "大学別パック 関西大学" in MAILS[0]["body"] and "12月12日（土）" in MAILS[0]["body"]
           and "course-videos.html?t=" in MAILS[0]["body"] and "3月31日（水）" in MAILS[0]["body"], MAILS)
     welcome_link = [l for l in MAILS[0]["body"].splitlines() if "course-videos.html?t=" in l] if MAILS else []
+    check("C4b. 案内メールの件名に冬期講習 (受信箱で探せる)", bool(MAILS) and "冬期講習2026" in MAILS[0]["subject"], MAILS[0]["subject"] if MAILS else None)
     # 月額講座の受講者が講習も買う → 月額講座はそのまま
     mod._course_upsert_member("monthly@example.invalid", ["bunpo"], "cus_m1", "月額 花子")
     mod._winter_webhook_record({"id": "cs_live_w2", "payment_status": "paid", "amount_total": 7500, "customer_email": "monthly@example.invalid",
@@ -227,6 +228,16 @@ def main():
                                          "metadata": {"system": "juku-payment-winter", "items": "h3-r", "plan": "h3-r"}})
     conn = mod.db(); conn.cursor().execute("ALTER TABLE winter_purchases_tmp RENAME TO winter_purchases"); conn.commit(); conn.close()
     check("C8. 記録そのものに失敗したら False (webhook が 500 で Stripe に再送させる)・メールは送らない", r_fail is False and not MAILS, r_fail)
+    _orig_link = mod._course_send_login_link
+    mod._course_send_login_link = lambda member, intro="", subject="": {"sent": False, "error": "recipient cap"}
+    MAILS.clear()
+    r_nm = mod._winter_webhook_record({"id": "cs_live_nomail", "payment_status": "paid", "amount_total": 7500, "customer_email": "nomail@example.invalid",
+                                       "metadata": {"system": "juku-payment-winter", "items": "h3-m", "plan": "h3-m"}})
+    mod._course_send_login_link = _orig_link
+    check("C8b. 案内メールが送れなかったら塾長に知らせる (記録はできている・再送させない)", r_nm is True and mod._winter_keys_for_email("nomail@example.invalid") == ["w26-h3-m"]
+          and len(MAILS) == 1 and MAILS[0]["to"] == mod.COURSE_CONTACT_EMAIL and "送れませんでした" in MAILS[0]["subject"]
+          and "nomail@example.invalid" in MAILS[0]["body"] and "共通テスト数学" in MAILS[0]["body"], MAILS)
+    conn = mod.db(); conn.cursor().execute("DELETE FROM winter_purchases WHERE session_id = 'cs_live_nomail'"); conn.commit(); conn.close()   # 後の人数・合計の検査に混ぜない
     # 取りこぼしの補い (Stripe の Checkout Session 一覧から)
     class _L(list):
         def auto_paging_iter(self):
@@ -247,6 +258,30 @@ def main():
           and mod._winter_keys_for_email("missed@example.invalid") == ["w26-h3-k"] and "gte" in LIST_ARGS[0].get("created", {}), (s1, s2, s3))
     sy = client.post("/api/admin/winter/sync", json={"dry_run": True})
     check("C10. 補いの API は認証必須", sy.status_code == 401, sy.status_code)
+    # 返金済みの決済は補わない (返金しても Checkout の payment_status は paid のまま)
+    class _PI:
+        @staticmethod
+        def retrieve(pi, **kw):
+            return {"id": pi, "latest_charge": {"amount": 7500, "amount_refunded": 7500 if pi == "pi_refunded" else 0, "refunded": pi == "pi_refunded", "disputed": False}}
+    fake.PaymentIntent = _PI
+    def _list2(**kw):
+        if kw.get("payment_intent"):
+            return {"data": [{"id": {"pi_missed": "cs_live_missed"}.get(kw["payment_intent"], "cs_unknown")}]}
+        return _L([{"id": "cs_live_refd", "payment_intent": "pi_refunded", "payment_status": "paid", "amount_total": 7500, "livemode": True,
+                    "customer_details": {"email": "refd@example.invalid"}, "metadata": {"system": "juku-payment-winter", "items": "h3-k", "plan": "h3-k"}}])
+    fake.checkout.Session.list = staticmethod(_list2)
+    s4 = mod._winter_sync_from_stripe(days=7, dry_run=False)
+    check("C11. 返金・異議申し立てのある決済は補わない (視聴を開けない)", s4["recorded"] == 0 and s4["skipped_refunded"] == 1 and not mod._winter_keys_for_email("refd@example.invalid"), s4)
+    # Stripe で全額返金 → 本体 webhook の charge.refunded で視聴を止める・塾長に知らせる
+    MAILS.clear()
+    rf = mod._winter_on_refund({"payment_intent": "pi_missed", "amount": 7500, "amount_refunded": 7500, "refunded": True, "metadata": {"system": "juku-payment-winter"}})
+    check("C12. 全額返金で視聴を止める (refunded)・塾長に知らせる", rf.get("updated") is True and not mod._winter_keys_for_email("missed@example.invalid")
+          and len(MAILS) == 1 and MAILS[0]["to"] == mod.COURSE_CONTACT_EMAIL and "止めました" in MAILS[0]["body"], (rf, MAILS))
+    MAILS.clear()
+    conn = mod.db(); conn.cursor().execute("UPDATE winter_purchases SET status = 'paid' WHERE session_id = 'cs_live_missed'"); conn.commit(); conn.close()
+    rp = mod._winter_on_refund({"payment_intent": "pi_missed", "amount": 7500, "amount_refunded": 2000, "refunded": False, "metadata": {"system": "juku-payment-winter"}})
+    check("C13. 一部返金は視聴を止めずに塾長に知らせるだけ", rp.get("updated") is False and mod._winter_keys_for_email("missed@example.invalid") == ["w26-h3-k"]
+          and len(MAILS) == 1 and "一部返金" in MAILS[0]["body"], (rp, MAILS))
 
     # ---- D. 視聴ページ ----
     tok = welcome_link[0].split("?t=", 1)[1].strip() if welcome_link else ""
@@ -318,6 +353,7 @@ def main():
     check("B13. 支払い済みの講座を含むと確認画面 (決済画面は作らない・講座名と「このまま支払いへ進む」)", dupr.status_code == 200 and "すでにお支払い済み" in dupr.text
           and "共通テスト英語リーディング" in dupr.text and 'name="confirm_dup" value="1"' in dupr.text and len(fake.created) == n0, dupr.text[:300])
     dupok = post_form({"items": "h3-r,h3-m", "email": "buyer@example.invalid", "page": "winter", "confirm_dup": "1"})
+    check("B13b. 確認画面は同じメールで払い直しても増えないことを伝える", "見られる内容は変わりません" in dupr.text and "別のメールアドレス" in dupr.text)
     check("B14. 「このまま支払いへ進む」(confirm_dup=1) なら作る", dupok.status_code == 303 and len(fake.created) == n0 + 1)
     # 「知らせる」を外して登録した講習の動画は朝のまとめでも送らない
     add("w26-u-kansai", "関西大 おまけ（知らせない）", "KKKKKKKKKK9", "2026-12-19", notify=False)

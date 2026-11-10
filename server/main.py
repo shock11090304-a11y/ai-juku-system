@@ -34424,6 +34424,12 @@ def stripe_webhook(
         # payments に行が無いので自然に no-op (別系統の metadata 判定を再実装しない)。
         # amount_refunded は cumulative なので同イベントが何度届いても冪等。
         charge = event["data"]["object"]
+        if ((charge.get("metadata") or {}).get("system") or "").strip() == WINTER_SYSTEM_TAG:
+            # ❄️ 冬期講習の返金 → 視聴を止める (payments には行が無いので下は no-op のまま)
+            try:
+                _winter_on_refund(charge)
+            except Exception as _wr_e:
+                log.error(f"[winter] refund handling failed: {type(_wr_e).__name__}: {str(_wr_e)[:200]}")
         _ch_inv = charge.get("invoice")
         if isinstance(_ch_inv, dict):
             _ch_inv = _ch_inv.get("id")
@@ -56749,7 +56755,7 @@ def _course_notify_video(video: dict, resend_all: bool = False) -> dict:
     return {"queued": len(targets), "recipients": len(targets), "background": True}
 
 
-def _course_send_login_link(member: dict, intro: str = "") -> dict:
+def _course_send_login_link(member: dict, intro: str = "", subject: str = "") -> dict:
     """視聴ページのログインリンク (coursemagic 7 日) をメールで送る。intro は本文冒頭の一言 (決済直後の案内など)。"""
     if not _check_recipient_send_cap(member["email"], limit=6, window=3600):
         return {"sent": False, "error": "recipient cap"}
@@ -56760,7 +56766,7 @@ def _course_send_login_link(member: dict, intro: str = "") -> dict:
         f"開いた端末では、同じブラウザでは 30 日間そのまま開けます。生徒さんの端末でも開く場合は、このメールを転送してください。\n\n"
         f"このメールに心当たりがない場合は、そのまま無視してください。\n\n"
         f"ご不明な点は 公式 LINE（{COURSE_LINE_URL}）またはメール（{COURSE_CONTACT_EMAIL}）までご連絡ください。\nトリリオン英語塾（Trillion English Academy）")
-    return _course_send_email(member["email"], "【トリリオン英語塾】視聴ページのログインリンク", body)
+    return _course_send_email(member["email"], subject or "【トリリオン英語塾】視聴ページのログインリンク", body)
 
 
 # ===== 🎓 体験授業 (taiken.html・¥1,500 支払いリンク) の案内メール (2026-09-17) =====
@@ -57437,7 +57443,8 @@ def _winter_error_page(message: str, page: str = "winter", status: int = 400):
             "<div style=\"max-width:600px;margin:1.5rem auto;padding:1.2rem;background:#fff;border:1px solid #E5E7EB;border-radius:6px;\">"
             "<h1 style=\"font-size:1.1rem;color:#991B1B;\">お支払いの画面へ進めませんでした</h1>"
             f"<p>{_esc(message)}</p>"
-            f"<p style=\"margin-top:1rem;\"><a href=\"{_esc(back)}\">申込ページへ戻る</a></p>"
+            "<p style=\"margin-top:1rem;\">このタブを閉じて、元の画面（お申し込み完了の画面）の「カードでお支払いへ進む」からもう一度お進みください。"
+            f"元の画面を閉じてしまった場合は、<a href=\"{_esc(back)}\">申込ページ</a>からもう一度ご入力ください。</p>"
             f"<p style=\"font-size:0.85rem;color:#6B7280;\">解決しない場合は、公式 LINE（{_esc(COURSE_LINE_URL)}）またはメール（{_esc(COURSE_CONTACT_EMAIL)}）までご連絡ください。</p>"
             "</div></body></html>")
     return HTMLResponse(content=html, status_code=status)
@@ -57458,9 +57465,10 @@ def _winter_dup_page(names: list, fields: dict, page: str):
             "<h1 style=\"font-size:1.1rem;color:#92400E;\">このメールアドレスで、すでにお支払い済みの講座があります</h1><ul>"
             + "".join(f"<li>{_esc(n)}</li>" for n in names) +
             "</ul><p>同じ講座を2回お支払いいただく必要はありません。視聴ページ（ご案内メールのリンク）からご覧ください。"
-            "別のお子さまの分など、もう一度お支払いになる場合だけ「このまま支払いへ進む」を押してください。</p>"
+            "<b>同じメールアドレスでもう一度お支払いいただいても、見られる内容は変わりません。</b>別のお子さまの分は、別のメールアドレスでお申し込みください。</p>"
+            "<p>まだお支払いが済んでいない講座だけを買う場合は、このタブを閉じて、申込ページでその講座だけを選び直してください。</p>"
             f"<form method=\"POST\" action=\"\" style=\"margin-top:1rem;\">{hidden}<input type=\"hidden\" name=\"confirm_dup\" value=\"1\">"
-            "<button type=\"submit\" style=\"padding:0.7rem 1.2rem;border:0;border-radius:4px;background:#0B2545;color:#fff;font:inherit;cursor:pointer;\">このまま支払いへ進む</button></form>"
+            "<button type=\"submit\" style=\"padding:0.45rem 0.9rem;border:1px solid #9CA3AF;border-radius:4px;background:#fff;color:#4B5563;font:inherit;font-size:0.85rem;cursor:pointer;\">それでも同じ内容で支払いへ進む</button></form>"
             f"<p style=\"margin-top:1rem;\"><a href=\"{_esc(back)}\">申込ページへ戻る</a></p>"
             f"<p style=\"font-size:0.85rem;color:#6B7280;\">ご不明な点は 公式 LINE（{_esc(COURSE_LINE_URL)}）またはメール（{_esc(COURSE_CONTACT_EMAIL)}）までご連絡ください。</p>"
             "</div></body></html>")
@@ -57679,6 +57687,24 @@ def _winter_items_text(items: list) -> str:
     return "".join(f"・{WINTER_ITEMS[k]['name']}（配信 {_winter_fmt_date(WINTER_ITEMS[k]['delivery'])}〜）\n" for k in items if k in WINTER_ITEMS)
 
 
+def _winter_alert_owner(session, email: str, keys, reason: str):
+    """購入は記録できたのに案内メール (ログインリンク) が届かなかったとき、塾長に知らせる。
+    購入者は視聴ページの場所を知らないままになるので、ログの warning だけでは足りない (11-10 レビュー)。"""
+    try:
+        _record_ai_critical_event("winter_welcome_mail_failed", {"session_id": (session or {}).get("id"), "reason": str(reason)[:200]})
+    except Exception:
+        pass
+    try:
+        names = "・".join(_course_key_name(k) for k in (keys or []))
+        _course_send_email(COURSE_CONTACT_EMAIL, "[冬期講習] ★視聴の案内メールが送れませんでした",
+                           f"冬期講習の支払いは記録しましたが、購入者への視聴ページの案内メールが送れませんでした（理由: {str(reason)[:200]}）。\n\n"
+                           f"購入者のメール: {email}\n講座: {names}\nStripe の決済: {(session or {}).get('id')}\n\n"
+                           "購入者に、視聴ページ https://trillion-ai-juku.com/course-videos.html を開いて、お支払いに使ったメールアドレスで"
+                           "ログインリンクを取り直すよう伝えてください。")
+    except Exception as e:
+        log.warning(f"[winter] owner alert failed: {type(e).__name__}")
+
+
 def _winter_webhook_record(session: dict) -> bool:
     """本体 webhook から呼ぶ: 講習の決済完了を winter_purchases に記録し、視聴ページのログインリンクを送る。
     同じ Checkout が 2 回届いても (Stripe の再送・別イベント・取りこぼしの補い) session_id の一意制約で 1 行・1 通。
@@ -57727,7 +57753,10 @@ def _winter_webhook_record(session: dict) -> bool:
             return True
         member = _winter_ensure_member(email, name)
         log.info(f"[winter] purchase recorded id={row['id']} items={items} amount={amount}")
-        if not member or os.getenv("WINTER_WELCOME_ENABLED", "1").strip().lower() in ("0", "false", "off", "no"):
+        if os.getenv("WINTER_WELCOME_ENABLED", "1").strip().lower() in ("0", "false", "off", "no"):
+            return True
+        if not member:
+            _winter_alert_owner(session, email, [WINTER_VIDEO_PREFIX + k for k in items], "受講者の行を作れなかった")
             return True
         today = _winter_today()
         ready = _winter_published_videos([WINTER_VIDEO_PREFIX + k for k in items], today)
@@ -57739,10 +57768,13 @@ def _winter_webhook_record(session: dict) -> bool:
         else:
             lines.append("動画は配信日から視聴ページに並びます。配信日の朝にメールでお知らせします。")
         lines.append(f"視聴は {_winter_fmt_date(WINTER_VIEW_UNTIL)} までです。")
-        res = _course_send_login_link(member, intro="\n".join(lines))
+        res = _course_send_login_link(member, intro="\n".join(lines),
+                                      subject=f"【トリリオン英語塾】{WINTER_LABEL} お支払いの確認と視聴ページのご案内")
         if res.get("sent") and ready:
             _winter_mark_noticed(email, [v["id"] for v in ready])
         log.info(f"[winter] welcome mail sent={res.get('sent')}")
+        if not res.get("sent"):
+            _winter_alert_owner(session, email, [WINTER_VIDEO_PREFIX + k for k in items], res.get("error") or "send failed")
         return True
     except Exception as e:
         # 記録の後 (会員行・メール) の失敗。記録はできているので再送させない (ログインリンクは視聴ページから取り直せる)
@@ -57774,14 +57806,92 @@ def _winter_sync_from_stripe(days: int = 3, dry_run: bool = True) -> dict:
             conn.close()
         if not exists:
             missing.append(s_)
+    # ★返金しても Checkout の payment_status は paid のまま。記録が無いまま Stripe で返金した決済を、
+    #   ここで「支払い済み」として記録して視聴を開けてしまわないよう、返金・異議申し立てのあるものは外して塾長に知らせる
+    refunded_skip = [s_ for s_ in missing if _winter_session_refunded(s_)]
+    missing = [s_ for s_ in missing if s_ not in refunded_skip]
     recorded = 0
     if not dry_run:
         for s_ in missing:
             if _winter_webhook_record(s_):
                 recorded += 1
+        for s_ in refunded_skip:
+            log.warning(f"[winter] stripe sync: refunded/disputed checkout not recorded: {s_.get('id')}")
     if missing:
         log.warning(f"[winter] stripe sync: {len(missing)} paid checkout(s) were not recorded (dry_run={dry_run})")
-    return {"paid_sessions": found, "missing": len(missing), "recorded": recorded, "dry_run": dry_run}
+    return {"paid_sessions": found, "missing": len(missing), "recorded": recorded, "skipped_refunded": len(refunded_skip), "dry_run": dry_run}
+
+
+def _winter_session_refunded(s_: dict) -> bool:
+    """この Checkout の支払いに返金・異議申し立て (チャージバック) があるか。確かめられないときは False (支払い済みを優先)。"""
+    pi = s_.get("payment_intent")
+    if isinstance(pi, dict):
+        pi = pi.get("id")
+    if not pi:
+        return False
+    try:
+        obj = get_stripe().PaymentIntent.retrieve(pi, expand=["latest_charge"])
+        obj = obj.to_dict() if hasattr(obj, "to_dict") else dict(obj)
+        ch = obj.get("latest_charge") or {}
+        if not isinstance(ch, dict):
+            return False
+        return bool((ch.get("amount_refunded") or 0) > 0 or ch.get("refunded") or ch.get("disputed"))
+    except Exception as e:
+        log.warning(f"[winter] refund check failed for {pi}: {type(e).__name__}")
+        return False
+
+
+def _winter_on_refund(charge: dict) -> dict:
+    """本体 webhook の charge.refunded から呼ぶ: 講習の決済の返金を視聴に反映する。
+    全額返金 → その決済の講座をまとめて refunded (視聴ページから消える)。一部返金 → どの講座を止めるかは決められないので塾長に知らせる。"""
+    pi = charge.get("payment_intent")
+    if isinstance(pi, dict):
+        pi = pi.get("id")
+    amount = int(charge.get("amount") or 0)
+    refunded_amt = int(charge.get("amount_refunded") or 0)
+    full = bool(charge.get("refunded")) or (amount > 0 and refunded_amt >= amount)
+    if not pi or refunded_amt <= 0:
+        return {"skipped": "no refund"}
+    sid = ""
+    try:
+        lst = get_stripe().checkout.Session.list(payment_intent=pi, limit=1)
+        data = list(lst.get("data") if hasattr(lst, "get") else lst)
+        if data:
+            d0 = data[0].to_dict() if hasattr(data[0], "to_dict") else dict(data[0])
+            sid = d0.get("id") or ""
+    except Exception as e:
+        log.warning(f"[winter] refund: session lookup failed: {type(e).__name__}")
+    row = None
+    if sid:
+        conn = db()
+        try:
+            c = conn.cursor()
+            c.execute("SELECT id, email, item_keys, status FROM winter_purchases WHERE session_id = ?", (sid,))
+            row = c.fetchone()
+            if row and full and row["status"] == "paid":
+                c.execute("UPDATE winter_purchases SET status = 'refunded' WHERE id = ?", (row["id"],))
+                conn.commit()
+        finally:
+            conn.close()
+    try:
+        items = json.loads(row["item_keys"] or "[]") if row else []
+    except Exception:
+        items = []
+    names = "・".join(_course_key_name(WINTER_VIDEO_PREFIX + k) for k in items) or "（記録が見つかりません）"
+    if full and row:
+        msg = "全額返金を確認したので、この決済の講座の視聴を止めました（視聴ページから消えます）。"
+    elif full:
+        msg = "全額返金を確認しましたが、購入の記録が見つからず、視聴の停止はしていません（記録が無ければ視聴もできない状態です）。"
+    else:
+        msg = (f"一部返金（{refunded_amt:,}円 / {amount:,}円）を確認しました。どの講座の視聴を止めるかは自動では決めていません。"
+               f"止める講座があれば、POST /api/admin/winter/purchases/{row['id'] if row else '?'}/status に remove_items で外してください（Claude に頼めます）。")
+    log.info(f"[winter] refund handled: full={full} purchase={row['id'] if row else None}")
+    try:
+        _course_send_email(COURSE_CONTACT_EMAIL, "[冬期講習] 返金を確認しました",
+                           f"{msg}\n\n購入者のメール: {row['email'] if row else '-'}\n講座: {names}\nStripe の決済: {sid or pi}")
+    except Exception:
+        pass
+    return {"full": full, "purchase_id": row["id"] if row else None, "updated": bool(full and row)}
 
 
 class WinterSyncIn(BaseModel):
