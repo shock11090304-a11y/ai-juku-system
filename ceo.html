@@ -3135,7 +3135,7 @@
          登録と同時にその講座の受講者へお知らせメール (視聴ページ course-videos.html の URL のみ)。 -->
     <section id="courseVideosSection" style="margin:1.5rem 0; padding:1.2rem; background:rgba(201,169,97,0.07); border:1px solid rgba(201,169,97,0.35); border-radius:14px;">
       <h2 style="margin:0 0 0.3rem; font-size:1.05rem;">🎥 月額講座（動画配信）</h2>
-      <p style="font-size:0.8rem; color:#a1a1aa; margin:0 0 0.8rem;">英文解釈（月額 1,000円）／英文法・共通テスト対策（各 月額 1,500円）の受講者向け。登録した動画は視聴ページ（course-videos.html）に出て、<b>登録と同時にその講座の受講者へお知らせメール</b>が届きます。動画は YouTube の「限定公開」で用意し、URL を貼ってください（視聴ページには動画 URL は出ません）。</p>
+      <p style="font-size:0.8rem; color:#a1a1aa; margin:0 0 0.8rem;">英文解釈（月額 1,000円）／英文法・共通テスト対策（各 月額 1,500円）の受講者向け。登録した動画は視聴ページ（course-videos.html）に出て、<b>登録と同時にその講座の受講者へお知らせメール</b>が届きます。動画は YouTube の「限定公開」で用意し、URL を貼ってください（視聴ページには動画 URL は出ません）。<b>教材PDF</b>は Google ドライブなどに置いて「リンクを知っている全員」で共有し、その URL を「教材PDFの URL」に貼ると、視聴ページのその動画の下に「📄 教材（PDF）」のボタンが出ます（ログインした受講者だけに見えます。あとからでも一覧の「📄 PDF追加」で付けられます）。</p>
       <div id="cvCounts" style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.9rem; font-size:0.82rem;"></div>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.6rem;">
@@ -3147,6 +3147,7 @@
         <input id="cvDate" type="date" style="padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
         <input id="cvTitle" type="text" placeholder="タイトル（例: 第1回 時制の基本）" style="grid-column:1 / -1; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
         <input id="cvUrl" type="url" placeholder="YouTube の URL（限定公開）" style="grid-column:1 / -1; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+        <input id="cvPdf" type="url" placeholder="教材PDFの URL（任意・https:// で始まる共有リンク。例: Google ドライブの「リンクを知っている全員」）" style="grid-column:1 / -1; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
         <textarea id="cvNote" placeholder="ひとこと（任意・お知らせメールと視聴ページに載ります。例: 範囲 / 見どころ）" style="grid-column:1 / -1; padding:0.55rem; min-height:48px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;"></textarea>
       </div>
       <div style="margin-top:0.7rem; display:flex; align-items:center; gap:0.8rem; flex-wrap:wrap;">
@@ -14561,6 +14562,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             + '<span style="font-size:0.74rem; color:#71717a;">' + esc(notif) + '</span>'
             + '<span style="margin-left:auto; display:flex; gap:0.35rem;">'
             + '<a href="https://www.youtube.com/watch?v=' + encodeURIComponent(v.youtube_id) + '" target="_blank" rel="noopener" style="' + BTN + ' text-decoration:none;">▶ 確認</a>'
+            + (/^https:\/\//.test(v.material_url || '') ? '<a href="' + esc(v.material_url) + '" target="_blank" rel="noopener" style="' + BTN + ' text-decoration:none;">📄 PDF</a>' : '')
+            + '<button type="button" data-act="pdf" data-id="' + v.id + '" data-url="' + esc(v.material_url || '') + '" style="' + BTN + '">' + (v.material_url ? '📄 PDF変更' : '📄 PDF追加') + '</button>'
             + '<button type="button" data-act="notify" data-id="' + v.id + '" data-title="' + esc(v.title) + '" style="' + BTN + '">📧 通知</button>'
             + '<button type="button" data-act="toggle" data-id="' + v.id + '" data-pub="' + (v.is_published ? 1 : 0) + '" style="' + BTN + '">' + (v.is_published ? '非公開にする' : '公開する') + '</button>'
             + '<button type="button" data-act="delete" data-id="' + v.id + '" data-title="' + esc(v.title) + '" style="' + BTN + ' color:#fca5a5;">削除</button>'
@@ -14754,13 +14757,13 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       if (notify && dtSel <= jstToday() && !confirm((COURSE_NAMES[course] || course) + '（受講者 ' + (_memberCounts[course] != null ? _memberCounts[course] : '?') + ' 名）へお知らせメールを送ります。\n動画: ' + title + '\n公開日: ' + dtSel + '\nよろしいですか？')) return;
       var btn = this; btn.disabled = true; msg.textContent = '登録中…';
       try {
-        var body = { course_key: course, title: title, youtube_url: url, note: (document.getElementById('cvNote').value || '').trim(), notify: notify };
+        var body = { course_key: course, title: title, youtube_url: url, note: (document.getElementById('cvNote').value || '').trim(), notify: notify, material_url: (document.getElementById('cvPdf').value || '').trim() };
         var dt = document.getElementById('cvDate').value; if (dt) body.publish_date = dt;
         var r = await cvJson('/api/admin/course/videos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         var n = r.notified;
         msg.style.color = '#6ee7b7';
         msg.textContent = '登録しました' + (n ? (n.in_progress ? '（この動画は別の送信が進行中です。完了までお待ちください）' : n.background ? '（受講者 ' + n.queued + ' 名へ順に送信中。数分後に一覧の「通知 累計」で確認できます）' : (n.recipients === 0 ? '（受講者がいないため通知なし）' : '（お知らせ ' + n.sent + ' 通送信' + (n.failed ? '・失敗 ' + n.failed : '') + '）')) : (notify ? '（公開日が未来なので通知は送っていません）' : '（通知なし）'));
-        document.getElementById('cvTitle').value = ''; document.getElementById('cvUrl').value = ''; document.getElementById('cvNote').value = '';
+        document.getElementById('cvTitle').value = ''; document.getElementById('cvUrl').value = ''; document.getElementById('cvNote').value = ''; document.getElementById('cvPdf').value = '';
         loadAll();
       } catch (e) { msg.style.color = '#fca5a5'; msg.textContent = '登録できませんでした: ' + e.message; }
       finally { btn.disabled = false; }
@@ -14770,6 +14773,11 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       var id = t.getAttribute('data-id'); var act = t.getAttribute('data-act');
       try {
         if (act === 'delete') { if (!confirm('「' + t.getAttribute('data-title') + '」を削除しますか？（視聴ページから消えます）')) return; await cvJson('/api/admin/course/videos/' + id, { method: 'DELETE' }); }
+        else if (act === 'pdf') {
+          var nu = prompt('教材PDFの URL（https:// で始まる共有リンク）。空にして OK を押すと教材を外します。', t.getAttribute('data-url') || '');
+          if (nu === null) return;
+          await cvJson('/api/admin/course/videos/' + id, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ material_url: nu.trim() }) });
+        }
         else if (act === 'toggle') { await cvJson('/api/admin/course/videos/' + id, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_published: t.getAttribute('data-pub') !== '1' }) }); }
         else if (act === 'notify') {
           if (!confirm('「' + t.getAttribute('data-title') + '」のお知らせを、まだ受け取っていない受講者に送ります。よろしいですか？')) return;

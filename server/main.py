@@ -2193,6 +2193,7 @@ def init_db():
         is_published INTEGER DEFAULT 1,
         notified_at TIMESTAMP,
         notified_count INTEGER DEFAULT 0,
+        material_url TEXT DEFAULT '',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     CREATE INDEX IF NOT EXISTS idx_course_videos_course ON course_videos(course_key, publish_date);
@@ -2458,6 +2459,8 @@ def init_db():
         #   notify_off = 塾長が CEO で止めたお知らせ (1 = 送らない)。
         ("course_members_ending", "ALTER TABLE course_members ADD COLUMN ending TEXT DEFAULT '{}'"),
         ("course_members_notify_off", "ALTER TABLE course_members ADD COLUMN notify_off INTEGER DEFAULT 0"),
+        # 📄 [冬期講習2026 教材PDF 2026-11-10] 動画ごとの教材 (PDF) の URL。視聴ページのログイン後だけに出す (静的 HTML には書かない)。
+        ("course_videos_material_url", "ALTER TABLE course_videos ADD COLUMN material_url TEXT DEFAULT ''"),
         # 📎 [クラス別ファイル配布 2026-06-26] class_files を時間割クラスに紐づけ (全通塾生に表示・クラス名で整理)
         ("class_files_class_label", "ALTER TABLE class_files ADD COLUMN class_label TEXT"),
         # 🎒 [受講クラス 2026-06-26] 生徒の受講クラス (時間割 label の JSON 配列)。出欠を所属クラスに限定。
@@ -56249,6 +56252,19 @@ def _course_youtube_id(url_or_id: str) -> Optional[str]:
     return None
 
 
+_COURSE_MATERIAL_URL_RE = re.compile(r"https://[^\s\"'<>]{3,490}")
+
+
+def _course_material_url(raw) -> str:
+    """教材 (PDF) の URL を確かめる。空 = 教材なし。https:// で始まる 500 字以内の URL だけ通す (それ以外は 400)。"""
+    s = (raw or "").strip()
+    if not s:
+        return ""
+    if not _COURSE_MATERIAL_URL_RE.fullmatch(s):
+        raise HTTPException(status_code=400, detail="教材の URL は https:// で始まる URL を貼ってください（Google ドライブの共有リンクなど）")
+    return s
+
+
 def _course_keys_from_subscription(sub) -> list:
     """Stripe Subscription (dict ライク) から講座コードを取り出す。price.lookup_key=course_<key>_monthly が正、
     無ければ metadata.combo ("bunpo+kaishaku")。講座のサブスクでなければ []。"""
@@ -56576,7 +56592,15 @@ def _course_video_row(row) -> dict:
     return {"id": row["id"], "course_key": row["course_key"], "course_name": _course_key_name(row["course_key"]),
             "title": row["title"], "youtube_id": row["youtube_id"], "note": row["note"] or "",
             "publish_date": row["publish_date"] or "", "is_published": bool(row["is_published"]),
-            "notified_at": row["notified_at"], "notified_count": row["notified_count"] or 0, "created_at": row["created_at"]}
+            "notified_at": row["notified_at"], "notified_count": row["notified_count"] or 0, "created_at": row["created_at"],
+            "material_url": _course_row_material(row)}
+
+
+def _course_row_material(row) -> str:
+    try:
+        return row["material_url"] or ""
+    except (KeyError, IndexError):
+        return ""
 
 
 COURSE_NOTIFY_INLINE_MAX = 15   # これを超える宛先はバックグラウンドで送る (管理画面のリクエストが Vercel のプロキシ時間内に返るように)
@@ -56848,6 +56872,7 @@ class CourseVideoCreateRequest(BaseModel):
     note: Optional[str] = None
     publish_date: Optional[str] = None
     notify: Optional[bool] = True
+    material_url: Optional[str] = None
 
 
 class CourseVideoUpdateRequest(BaseModel):
@@ -56855,6 +56880,7 @@ class CourseVideoUpdateRequest(BaseModel):
     note: Optional[str] = None
     publish_date: Optional[str] = None
     is_published: Optional[bool] = None
+    material_url: Optional[str] = None
 
 
 @app.post("/api/course/login/request")
@@ -56937,7 +56963,8 @@ def course_me(authorization: Optional[str] = Header(None)):
             continue
         v = _course_video_row(r)
         videos.append({"id": v["id"], "course_key": v["course_key"], "course_name": v["course_name"], "title": v["title"],
-                       "youtube_id": v["youtube_id"], "note": v["note"], "publish_date": str(v["publish_date"])[:10]})
+                       "youtube_id": v["youtube_id"], "note": v["note"], "publish_date": str(v["publish_date"])[:10],
+                       "material_url": v["material_url"]})
     return {"email": member["email"], "name": member["name"],
             "courses": [{"key": k, "name": _course_key_name(k)} for k in _course_member_all_keys(member)], "videos": videos,
             "contact": COURSE_CONTACT_EMAIL, "line_url": COURSE_LINE_URL,
@@ -56963,6 +56990,7 @@ def admin_course_video_create(payload: CourseVideoCreateRequest, request: Reques
     if not yid:
         raise HTTPException(status_code=400, detail="YouTube の URL（または 11 文字の動画 ID）を入力してください")
     note = _sanitize_text(payload.note, 1000) or ""
+    material = _course_material_url(payload.material_url)
     pub = (payload.publish_date or "").strip()[:10] or _course_today_jst()
     try:
         datetime.strptime(pub, "%Y-%m-%d")
@@ -56974,8 +57002,8 @@ def admin_course_video_create(payload: CourseVideoCreateRequest, request: Reques
         c.execute("SELECT id FROM course_videos WHERE course_key = ? AND youtube_id = ?", (key, yid))
         if c.fetchone():
             raise HTTPException(status_code=409, detail="この動画はすでに同じ講座に登録されています")
-        c.execute("INSERT INTO course_videos (course_key, title, youtube_id, note, publish_date, is_published, created_at) VALUES (?,?,?,?,?,1,?) RETURNING id",
-                  (key, title, yid, note, pub, _utc_naive_iso()))
+        c.execute("INSERT INTO course_videos (course_key, title, youtube_id, note, publish_date, is_published, material_url, created_at) VALUES (?,?,?,?,?,1,?,?) RETURNING id",
+                  (key, title, yid, note, pub, material, _utc_naive_iso()))
         row = c.fetchone()
         conn.commit()
         vid = row["id"]
@@ -57044,6 +57072,8 @@ def admin_course_video_update(video_id: int, payload: CourseVideoUpdateRequest, 
         sets.append("publish_date = ?"); params.append(pub)
     if payload.is_published is not None:
         sets.append("is_published = ?"); params.append(1 if payload.is_published else 0)
+    if payload.material_url is not None:
+        sets.append("material_url = ?"); params.append(_course_material_url(payload.material_url))
     if not sets:
         return {"ok": True}
     params.append(int(video_id))

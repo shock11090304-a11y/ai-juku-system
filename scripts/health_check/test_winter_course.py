@@ -289,6 +289,29 @@ def main():
     am = {m["email"]: m for m in client.get("/api/admin/course/members", headers=ADMIN).json()["members"]}
     check("D9. 受講者一覧に講習の講座名", am["buyer@example.invalid"]["winter_names"][0] == "共通テスト英語リーディング 本番形式演習", am.get("buyer@example.invalid"))
 
+    # 教材 (PDF) の URL: 動画ごと・視聴ページ (/me) だけに出す
+    vid_r = [v["id"] for v in adm["videos"] if v["title"] == "共テR 第1回"][0]
+    bad = client.patch(f"/api/admin/course/videos/{vid_r}", headers=ADMIN, json={"material_url": "javascript:alert(1)"})
+    bad2 = client.patch(f"/api/admin/course/videos/{vid_r}", headers=ADMIN, json={"material_url": "http://example.invalid/a.pdf"})
+    check("D10. 教材の URL は https:// だけ (javascript:・http:// は 400)", bad.status_code == 400 and bad2.status_code == 400, (bad.status_code, bad2.status_code))
+    pdf = "https://drive.google.com/file/d/abcDEF123/view?usp=sharing"
+    ok = client.patch(f"/api/admin/course/videos/{vid_r}", headers=ADMIN, json={"material_url": pdf})
+    mev = {v["title"]: v for v in client.get("/api/course/me", headers=H).json()["videos"]}
+    check("D11. 教材の URL を付けると /me の動画に material_url が出る", ok.status_code == 200 and mev["共テR 第1回"].get("material_url") == pdf, mev)
+    adm2 = {v["title"]: v for v in client.get("/api/admin/course/videos", headers=ADMIN).json()["videos"]}
+    check("D12. CEO の一覧にも material_url (付けていない動画は空)", adm2["共テR 第1回"]["material_url"] == pdf and adm2["関西大 第1回"]["material_url"] == "", adm2.get("関西大 第1回"))
+    rc = client.post("/api/admin/course/videos", headers=ADMIN, json={"course_key": "w26-h3-l", "title": "共テL 第1回", "youtube_url": "https://youtu.be/LLLLLLLLLL1",
+                                                                      "publish_date": "2026-12-12", "notify": False, "material_url": "  https://example.invalid/l1.pdf  "})
+    rcb = client.post("/api/admin/course/videos", headers=ADMIN, json={"course_key": "w26-h3-l", "title": "共テL 第2回", "youtube_url": "https://youtu.be/LLLLLLLLLL2",
+                                                                       "publish_date": "2026-12-12", "notify": False, "material_url": "ftp://x/y.pdf"})
+    adm3 = {v["title"]: v for v in client.get("/api/admin/course/videos", headers=ADMIN).json()["videos"]}
+    check("D13. 登録と同時に教材の URL (前後の空白は落とす)・不正な URL は登録しない", rc.status_code == 200 and adm3["共テL 第1回"]["material_url"] == "https://example.invalid/l1.pdf"
+          and rcb.status_code == 400 and "共テL 第2回" not in adm3, (rc.text[:200], rcb.status_code))
+    clr = client.patch(f"/api/admin/course/videos/{vid_r}", headers=ADMIN, json={"material_url": ""})
+    mev2 = {v["title"]: v for v in client.get("/api/course/me", headers=H).json()["videos"]}
+    check("D14. 空で送ると教材を外せる", clr.status_code == 200 and mev2["共テR 第1回"].get("material_url") == "", mev2)
+    client.patch(f"/api/admin/course/videos/{vid_r}", headers=ADMIN, json={"material_url": pdf})
+
     # 二重払いの確認画面
     n0 = len(fake.created)
     dupr = post_form({"items": "h3-r,h3-m", "email": "buyer@example.invalid", "page": "winter"})
@@ -313,7 +336,7 @@ def main():
     MAILS.clear()
     check("E4. 2 回目は送らない", mod._winter_notify_due()["sent"] == 0 and not MAILS)
     me2 = client.get("/api/course/me", headers=H)
-    check("E5. 配信日になると /me に並ぶ (知らせない印の動画も視聴はできる)", sorted(v["title"] for v in me2.json().get("videos", [])) == ["共テR 第1回", "関西大 おまけ（知らせない）", "関西大 第1回", "関西大 第2回"], me2.text[:300])
+    check("E5. 配信日になると /me に並ぶ (知らせない印の動画も視聴はできる)", sorted(v["title"] for v in me2.json().get("videos", [])) == ["共テL 第1回", "共テR 第1回", "関西大 おまけ（知らせない）", "関西大 第1回", "関西大 第2回"], me2.text[:300])
     # 配信後に買った人: 案内メールで公開済みの動画を知らせ、朝のまとめでは送らない
     MAILS.clear()
     mod._winter_webhook_record({"id": "cs_live_w3", "payment_status": "paid", "amount_total": 14500, "customer_details": {"email": "late@example.invalid", "name": ""},
