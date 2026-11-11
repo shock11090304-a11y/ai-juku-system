@@ -8,6 +8,7 @@ in-process・一時 SQLite。Stripe (Checkout の作成・顧客の検索) は�
   D. 視聴ページ: 講習だけの人もログインできる・自分の講座の動画だけ・配信日前は出ない
   E. お知らせ: 動画の登録 (notify) は買った人だけ・配信日の朝のまとめは 1 人 1 通で、同じ動画は 2 回知らせない
   F. 返金 (refunded)・視聴期間の終わりで入れなくなる / 管理 API は認証必須
+  H. 定員: 大学別パックは各先着20名。満員なら決済画面を作らない・超えた支払いは塾長へ連絡・返金分は数えない
 """
 import base64
 import datetime
@@ -421,6 +422,52 @@ def main():
     mod.get_stripe = _orig_get_stripe
     os.environ["STRIPE_WEBHOOK_SECRET"] = "whsec_test_winter"
     mod.STRIPE_WEBHOOK_SECRET = "whsec_test_winter"
+    # ---- H. 定員 (大学別パック 各先着20名・塾長決定 2026-11-11。満員後に枠を足さない) ----
+    set_today("2026-11-20")
+    mod.get_stripe = lambda: fake
+    check("H1. 大学別 18 パックすべて定員 20・高3/学年パックは定員なし",
+          all(mod.WINTER_ITEMS[k].get("cap") == 20 for k in mod.WINTER_ITEMS if k.startswith("u-"))
+          and not any(mod.WINTER_ITEMS[k].get("cap") for k in mod.WINTER_ITEMS if not k.startswith("u-")))
+    base = mod._winter_paid_counts().get("u-doshisha", 0)
+    conn = mod.db(); c = conn.cursor()
+    for i in range(20 - base):
+        c.execute("INSERT INTO winter_purchases (session_id, email, name, plan, item_keys, amount, status, app_id, livemode, paid_at, created_at) "
+                  "VALUES (?,?,?,?,?,?,'paid','',1,?,?)", (f"cs_cap_{i}", f"cap{i}@example.invalid", "", json.dumps(["u-doshisha"]),
+                  json.dumps(["u-doshisha"]), 14500, "2026-11-20T00:00:00", "2026-11-20T00:00:00"))
+    conn.commit(); conn.close()
+    sr = client.get("/api/winter/seats")
+    sj = sr.json() if sr.status_code == 200 else {}
+    check("H2. 残り席 API: 同志社 0・関西学院 20・誰でも読める (CORS *)・個人情報なし",
+          sr.status_code == 200 and sj.get("cap") == 20 and sj["left"].get("u-doshisha") == 0 and sj["left"].get("u-kwansei") == 20
+          and "h3-r" not in sj["left"] and sr.headers.get("access-control-allow-origin") == "*" and "@" not in sr.text, sr.text[:300])
+    n0 = len(fake.created)
+    r = post_form({"items": ["u-ritsumei,u-doshisha"], "email": "late@example.invalid", "page": "winter"})
+    check("H3. 満員のパックを含む申込は決済画面を作らず、定員の案内", r.status_code == 400 and "定員" in r.text and "同志社大学" in r.text
+          and len(fake.created) == n0, (r.status_code, r.text[:200]))
+    r = post_form({"items": ["u-ritsumei"], "email": "late@example.invalid", "page": "winter"})
+    check("H4. 空きのあるパックは今までどおり決済へ", r.status_code == 303 and len(fake.created) == n0 + 1, r.status_code)
+    MAILS.clear()
+    mod._winter_webhook_record({"id": "cs_cap_over", "livemode": True, "amount_total": 14500,
+                                "customer_details": {"email": "over@example.invalid", "name": ""},
+                                "metadata": {"system": "juku-payment-winter", "items": "u-doshisha", "plan": "u-doshisha"}})
+    over = [m for m in MAILS if "定員を超えた" in m["subject"]]
+    check("H5. 開いたままの決済画面で 21 人目が払ったら記録し (視聴はできる)、塾長に返金の連絡",
+          len(over) == 1 and over[0]["to"] == mod.COURSE_CONTACT_EMAIL and "21人目" in over[0]["body"]
+          and mod._winter_keys_for_email("over@example.invalid") == ["w26-u-doshisha"], [m["subject"] for m in MAILS])
+    MAILS.clear()
+    mod._winter_webhook_record({"id": "cs_cap_ok", "livemode": True, "amount_total": 14500,
+                                "customer_details": {"email": "ok@example.invalid", "name": ""},
+                                "metadata": {"system": "juku-payment-winter", "items": "u-ritsumei", "plan": "u-ritsumei"}})
+    check("H6. 定員内の支払いでは塾長への連絡なし", not [m for m in MAILS if "定員" in m["subject"]], [m["subject"] for m in MAILS])
+    conn = mod.db(); c = conn.cursor()
+    c.execute("UPDATE winter_purchases SET status = 'refunded' WHERE session_id IN ('cs_cap_over', 'cs_cap_0')"); conn.commit(); conn.close()
+    check("H7. 返金した分は数えない (21→19 で残り 1)", mod._winter_seats_left()["u-doshisha"] == 1, mod._winter_seats_left()["u-doshisha"])
+    ar = client.get("/api/admin/winter/purchases", headers=ADMIN)
+    it = {x["sku"]: x for x in ar.json().get("items", [])} if ar.status_code == 200 else {}
+    check("H8. 管理の一覧に定員と残り", it.get("u-doshisha", {}).get("cap") == 20 and it["u-doshisha"].get("left") == 1
+          and it.get("h3-r", {}).get("cap") is None, ar.text[:200])
+    mod.get_stripe = _orig_get_stripe
+
     import stripe as _stripe_lib
     if int(str(getattr(_stripe_lib, "VERSION", "0")).split(".")[0] or 0) >= 14:
         print(f"  ⏭ G. 署名付き webhook: stripe {_stripe_lib.VERSION} ではスキップ (CI の 11.x で実行)")

@@ -57337,6 +57337,8 @@ WINTER_ITEMS = {
     "pack-c3": {"name": "中3パック（英数国理社 5教科25本）", "price": 15000, "deadline": _WINTER_DL_LATE, "delivery": "2026-12-19"},
 }
 # 大学別パック (締切 = その大学のいちばん早い試験日の 1 週間前・塾長決定 2026-11-10)
+# 定員: 各パック先着 20 名 (塾長決定 2026-11-11)。★「限定」と告知しているので、満員後に枠を足さない (景品表示法の有利誤認)。
+WINTER_UNIV_CAP = 20
 for _sku, _name, _dl, _dv in [
     ("u-kansai", "関西大学（全学部）", "2027-01-25", "2026-12-19"),
     ("u-kwansei", "関西学院大学（全学部日程＋学部個別日程の記述）", "2027-01-25", "2026-12-19"),
@@ -57357,7 +57359,8 @@ for _sku, _name, _dl, _dv in [
     ("u-keio-sho", "慶應義塾大学 商学部", "2027-02-07", "2027-01-18"),
     ("u-keio-kei", "慶應義塾大学 経済学部", "2027-02-06", "2027-01-18"),
 ]:
-    WINTER_ITEMS[_sku] = {"name": "大学別パック " + _name, "price": 14500, "deadline": _dl, "delivery": _dv}
+    WINTER_ITEMS[_sku] = {"name": "大学別パック " + _name, "price": 14500, "deadline": _dl, "delivery": _dv,
+                          "cap": WINTER_UNIV_CAP}
 # 高3のセット割 (中身はすべて h3-*)。締切は中の講座でいちばん早い日 (どれも共通テストを含むので 1/12)
 WINTER_BUNDLES = {
     "h3-set-ei": {"name": "共テ英語セット（リーディング＋リスニング）", "items": ["h3-r", "h3-l"], "price": 13800, "deadline": _WINTER_DL_KYOTSU},
@@ -57421,6 +57424,44 @@ def _winter_plan(skus: list, today: Optional[str] = None) -> dict:
     parts = best_parts + others
     total = best_cost + sum(WINTER_ITEMS[k]["price"] for k in others)
     return {"items": items, "parts": parts, "total": total, "closed": closed, "unknown": unknown}
+
+
+def _winter_paid_counts() -> dict:
+    """{sku: 支払い済みの人数} — 定員のある講座の残りを数える (返金済みは数えない)。"""
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT item_keys FROM winter_purchases WHERE status = 'paid'")
+        rows = c.fetchall()
+    finally:
+        conn.close()
+    counts = {k: 0 for k in WINTER_ITEMS}
+    for r in rows:
+        try:
+            for k in set(json.loads(r["item_keys"] or "[]")):
+                if k in counts:
+                    counts[k] += 1
+        except Exception:
+            pass
+    return counts
+
+
+def _winter_seats_left(counts: Optional[dict] = None) -> dict:
+    """{sku: 残り席} — 定員 (cap) のある講座だけ。"""
+    counts = counts if counts is not None else _winter_paid_counts()
+    return {k: max(0, int(v["cap"]) - counts.get(k, 0)) for k, v in WINTER_ITEMS.items() if v.get("cap")}
+
+
+@app.get("/api/winter/seats")
+def winter_seats():
+    """❄️ 申込ページ (Netlify) が読む: 大学別パックの定員と残り。個人情報は返さない。"""
+    try:
+        left = _winter_seats_left()
+    except Exception as e:
+        log.warning(f"[winter] seats lookup failed: {type(e).__name__}")
+        return JSONResponse({"ok": False}, status_code=503, headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "no-store"})
+    return JSONResponse({"ok": True, "cap": WINTER_UNIV_CAP, "left": left},
+                        headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "no-store"})
 
 
 def _winter_part_name(part: str) -> str:
@@ -57529,6 +57570,19 @@ def winter_checkout(request: Request, body: bytes = Depends(_raw_body_dep)):
     if plan["closed"]:
         names = "、".join(WINTER_ITEMS[k]["name"] for k in plan["closed"])
         return _winter_error_page(f"申込の締切を過ぎた講座が含まれています（{names}）。申込ページを開き直して、受付中の講座だけをお選びください。", page)
+    # 定員 (大学別パック 各20名): 支払い済みの人数で満員なら受け付けない
+    capped = [k for k in plan["items"] if WINTER_ITEMS[k].get("cap")]
+    if capped:
+        try:
+            left = _winter_seats_left()
+        except Exception as e:
+            log.error(f"[winter] seats check failed: {type(e).__name__}")
+            return _winter_error_page("残りの席を確かめられませんでした。少し時間をおいて、もう一度お試しください。", page, 503)
+        full = [k for k in capped if left.get(k, 0) <= 0]
+        if full:
+            names = "、".join(WINTER_ITEMS[k]["name"] for k in full)
+            return _winter_error_page(f"定員（先着{WINTER_UNIV_CAP}名）に達したため、受付を終了した講座が含まれています（{names}）。"
+                                      "申込ページを開き直して、受付中の講座だけをお選びください。", page)
     app_id = _f("app_id")
     if not _WINTER_APP_ID_RE.match(app_id):
         app_id = ""
@@ -57705,6 +57759,26 @@ def _winter_alert_owner(session, email: str, keys, reason: str):
         log.warning(f"[winter] owner alert failed: {type(e).__name__}")
 
 
+def _winter_check_over_cap(session, email: str, items: list):
+    """支払い画面を開いたまま同時に払われると定員を少し超えることがある → 塾長に知らせる (超えた分は返金で対応)。"""
+    try:
+        capped = [k for k in items if WINTER_ITEMS.get(k, {}).get("cap")]
+        if not capped:
+            return
+        counts = _winter_paid_counts()
+        over = [k for k in capped if counts.get(k, 0) > int(WINTER_ITEMS[k]["cap"])]
+        if not over:
+            return
+        names = "・".join(f"{WINTER_ITEMS[k]['name']}（{counts[k]}人目）" for k in over)
+        _course_send_email(COURSE_CONTACT_EMAIL, "[冬期講習] ★定員を超えた支払いがありました",
+                           f"定員（先着{WINTER_UNIV_CAP}名）を超えて支払いが記録されました: {names}\n\n"
+                           f"購入者のメール: {email}\nStripe の決済: {(session or {}).get('id')}\n\n"
+                           "同時に支払い画面を開いていた方の分です。告知どおり定員で締め切るため、"
+                           "この方へ「定員に達していたため返金します」と連絡し、Stripe で返金してください（返金すると視聴は自動で止まります）。")
+    except Exception as e:
+        log.warning(f"[winter] over-cap check failed: {type(e).__name__}")
+
+
 def _winter_webhook_record(session: dict) -> bool:
     """本体 webhook から呼ぶ: 講習の決済完了を winter_purchases に記録し、視聴ページのログインリンクを送る。
     同じ Checkout が 2 回届いても (Stripe の再送・別イベント・取りこぼしの補い) session_id の一意制約で 1 行・1 通。
@@ -57753,6 +57827,7 @@ def _winter_webhook_record(session: dict) -> bool:
             return True
         member = _winter_ensure_member(email, name)
         log.info(f"[winter] purchase recorded id={row['id']} items={items} amount={amount}")
+        _winter_check_over_cap(session, email, items)
         if os.getenv("WINTER_WELCOME_ENABLED", "1").strip().lower() in ("0", "false", "off", "no"):
             return True
         if not member:
@@ -58089,7 +58164,9 @@ def admin_winter_purchases(authorization: Optional[str] = Header(None), x_cron_s
                     "session_id": r["session_id"], "paid_at": r["paid_at"]})
     return {"purchases": out, "paid_total": total, "view_until": WINTER_VIEW_UNTIL,
             "items": [{"key": WINTER_VIDEO_PREFIX + k, "sku": k, "name": v["name"], "buyers": counts[k],
-                       "delivery": v["delivery"], "deadline": v["deadline"]} for k, v in WINTER_ITEMS.items()]}
+                       "delivery": v["delivery"], "deadline": v["deadline"],
+                       "cap": v.get("cap"), "left": (max(0, v["cap"] - counts[k]) if v.get("cap") else None)}
+                      for k, v in WINTER_ITEMS.items()]}
 
 
 class WinterPurchaseStatusIn(BaseModel):
