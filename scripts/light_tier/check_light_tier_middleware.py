@@ -476,6 +476,50 @@ try:
 finally:
     main.LIGHT_SIGNUP_OPEN = False
 
+print("\n[J] ★先着200名 (支払った人数で数える。体験の申込では数えない)")
+_cap0 = main.LIGHT_PAID_CAP
+main.LIGHT_SIGNUP_OPEN = True
+try:
+    _n0 = main._light_paid_count()
+    ok(isinstance(_n0, int), f"支払った人数を読める ({_n0})")
+    main.LIGHT_PAID_CAP = _n0 + 2
+    # 体験中・解約済み・カード登録つきの体験は数えない
+    _mkrow(9301, "cap-trial@example.com", plan="trillion_light", feature_tier="light", status="trial")
+    _mkrow(9302, "cap-canceled@example.com", plan="trillion_light", feature_tier="light", status="canceled")
+    ok(main._light_paid_count() == _n0, "★体験中・解約済みは人数に入らない")
+    _mkrow(9303, "cap-paid1@example.com", plan="trillion_light", feature_tier="light", status="paid",
+           stripe_subscription_id="sub_c1")
+    ok(main._light_paid_count() == _n0 + 1, "支払った人は人数に入る")
+    r = client.get("/api/light/availability"); j = r.json()
+    ok(r.status_code == 200 and j.get("open") is True and j.get("remaining") == 1 and "paid" not in j,
+       f"残り1名: 受付中・残りの人数だけ返す (支払った人数は返さない) {j}")
+    main._RATE_LIMIT_STORE.clear()
+    r = client.post("/api/trial/signup", json={**_SIGN, "email": "cap-new1@example.com"})
+    ok(r.status_code == 200, f"定員前: 体験の申込は通る ({r.status_code})")
+    _mkrow(9304, "cap-pastdue@example.com", plan="trillion_light", feature_tier="light", status="past_due",
+           stripe_subscription_id="sub_c2")
+    r = client.get("/api/light/availability"); j = r.json()
+    ok(j.get("open") is False and j.get("remaining") == 0, f"★支払い遅れ (past_due) も数え、定員に達したら締め切り {j}")
+    main._RATE_LIMIT_STORE.clear()
+    r1 = client.post("/api/trial/signup", json={**_SIGN, "email": "cap-new2@example.com"})
+    r2 = client.post("/api/stripe/checkout", json={"plan": "trillion_light", "email": "cap-new2@example.com", "name": "仮名 一郎"})
+    d1 = (r1.json() or {}).get("detail", ""); d2 = (r2.json() or {}).get("detail", "")
+    ok(r1.status_code == 403 and "定員" in str(d1) and r2.status_code == 403 and "定員" in str(d2),
+       f"★定員後: 体験 {r1.status_code} / 決済 {r2.status_code} を「定員」で断る")
+    conn = main.db(); c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM students WHERE LOWER(email) = ?", ("cap-new2@example.com",))
+    ok(c.fetchone()[0] == 0, "★定員後: 体験の生徒行を作らない"); conn.close()
+    # 解約が出たら1名分空く
+    _mkrow(9304, "cap-pastdue@example.com", plan="trillion_light", feature_tier="light", status="canceled")
+    ok(main._light_full() is False, "解約で1名分空く")
+    # 上限なし (0)
+    main.LIGHT_PAID_CAP = 0
+    ok(main._light_full() is False and client.get("/api/light/availability").json().get("cap") is None,
+       "LIGHT_PAID_CAP=0 は上限なし")
+finally:
+    main.LIGHT_PAID_CAP = _cap0
+    main.LIGHT_SIGNUP_OPEN = False
+
 print("\n" + "=" * 60)
 print(f"{N[0]} checks / FAIL {len(FAIL)}")
 for f in FAIL:

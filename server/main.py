@@ -3468,6 +3468,16 @@ LIGHT_SIGNUP_OPEN = os.getenv("LIGHT_SIGNUP_OPEN", "").strip().lower() in ("1", 
 LIGHT_SIGNUP_CLOSED_DETAIL = (f"{LIGHT_PLAN_LABEL} の受付はまだ始まっていません。"
                               "お問い合わせは info@trillion-ai-juku.com までお願いします。")
 
+# 💴 [2026-11-12 塾長決定]「月2,500円・先着200名」(成績の伸び率の実証実験として募集)。
+#   ★数えるのは支払った人 (status が paid / past_due の AI学習アプリ会員)。無料体験の申込では数えない
+#     (試しただけで続けない人で枠が埋まらないように)。解約した人の分は空く。
+#   ★定員に達したら、体験と決済の両方を断る (体験だけ通しても、終わったあと払えないため)。
+#   ★締め切った後に枠を足さない (募集文で「200名に達したら締め切ります」と約束している)。
+#   env LIGHT_PAID_CAP で変えられる。0 は上限なし。人数が読めないときは止めない (ログを残す)。
+LIGHT_PAID_CAP = _env_int("LIGHT_PAID_CAP", 200, lo=0, hi=100_000)
+LIGHT_FULL_DETAIL = (f"{LIGHT_PLAN_LABEL} は、先着{LIGHT_PAID_CAP}名の定員に達したため受付を締め切りました。"
+                     "お問い合わせは info@trillion-ai-juku.com までお願いします。")
+
 # 🚫 ライトでは丸ごと使えない AI ルート。★ここは「上限を消費させる前に、はっきり断る」ための
 #   早期ゲート。★「ここに書き忘れても backstop が拾うから安全」ではない —
 #   backstop (_call_anthropic_safe) が効くのは **student_id が渡ってきた呼び出しだけ**で、
@@ -32541,6 +32551,8 @@ def trial_signup(payload: TrialSignup, request: Request):
     if light_trial:
         if not LIGHT_SIGNUP_OPEN:
             raise HTTPException(status_code=403, detail=LIGHT_SIGNUP_CLOSED_DETAIL)
+        if _light_full():   # 先着200名 (支払った人数) に達したら体験も受け付けない
+            raise HTTPException(status_code=403, detail=LIGHT_FULL_DETAIL)
         # ★制限を付ける列が無い (または一時的に読めない) ときは体験を付けない。
         #   付けると 3日間フル機能の体験になる (2,500円のつもりが全機能)。
         if not _students_has_feature_tier():
@@ -33292,6 +33304,8 @@ def create_checkout_session(payload: CheckoutRequest, request: Request):
     if payload.plan == "trillion_light":
         if not LIGHT_SIGNUP_OPEN:
             raise HTTPException(status_code=403, detail=LIGHT_SIGNUP_CLOSED_DETAIL)
+        if _light_full():   # 先着200名 (支払った人数) に達したら決済を始めない
+            raise HTTPException(status_code=403, detail=LIGHT_FULL_DETAIL)
         _lc_email = (payload.email or "").strip().lower()
         if _lc_email or payload.student_id:
             _lc_conn = db()
@@ -33639,6 +33653,19 @@ def list_plans():
         "trial_fee": FOUNDER_TRIAL_PRICE,
         "trial_duration_days": FOUNDER_TRIAL_DAYS,
     }
+
+
+@app.get("/api/light/availability")
+def light_availability():
+    """💴 トリリオン AI学習アプリ (先着200名) の受付状況。light.html が「残り◯名」と締め切りの表示に使う public な照会。
+    支払った人数そのものは返さず、残りの人数だけ返す。人数が読めないときは remaining=None (画面は残り数を出さない)。"""
+    if LIGHT_PAID_CAP <= 0:
+        return {"open": LIGHT_SIGNUP_OPEN, "cap": None, "remaining": None}
+    n = _light_paid_count()
+    if n is None:
+        return {"open": LIGHT_SIGNUP_OPEN, "cap": LIGHT_PAID_CAP, "remaining": None}
+    remaining = max(0, LIGHT_PAID_CAP - n)
+    return {"open": bool(LIGHT_SIGNUP_OPEN and remaining > 0), "cap": LIGHT_PAID_CAP, "remaining": remaining}
 
 
 @app.get("/api/trial/cohort-info")
@@ -40168,6 +40195,39 @@ def _light_signup_block(row) -> Optional[str]:
         return ("このメールアドレスはカード登録つきの無料体験中です。"
                 "プランの変更は info@trillion-ai-juku.com までご連絡ください。")
     return None
+
+
+def _light_paid_count() -> Optional[int]:
+    """トリリオン AI学習アプリを支払って使っている人数 (status が paid / past_due)。読めなければ None。
+    先着200名 (LIGHT_PAID_CAP) の判定と、申込ページの「残り◯名」に使う。"""
+    conn = None
+    try:
+        conn = db(); c = conn.cursor()
+        _has_tier = _students_has_feature_tier()
+        c.execute("SELECT COUNT(*) AS n FROM students WHERE status IN ('paid', 'past_due') AND (plan = ?"
+                  + (" OR LOWER(COALESCE(feature_tier,'')) = ?" if _has_tier else "") + ")",
+                  (("trillion_light", _TIER_LIGHT) if _has_tier else ("trillion_light",)))
+        row = c.fetchone()
+        return int(row["n"] or 0) if row is not None else 0
+    except Exception as _e:
+        log.warning(f"[Light] 支払った人数の読み取りに失敗: {type(_e).__name__}: {_e}")
+        return None
+    finally:
+        try:
+            if conn is not None: conn.close()
+        except Exception:
+            pass
+
+
+def _light_full() -> bool:
+    """先着 LIGHT_PAID_CAP 名 (支払った人数) に達しているか。上限なし (0) と、人数が読めないときは False。"""
+    if LIGHT_PAID_CAP <= 0:
+        return False
+    n = _light_paid_count()
+    if n is None:
+        log.warning("[Light] 支払った人数が読めないため、定員の判定をせずに受け付けた")
+        return False
+    return n >= LIGHT_PAID_CAP
 
 
 def _light_member_ids() -> set:

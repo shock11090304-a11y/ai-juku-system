@@ -138,6 +138,8 @@
           月額 <strong>2,500円</strong>（税込）／
           <strong>3日間の無料体験</strong>（カード登録なし・体験が終わっても料金はかかりません）
         </p>
+        <!-- 💴 先着200名 (支払った人数で数える)。人数と残りはサーバ /api/light/availability から入れる (ここに直書きしない) -->
+        <p id="ltCap" class="checkout-sub" style="display:none;margin-top:0.6rem;color:#fbbf24;font-weight:700;"></p>
       </div>
 
       <div class="lt-card">
@@ -196,6 +198,8 @@
           <li>入塾金（システム登録費 10,000円）はかかりません。</li>
           <li>解約はマイページからいつでも可能です。メールでのご連絡でも承ります。</li>
           <li>英作文・記述の添削は月10回、学習計画の自動作成は月1回までで、毎月1日に戻ります（繰り越しなし）。無料体験中の添削は2回までです。</li>
+          <li><strong>成績の伸び率の実証実験として、先着でご契約いただいた方の人数を限って募集しています。</strong>定員に達したら受付を締め切ります。</li>
+          <li>ご協力のお願い：始める前と3か月後の定期テストや模試の成績、終わった後の短いアンケートにご協力ください。いただいた成績は伸び率の集計だけに使い、お名前・学校名など個人が分かる形で外に出すことはありません。未成年の方は、保護者の方の同意のうえでお申し込みください。</li>
         </ul>
       </div>
 
@@ -358,7 +362,7 @@
       : '📧 無料体験をお使いの方は、体験で登録したメールアドレスをご入力ください。決済の確認もこのアドレスに届きます。';
     $('ltTotalLabel').textContent = (mode === 'trial') ? '本日のお支払い' : '本日お支払い金額';
     $('ltTotalValue').textContent = (mode === 'trial') ? '0円（3日間の無料体験）' : '2,500円';
-    if (LIGHT_SIGNUP_ENABLED) submitBtn.textContent = submitLabel();
+    if (LIGHT_SIGNUP_ENABLED && !LIGHT_FULL) submitBtn.textContent = submitLabel();
     clearError();
   }
   $('ltModeTrial').addEventListener('click', function () { setMode('trial'); });
@@ -383,6 +387,31 @@
     } catch (_e) { /* graceful */ }
     return a;
   }
+
+  // 💴 先着200名 (支払った人数) の残りと締め切り。読めないときは何も出さず、申込はサーバ側の判定に任せる。
+  var LIGHT_FULL = false;
+  function showCapacity() {
+    if (!LIGHT_SIGNUP_ENABLED) return;
+    fetchWithTimeout(API_BASE + '/api/light/availability', { method: 'GET' }, 8000)
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (d) {
+        if (!d || !d.cap) return;
+        var line = $('ltCap');
+        if (typeof d.remaining === 'number' && d.remaining <= 0) {
+          LIGHT_FULL = true;
+          line.textContent = '先着' + d.cap + '名の定員に達したため、受付を締め切りました。';
+          line.style.display = '';
+          submitBtn.disabled = true;
+          submitBtn.textContent = '受付を締め切りました';
+          return;
+        }
+        line.textContent = '🎯 先着' + d.cap + '名の限定募集（成績の伸び率の実証実験）'
+          + (typeof d.remaining === 'number' ? '・残り' + d.remaining + '名' : '');
+        line.style.display = '';
+      })
+      .catch(function () { /* 残りの表示は出さない */ });
+  }
+  showCapacity();
 
   if (!LIGHT_SIGNUP_ENABLED) {
     submitBtn.disabled = true;
@@ -496,6 +525,10 @@
     clearError();
     if (!LIGHT_SIGNUP_ENABLED) {
       showError('🔧 ただいま受付の準備中です。開始までお待ちください。');
+      return;
+    }
+    if (LIGHT_FULL) {
+      showError('先着の定員に達したため、受付を締め切りました。お問い合わせは info@trillion-ai-juku.com までお願いします。');
       return;
     }
 
