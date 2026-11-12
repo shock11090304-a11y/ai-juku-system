@@ -1592,6 +1592,9 @@
           // if (typeof ExamPrep !== 'undefined') { try { ExamPrep.renderUpcomingWidget('examPrepWidget'); } catch (_e) { console.warn('[mypage] ExamPrep widget failed', _e); } }
           // if (typeof ReferralProgram !== 'undefined') { try { ReferralProgram.renderReferralWidget('referralWidget', student); } catch (_e) { console.warn('[mypage] Referral widget failed', _e); } }
           // renderUsageQuotaWidget('usageQuotaWidget');
+          // 💴 2026-11-12 塾長指示: AIアプリ会員 (feature_tier='light') にだけ「今月の利用状況」(添削・学習計画の残り回数) を出す。
+          //   会員かどうかはサーバ (/api/usage/me の feature_tier) で決める。塾生・他プランは欄を隠したまま (上の 9/9 の判断どおり)。
+          renderUsageQuotaWidget('usageQuotaWidget', { lightOnly: true });
           renderCurriculumWeekWidget('curriculumWeekWidget');
           syncCurriculumWeekWidgetFromServer('curriculumWeekWidget'); // ☁️ 端末に無ければアカウントから復元
           renderVocabSrsWidget('vocabSrsWidget', studentId);
@@ -1618,7 +1621,7 @@
     })();
 
     // 月次クォータ・利用状況ウィジェット
-    async function renderUsageQuotaWidget(containerId) {
+    async function renderUsageQuotaWidget(containerId, opts = {}) {
       const el = document.getElementById(containerId);
       if (!el) return;
       const API_BASE = (window.location.origin.includes(':8090') || window.location.origin.includes('localhost:8090'))
@@ -1660,8 +1663,10 @@
                 問題は問題プールから出題されます（AI で新しく問題・参考書を作る機能はありません）。
               </div>
             </div>`;
+          el.style.display = '';  // 容器は 9/9 から display:none。会員のときだけ見せる
           return;
         }
+        if (opts.lightOnly) { el.innerHTML = ''; return; }  // 会員以外は出さない (9/9 の判断どおり)
         // ★AI学習アプリの契約なのに専用の数が返らなかったとき (feature_tier の同期失敗など) は、
         //   汎用の表示 (問題生成 0/0回・プレミアムの勧誘) を出さずに欄ごと隠す。
         if (data.plan === 'trillion_light' || data.feature_tier === 'light') { el.innerHTML = ''; return; }
