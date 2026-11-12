@@ -399,6 +399,13 @@ def _mkrow(sid, email, **cols):
               (sid, "テスト生徒", email, *cols.values()))
     conn.commit(); conn.close()
     main._AI_DISABLED_CACHE.pop(sid, None)
+# ★体験の申込はウェルカムメールを送る。ここでは外へ送らず「送れた」ことにする
+#   (送信失敗の ERROR ログが出ると run_all_gates が「違反を印字した」と見なして落とすため)。
+_sent_welcome = []
+def _fake_send_magic_link_with_retry(to_email, *a, **kw):
+    _sent_welcome.append((to_email, kw.get("trial_note", "")))
+    return {"sent": True}
+main._send_magic_link_with_retry = _fake_send_magic_link_with_retry
 # (1) スイッチが閉じている間は、直接 POST しても体験も決済も受け付けない
 main.LIGHT_SIGNUP_OPEN = False
 r = client.post("/api/trial/signup", json={**_SIGN, "email": "closed1@example.com"})
@@ -427,6 +434,9 @@ try:
             _te = _te.replace(tzinfo=main.timezone.utc)
         _days = (_te - main.datetime.now(main.timezone.utc)).total_seconds() / 86400
         ok(2.9 < _days <= 3.01, f"★体験は3日間 ({_days:.2f}日)")
+    _wl = [n for (to, n) in _sent_welcome if to == "open1@example.com"]
+    ok(bool(_wl) and "2,500" in _wl[0] and "14,500" not in _wl[0],
+       f"体験のウェルカムメールは 2,500円の案内 (14,500円の案内ではない): {(_wl[0] if _wl else '')[:60]}")
     # (3) 塾生 (AIなし枠)・通塾生・契約中・カード登録つきの体験中は、体験も決済も断る
     _cases = [
         (9201, "jukusei@example.com", {"ai_disabled": 1, "status": "trial"}, "塾生"),
