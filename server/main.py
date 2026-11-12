@@ -56157,6 +56157,13 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
         for r in c.fetchall():
             item = {"id": r["id"], "title": r["title"], "video_url": r["video_url"],
                     "provider": r["provider"], "duration_sec": r["duration_sec"]}
+            # 🎬 [2026-11-12] 授業日 (lesson_date 列 → 題名の M/D。読めなければ None) を返す。
+            #   生徒の「動画」タブは授業の登録順 (session id 順) にクラスごとに固めて並べていたため、
+            #   日曜 高校国語 (34本) の下に水曜3限・金曜3限が埋もれ、国公立難関大コースの生徒から
+            #   「日曜しか見られない」と問い合わせが来た。画面側で授業日の新しい順に並べ、クラスで絞れるようにする。
+            _rec_ld = _recording_lesson_date(r["title"], r["created_at"], (r["lesson_date"] if _has_ld else None))
+            item["lesson_date"] = _rec_ld                                  # 表示用 (分からなければ None)
+            item["sort_date"] = _rec_ld or str(r["created_at"] or "")[:10] or None   # 並べ替え用 (読めなければ登録日・下限判定と同じ規則)
             if r["session_id"] is None:
                 loose_recordings.append(item)        # 授業に紐づかない録画 (全員向け)
             elif r["session_id"] in sessions:
@@ -56165,8 +56172,7 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
                 # 🎬 [2026-09-24] 入塾月 (受講開始月の 1 日) より前の授業の録画は出さない (2 万円の全期間視聴は _cutoff=None)。
                 #   授業日は lesson_date 列 → 題名の M/D → 登録日 の順で決める。start_month が空の生徒はこの分岐に入らない。
                 if _cutoff:
-                    _ld = (_recording_lesson_date(r["title"], r["created_at"], (r["lesson_date"] if _has_ld else None))
-                           or str(r["created_at"] or "")[:10])
+                    _ld = _rec_ld or str(r["created_at"] or "")[:10]
                     if _ld < _cutoff:
                         _hidden_recordings += 1
                         continue

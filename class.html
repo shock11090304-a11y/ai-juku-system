@@ -874,13 +874,31 @@
     }
 
     // ===================== 動画 (videos) =====================
+    // 🎬 [2026-11-12] 授業日の新しい順に並べ、クラスで絞れるようにした。以前は授業 (コマ) ごとに固めて
+    //   登録順に並べていたので、日曜 高校国語 (34本) の下に水曜3限・金曜3限が埋もれ、
+    //   国公立難関大コースの生徒から「日曜しか見られない」と言われた。録画の授業日はサーバの lesson_date。
+    var vidFilter = 'all';   // 'all' / クラス名 / '__common' (全体向け)。再描画しても選んだクラスを保つ
+    function vidDateLabel(d) {
+      var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || ''));
+      if (!m) return '';
+      var dt = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      return Number(m[2]) + '/' + Number(m[3]) + '（' + '日月火水木金土'.charAt(dt.getDay()) + '）';
+    }
     function renderVideos() {
       var body = document.getElementById('videosBody');
       var recs = [];
       ((feedData && feedData.sessions) || []).forEach(function (s) {
-        (s.recordings || []).forEach(function (r) { recs.push({ rec: r, sess: s.title, date: s.session_date }); });
+        (s.recordings || []).forEach(function (r) { recs.push({ rec: r, sess: s.title, date: r.lesson_date || s.session_date || null, sd: r.sort_date || r.lesson_date || s.session_date || null }); });
       });
-      ((feedData && feedData.loose_recordings) || []).forEach(function (r) { recs.push({ rec: r, sess: null, date: null }); });
+      ((feedData && feedData.loose_recordings) || []).forEach(function (r) { recs.push({ rec: r, sess: null, date: r.lesson_date || null, sd: r.sort_date || r.lesson_date || null }); });
+      // 授業日の新しい順 (授業日が読めない録画はサーバの sort_date = 登録日で並べる。どちらも無ければ最後・その中は今までどおりの順)
+      recs.forEach(function (x, i) { x.ord = i; });
+      recs.sort(function (a, b) {
+        if (a.sd && b.sd) return a.sd < b.sd ? 1 : (a.sd > b.sd ? -1 : a.ord - b.ord);
+        if (a.sd) return -1;
+        if (b.sd) return 1;
+        return a.ord - b.ord;
+      });
       // 🎬 2026-08-06 から録画は「自分の受講クラスの分だけ」表示する (サーバ側で絞り込み)。
       //   昨日まで他クラスの録画も見えていた生徒がいるので、空でも一覧でも
       //   「絞って出している」ことを画面で必ず伝える (でないと『動画が消えた』になる)。
@@ -919,11 +937,38 @@
         if (_ask) _ask.addEventListener('click', function () { showTab('messages'); });
         return;
       }
-      body.innerHTML = filterNote + recs.map(function (x, i) {
+      // クラスで絞るボタン (クラスが 2 つ以上あるときだけ)。各ボタンに本数を出す
+      var groups = [];
+      recs.forEach(function (x) {
+        var k = x.sess || '__common';
+        var g = groups.filter(function (y) { return y.k === k; })[0];
+        if (!g) { g = { k: k, n: 0 }; groups.push(g); }
+        g.n++;
+      });
+      // ボタンは受講クラスの順に固定 (最新の録画があるクラスを先頭にすると、曜日ごとに位置が動く)
+      groups.sort(function (a, b) {
+        var ia = myCls.indexOf(a.k), ib = myCls.indexOf(b.k);
+        return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
+      });
+      if (vidFilter !== 'all' && !groups.some(function (g) { return g.k === vidFilter; })) vidFilter = 'all';
+      var filterBar = '';
+      if (groups.length > 1) {
+        var btn = function (k, label, n) {
+          var on = vidFilter === k;
+          return '<button type="button" class="btn ' + (on ? 'btn-primary' : 'btn-ghost') + ' vid-filter" data-k="' + esc(k) + '"'
+            + ' aria-pressed="' + (on ? 'true' : 'false') + '" style="padding:0.3rem 0.7rem;font-size:0.8rem;margin:0 0.35rem 0.35rem 0;">'
+            + esc(label) + '（' + n + '）</button>';
+        };
+        filterBar = '<div style="margin-bottom:0.6rem;">' + btn('all', 'すべて', recs.length)
+          + groups.map(function (g) { return btn(g.k, g.k === '__common' ? '全体向け' : g.k, g.n); }).join('') + '</div>';
+      }
+      var shown = vidFilter === 'all' ? recs : recs.filter(function (x) { return (x.sess || '__common') === vidFilter; });
+      body.innerHTML = filterNote + filterBar + shown.map(function (x, i) {
         var r = x.rec;
         var id = r.provider === 'youtube' ? ytId(r.video_url) : null;
         var dur = r.duration_sec ? (' ・ ' + esc(fmtDur(r.duration_sec))) : '';
-        var ctx = x.sess ? ('<div class="card-meta">' + (x.date ? (esc(x.date) + ' ・ ') : '') + esc(x.sess) + '</div>') : '';
+        var dl = vidDateLabel(x.date);
+        var ctx = (x.sess || dl) ? ('<div class="card-meta">' + (dl ? (esc(dl) + (x.sess ? ' ・ ' : '')) : '') + (x.sess ? esc(x.sess) : '') + '</div>') : '';
         var player;
         if (id) {
           player = '<button class="btn btn-ghost rec-toggle" data-yt="' + esc(id) + '" data-i="' + i + '">▶ 再生</button>'
@@ -934,6 +979,9 @@
         return '<div class="card"><div class="card-title" style="font-size:0.98rem;">🎬 ' + esc(r.title) + '<span class="res-sub">' + dur + '</span></div>'
           + ctx + '<div class="row-actions">' + player + '</div></div>';
       }).join('');
+      body.querySelectorAll('.vid-filter').forEach(function (b) {
+        b.addEventListener('click', function () { vidFilter = b.getAttribute('data-k') || 'all'; renderVideos(); });
+      });
       body.querySelectorAll('.rec-toggle').forEach(function (btn) {
         btn.addEventListener('click', function () {
           var pl = body.querySelector('.rec-player[data-pi="' + btn.getAttribute('data-i') + '"]');
