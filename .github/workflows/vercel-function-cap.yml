@@ -19,6 +19,6 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: api/*.py count advisory (architecture guard, non-blocking)
         run: bash scripts/check_vercel_function_cap.sh
