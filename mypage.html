@@ -87,7 +87,26 @@
          (メール不達対策) なので core への昇格を検討すること。 */
       body.aj-hide-adv1 section.aj-adv1 { display: none !important; }
       body.aj-hide-adv2 section.aj-adv2 { display: none !important; }
+      /* 💴 [2026-11-12] トリリオン AI学習アプリ (light) の生徒には、使えない機能 (参考書の作成・学習記録)
+         の入口を出さない。表示だけの振り分けで、権限はサーバが判定する。 */
+      html.tier-light a[href^="textbook-generator.html"],
+      html.tier-light #study-log { display: none !important; }
     </style>
+    <script>
+      // 💴 AI学習アプリの生徒か (サーバ検証済みのセッションの feature_tier。古いセッションは plan で判定)
+      (function () {
+        function apply() {
+          try {
+            var s = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null');
+            var light = !!s && (s.feature_tier ? s.feature_tier === 'light' : s.plan === 'trillion_light');
+            document.documentElement.classList.toggle('tier-light', light);
+          } catch (_) {}
+        }
+        apply();
+        // auth-guard の検証 (非同期) の後のセッションでもう一度合わせる
+        [800, 2500, 6000].forEach(function (ms) { setTimeout(apply, ms); });
+      })();
+    </script>
     <section id="previewBanner" style="display:none; margin:0 0 1rem 0; padding:0.7rem 1rem; background:linear-gradient(90deg, rgba(99,102,241,0.18), rgba(99,102,241,0.05)); border:1px solid rgba(99,102,241,0.45); border-radius:12px; color:#c7d2fe; font-size:0.82rem; font-weight:700;" role="status">👁 プレビュー表示中｜実際の生徒データは表示されません（塾長の見た目確認用）</section>
     <section id="juniorModeHero" style="display:none;" role="region" aria-label="学年モードのご案内">
       <div class="jmh-title" id="jmhTitle"></div>

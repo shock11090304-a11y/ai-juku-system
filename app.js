@@ -58,12 +58,40 @@ function setActivePlan(plan) {
   localStorage.setItem(STORAGE_KEYS.ACTIVE_PLAN, plan);
   updatePlanIndicator();
 }
+// 💴 [2026-11-12] トリリオン AI学習アプリ (light) の生徒には、使えない機能の入口を出さない。
+//   <html> に tier-light を付け、index.html / mypage.html の CSS で隠す (タブ・リンク・カード)。
+//   ★表示だけの振り分け。権限はサーバが判定する (隠し漏れがあっても押せば断られる)。
+//   判定はサーバ検証済みのセッション (auth-guard が /api/auth/me の結果を保存) の feature_tier。
+//   古いセッションで feature_tier が無いときは plan='trillion_light' でも判定する。
+const LIGHT_HIDDEN_TABS = ['problems', 'moshi'];
+function isLightTierMember() {
+  try {
+    const s = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null');
+    if (!s) return false;
+    if (s.feature_tier) return s.feature_tier === 'light';
+    return s.plan === 'trillion_light';
+  } catch (_) { return false; }
+}
+function applyLightTierUi() {
+  const light = isLightTierMember();
+  document.documentElement.classList.toggle('tier-light', light);
+  if (!light) return;
+  const active = document.querySelector('.tab.active');
+  if (active && LIGHT_HIDDEN_TABS.includes(active.dataset.tab) && typeof switchTab === 'function') {
+    switchTab('tutor');
+  }
+}
+applyLightTierUi();
+// auth-guard の /api/auth/me 検証は非同期なので、検証後のセッションでもう一度合わせる
+[800, 2500, 6000].forEach(ms => setTimeout(applyLightTierUi, ms));
+
 function updatePlanIndicator() {
   const el = document.getElementById('planIndicator');
   if (!el) return;
   const info = getPlanInfo();
   const usedSlots = state.students?.length || 0;
   const maxSlots = info.maxStudents;
+  applyLightTierUi();
   el.innerHTML = `
     <span style="background:${info.color};color:#fff;padding:0.2rem 0.5rem;border-radius:8px;font-size:0.75rem;font-weight:700;">
       ${info.name}
@@ -1307,6 +1335,12 @@ function showQuotaExhaustedDialog(feature, message) {
   const planFromStudent = student && student.plan ? String(student.plan) : '';
   const PREMIUM_TIER = ['premium', 'family', 'founder_special', 'founder1', 'hybrid', 'intensive'];
   const userIsPremium = isPremium || isLightLimit || PREMIUM_TIER.includes(planFromStudent);
+  // 💴 AI学習アプリで「そもそも使えない機能」(問題・参考書の AI 作成) は、上限ではないので
+  //   「上限に達しました」と書かない (待てば使えると誤解させない)。
+  const isLightUnavailable = isLightLimit && (feature === 'problems' || feature === 'textbooks'
+    || /作ることはできません|ご利用いただけません/.test(cleanMessage));
+  const quotaTitle = isLightUnavailable ? 'この機能はご利用いただけません' : 'AI の利用上限に達しました';
+  const quotaIcon = isLightUnavailable ? '🔒' : '⏰';
 
   const modal = document.createElement('div');
   modal.id = 'quotaExhaustedModal';
@@ -1320,8 +1354,8 @@ function showQuotaExhaustedDialog(feature, message) {
     //   cleanMessage に一本化する。
     modal.innerHTML = `
       <div style="background:linear-gradient(135deg,#1a1432,#2a1a48);border:1px solid rgba(167,139,250,0.4);border-radius:18px;padding:1.8rem;max-width:480px;width:100%;color:#f5f5fa;">
-        <div style="font-size:2rem;margin-bottom:0.5rem;">⏰</div>
-        <h3 style="font-size:1.3rem;margin:0 0 0.5rem 0;color:#fbbf24;">AI の利用上限に達しました</h3>
+        <div style="font-size:2rem;margin-bottom:0.5rem;">${quotaIcon}</div>
+        <h3 style="font-size:1.3rem;margin:0 0 0.5rem 0;color:#fbbf24;">${quotaTitle}</h3>
         <p style="font-size:0.92rem;color:#cbd5e1;margin-bottom:1rem;line-height:1.6;">${escapeHtml(cleanMessage)}</p>
         <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:10px;padding:0.9rem;margin-bottom:1.2rem;">
           <p style="margin:0;font-size:0.85rem;color:#cbd5e1;line-height:1.6;">
@@ -7235,6 +7269,8 @@ function initChartsIfNeeded() {
 // Tab Switching
 // ==========================================================================
 function switchTab(tabId) {
+  // 💴 AI学習アプリの生徒は、隠したタブ (問題の AI 生成・模試) へ別の導線から飛ばされても開かない
+  if (LIGHT_HIDDEN_TABS.includes(tabId) && isLightTierMember()) tabId = 'tutor';
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `tab-${tabId}`));
   if (tabId === 'parent') setTimeout(() => { initChartsIfNeeded(); if (typeof wcpUpdateStatus === 'function') wcpUpdateStatus(); }, 50);

@@ -1458,6 +1458,13 @@
       min-width: 44px;
     }
     .phist-delete-btn:hover { background: rgba(239, 68, 68, 0.3); }
+    /* 💴 [2026-11-12] トリリオン AI学習アプリ (light) の生徒には、使えない機能の入口を出さない。
+       <html class="tier-light"> は app.js の applyLightTierUi が付ける (表示だけ。権限はサーバが判定)。 */
+    html.tier-light .tab[data-tab="problems"],
+    html.tier-light .tab[data-tab="moshi"],
+    html.tier-light #tab-problems,
+    html.tier-light #tab-moshi,
+    html.tier-light a[href^="textbook-generator.html"] { display: none !important; }
   </style>
   <div id="problemHistoryModal" class="phist-modal" role="dialog" aria-labelledby="phistTitle" aria-modal="true">
     <div class="phist-overlay"></div>
@@ -1479,7 +1486,7 @@
   <script src="exam-prep.js?v=20260721-xstudent-batch2"></script>
   <script src="referral-program.js?v=20260721-xstudent-batch2"></script>
   <script src="toast.js?v=20260526-profile-sync"></script>
-  <script src="app.js?v=20261010b-sapuri-caps-fix"></script>
+  <script src="app.js?v=20261112-ai-app-hide"></script>
   <script>
   // 定期テスト連携: exam-prep.html から ?examPrep=1&subject=&topic=&examId= で来た時、
   // 問題ジェネレーターに自動入力 + タブ切替 + 通知バナー
@@ -1493,6 +1500,8 @@
 
       // タブを「問題自動生成」に切替 (app.js初期化後に確実に効くよう少し遅延)
       function switchToProblemsTab() {
+        // 💴 AI学習アプリの生徒は問題の AI 生成タブを使わない (タブは隠している)
+        if (document.documentElement.classList.contains('tier-light')) return;
         const tabBtn = document.querySelector('.tab[data-tab="problems"]');
         if (tabBtn) tabBtn.click();
         // 念のためDOM直接操作も併用 (handlerが未バインドでも切替できるよう)

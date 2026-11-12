@@ -31845,6 +31845,13 @@ def auth_me(authorization: Optional[str] = Header(None)):
     except Exception as _cae:
         log.warning(f"[auth_me] cancel_at fetch skipped: {_cae}")
     student["entitled"] = True  # 🚪 [login-allow-inactive] active 本人。auth-guard は entitled で分岐。
+    # 💴 [2026-11-12] 機能層を画面に渡す。AI学習アプリ (light) の生徒には、使えない機能
+    #   (AI問題自動生成・模試・参考書の作成・学習記録) の入口を最初から出さないために使う。
+    #   ★表示の振り分けだけ。権限はサーバの各ゲート (middleware / 上限) が判定する。
+    try:
+        student["feature_tier"] = _student_tier(student["id"])
+    except Exception:
+        student["feature_tier"] = "full"
     # 📲 2026-09-09: mypage の LINE 連携 CTA を「未連携の生徒にだけ」出すための真偽値。LINE の userId 自体は返さない。
     student["line_linked"] = bool(student.pop("line_user_id", None))
     # 🎯 [体験中フォロー] mypage の残日数カウントダウン+緊急継続CTA 用。status=trial かつ
