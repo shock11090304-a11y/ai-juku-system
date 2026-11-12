@@ -200,8 +200,15 @@ if True:
                                   "finishReason": "STOP"}],
                   "usageMetadata": {"promptTokenCount": 10, "candidatesTokenCount": 5}}
 
+    _sent_models = []   # Anthropic へ実際に送ったモデル名 (Sonnet 固定の検査で使う)
+
     def _fake_urlopen(req, *a, **kw):
         url = getattr(req, "full_url", str(req))
+        if "anthropic" in url:
+            try:
+                _sent_models.append(_json.loads(req.data.decode()).get("model"))
+            except Exception:
+                _sent_models.append(None)
         return _FakeResp(_GEMINI_OK if "generativelanguage" in url else _ANTHROPIC_OK)
 
     _real_urlopen = _ureq.urlopen
@@ -322,11 +329,35 @@ if True:
         ok(r.status_code == 200,
            f"★汎用の essays が上限でも、専用の枠が残っていれば通る (二重に数えない) → {r.status_code} {str(r.json())[:60]}")
 
+        # (5d) ★AI学習アプリは Opus を使わない (2026-11-12 塾長決定「Sonnetに固定」)。full は Opus のまま
+        _sent_models.clear()
+        r = client.post("/api/ai/call",
+                        json={"system": "s", "kind": "chat", "model": "claude-opus-4-7",
+                              "messages": [{"role": "user", "content": "hi"}]},
+                        headers=HG)
+        ok(r.status_code == 200 and _sent_models and all(m == main.LIGHT_AI_MODEL for m in _sent_models)
+           and not main.LIGHT_AI_MODEL.startswith("claude-opus"),
+           f"★light が Opus を指定 → {main.LIGHT_AI_MODEL} で送る (送ったモデル={_sent_models})")
+        # サーバ側の呼び出し (_call_anthropic_safe に student_id を渡す経路) でも同じ
+        _sent_models.clear()
+        main._call_anthropic_safe({"model": "claude-opus-4-7", "max_tokens": 100, "system": "s",
+                                   "messages": [{"role": "user", "content": "hi"}]},
+                                  kind="chat", student_id=G, skip_light=True)
+        ok(_sent_models and _sent_models[0] == main.LIGHT_AI_MODEL,
+           f"★サーバ起点でも light は Opus を使わない (送ったモデル={_sent_models})")
+
         # (6) full の生徒は何回撃ってもカウンタ行が1つも増えない
         F2 = 9111
         mkstudent(F2, feature_tier=None)
         HF = {"Authorization": "Bearer " + main._sign_session_token(F2),
               "Origin": "https://trillion-ai-juku.com"}
+        _sent_models.clear()
+        r = client.post("/api/ai/call",
+                        json={"system": "s", "kind": "chat", "model": "claude-opus-4-7",
+                              "messages": [{"role": "user", "content": "hi"}]},
+                        headers=HF)
+        ok(r.status_code == 200 and _sent_models and _sent_models[0] == "claude-opus-4-7",
+           f"★full は Opus のまま (送ったモデル={_sent_models})")
         for _ in range(3):
             client.post("/api/ai/call",
                         json={"system": "s", "kind": "chat", "messages": [{"role": "user", "content": "hi"}]},

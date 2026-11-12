@@ -695,6 +695,8 @@ PLAN_DAILY_TOKEN_BUDGET = {
     #   これが原価の唯一の歯止め。★実際の値は env LIGHT_DAILY_TOKEN_BUDGET (既定 100K) で、
     #   _check_ai_budget が feature_tier='light' の生徒にはそちらを使う (plan は自称できるため tier で判定)。
     #   ここは plan='trillion_light' で引かれたときの表示用に同じ既定値を置いているだけ。
+    #   ★モデルは Sonnet に固定 (LIGHT_AI_MODEL)。Sonnet で毎日 100K 使い切ると月 約$20 (粗い見積もり)。
+    #     判定は呼び出しの前なので、同時に投げた分は少し超えうる。値は本番の使用量を見て決め直す。
     "trillion_light":    100_000,
 }
 
@@ -3422,6 +3424,7 @@ LIGHT_CURRICULUM_PER_MONTH = _env_int("LIGHT_CURRICULUM_PER_MONTH", 1, lo=0, hi=
 LIGHT_TRIAL_DAYS = _env_int("LIGHT_TRIAL_DAYS", 3, lo=1, hi=30)
 # 直近24時間の AI の量の上限 (input+output トークン)。AI チューターは回数無制限なので、これが原価の唯一の歯止め。
 #   ★仮の値。毎日上限まで使い切っても月の原価が売上 (¥2,500) を大きく超えない水準として trial と同じ 100K にした。
+#     この見積もりは Sonnet が前提 (light は LIGHT_AI_MODEL で Opus を使わない・2026-11-12 塾長決定)。
 #   実際の使い方 (anthropic_usage_log) を見て塾長と決め直すこと (env で変えられる)。
 LIGHT_DAILY_TOKEN_BUDGET = _env_int("LIGHT_DAILY_TOKEN_BUDGET", 100_000, lo=10_000, hi=5_000_000)
 # usage_monthly (PK = student_id, feature, year_month) に相乗りする feature キー。
@@ -3433,6 +3436,29 @@ _LIGHT_TRIAL_PERIOD = "trial"
 _LIGHT_DENIED_FEATURE = "light_denied"
 # 表示名 (生徒・保護者に出る名前)。内部キー trillion_light を画面に出さないこと。
 LIGHT_PLAN_LABEL = "トリリオン AI学習アプリ"
+# 💴 AI学習アプリは Opus を使わない (2026-11-12 塾長決定「Sonnetに固定」)。
+#   ★日次の量はトークン数で数えるので、Opus (Sonnet の約5倍の単価) だと同じ量でも月の原価が
+#     2,500円を超えうる。生徒の画面が Opus を指定してきても、light ならこのモデルに置き換える。
+#   env で変えられるが、Opus を指定しても Sonnet に戻す (固定の約束を env で崩さない)。
+LIGHT_AI_MODEL = os.getenv("LIGHT_AI_MODEL", "claude-sonnet-4-6").strip() or "claude-sonnet-4-6"
+if LIGHT_AI_MODEL.startswith("claude-opus"):
+    LIGHT_AI_MODEL = "claude-sonnet-4-6"
+
+
+def _light_model_for(student_id, model):
+    """light の生徒なら Opus を LIGHT_AI_MODEL に置き換えたモデル名を返す。それ以外はそのまま。
+    判定に失敗したらそのまま (既存の生徒を巻き込まない)。"""
+    m = str(model or "")
+    if student_id is None or not m.startswith("claude-opus"):
+        return model
+    try:
+        if _student_tier(student_id) == _TIER_LIGHT:
+            return LIGHT_AI_MODEL
+    except Exception as _e:
+        log.warning(f"[Light] モデル固定の層判定に失敗 (そのまま): {type(_e).__name__}: {_e}")
+    return model
+
+
 # 💴 受付スイッチ (サーバー側)。light.html の LIGHT_SIGNUP_ENABLED は画面の中だけなので、
 #   こちらが閉じている間は /api/trial/signup と /api/stripe/checkout に直接 POST されても
 #   AI学習アプリの体験・申込を受け付けない (公開前に値段入りのメールが出たり、決済が通ったりしない)。
@@ -15009,6 +15035,9 @@ def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = No
             })
 
     requested_model = body.get("model") or "claude-sonnet-4-6"
+    # 💴 AI学習アプリ (light) は Opus を使わない。サーバ起点のバッチ (skip_light) でも同じ
+    #   (回数は数えないが、原価は同じようにかかるため)。Opus 専用の項目は下の tier ごとの組み直しで外れる。
+    requested_model = _light_model_for(student_id, requested_model)
     # ⏱ per-call timeout (2026-07-20): 非ストリーミングなので応答は生成完了まで届かない。
     # 長文生成 (curriculum の 12k tokens 級 JSON 等) は 180s では生成途中に socket timeout →
     # リトライ 3 連 (input 3 重課金) → 降格の悪循環になるため、caller が "_timeout_s" で延長できる。
@@ -40535,6 +40564,9 @@ def ai_proxy(payload: AIProxyRequest, request: Request, authorization: Optional[
         _record_ai_call_failure("too_many_images", 413, f"image_blocks={_img_block_total}", payload, request)
         raise HTTPException(status_code=413, detail="添付画像/PDF が多すぎます (1 リクエストあたり 10 個まで)")
 
+    # 💴 AI学習アプリ (light) は Opus を使わない。thinking などの組み立てより前に置き換えて、
+    #   Sonnet 用の thinking (budget_tokens) が付くようにする。なりすまし (塾長の確認) でも同じ。
+    payload.model = _light_model_for(payload.student_id, payload.model)
     body = {
         "model": payload.model,
         "max_tokens": max_tokens,
