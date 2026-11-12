@@ -17541,6 +17541,14 @@ _STRIPE_PLAN_SPECS = [
         "description": "通塾生限定 (塾長招待制)・永年¥5,000/月・全機能無制限・入塾金免除",
         "metadata": {"plan": "student_addon", "perpetual": "true", "invite_only": "true"},
     },
+    {
+        # 💴 2026-11-12 外部向け (塾長決定)。金額は PRICE_MAP["trillion_light"] と同じ
+        "lookup_key": "trillion_light",
+        "amount": 2500,
+        "product_name": "トリリオン AI学習アプリ",
+        "description": "月額¥2,500・入塾金なし・AIチューター/学習診断/添削 月10回/学習計画 月1回",
+        "metadata": {"plan": "trillion_light", "tier": "light"},
+    },
 ]
 
 
@@ -17712,6 +17720,7 @@ def admin_stripe_check_prices(authorization: Optional[str] = Header(None)):
         "family": STRIPE_PRICE_FAMILY,
         "standard": STRIPE_PRICE_STANDARD,
         "student_addon": STRIPE_PRICE_STUDENT_ADDON,
+        "trillion_light": STRIPE_PRICE_TRILLION_LIGHT,
     }
 
     results = []

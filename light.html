@@ -6,9 +6,6 @@
   <script src="cache-purge.js?v=20261112-aiapp"></script>
   <script src="frontend-error-monitor.js?v=20260427-init"></script>
   <title>トリリオン AI学習アプリ お申込み | AIコーチング</title>
-  <!-- ★受付を始める (LIGHT_SIGNUP_ENABLED = true) までは検索に出さない。
-       公開するときにこの行を消すこと (塾長の「公開して」の後)。 -->
-  <meta name="robots" content="noindex,nofollow">
   <meta name="description" content="トリリオン AI学習アプリ 月額2,500円（税込）。AIチューター・学習診断・単元ドリル・弱点ドリル・AI単語帳。3日間の無料体験（カード登録なし）。">
   <link rel="stylesheet" href="lp.css">
   <link rel="stylesheet" href="checkout.css">
@@ -307,8 +304,9 @@
   //     - legal.html#tokusho・利用規約に、このプラン (料金・3日間の体験・月の上限・使えない機能) の行がある
   //     - 本番 DB に students.feature_tier 列がある (無いと体験生に制限が掛からず 3日間フル機能になる)
   //     - テスト用の申込で、体験の登録 → feature_tier='light' → 問題の AI 生成が断られる → 申込 → paid、を通した
-  //     - 上の <meta name="robots" content="noindex,nofollow"> を消す
-  var LIGHT_SIGNUP_ENABLED = false;
+  //     - 検索よけ (robots の noindex) を外す (2026-11-12 に外した)
+  // 2026-11-12 塾長の「やって」(公開の指示) で開けた。サーバー側の env LIGHT_SIGNUP_OPEN=1 と組で開く。
+  var LIGHT_SIGNUP_ENABLED = true;
 
   var $ = function (id) { return document.getElementById(id); };
   var form = $('ltForm'), submitBtn = $('ltSubmit'), errorBox = $('ltError'),
