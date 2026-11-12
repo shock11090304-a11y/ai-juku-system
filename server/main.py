@@ -110,6 +110,8 @@ STRIPE_PRICE_STANDARD = os.getenv("STRIPE_PRICE_STANDARD") or os.getenv("STRIPE_
 STRIPE_PRICE_PREMIUM = os.getenv("STRIPE_PRICE_PREMIUM") or os.getenv("STRIPE_PRICE_HYBRID", "price_premium_placeholder")
 STRIPE_PRICE_FAMILY = os.getenv("STRIPE_PRICE_FAMILY") or os.getenv("STRIPE_PRICE_INTENSIVE", "price_family_placeholder")
 STRIPE_PRICE_STUDENT_ADDON = os.getenv("STRIPE_PRICE_STUDENT_ADDON", "price_student_addon_placeholder")
+# 💴 トリリオン AI学習アプリ (月¥2,500・2026-11-12)。env 未設定なら lookup_key="trillion_light" で引く。
+STRIPE_PRICE_TRILLION_LIGHT = os.getenv("STRIPE_PRICE_TRILLION_LIGHT", "")
 # 🎁 期間限定50名・永年¥14,500 (founder_special)
 # - 旧 founder1 (¥25,000・100名) は 2026-04-28 廃止
 # - Stripe Price は admin endpoint /api/admin/stripe/setup-founder-special で自動作成可
@@ -194,6 +196,12 @@ PRICE_MAP = {
     "premium": (STRIPE_PRICE_PREMIUM, 39800, "プレミアム", 1),  # 据置 + 学習管理機能を解放
     "family": (STRIPE_PRICE_FAMILY, 59800, "家族プラン（最大3名）", 3),  # 据置
     "student_addon": (STRIPE_PRICE_STUDENT_ADDON, 5000, "通塾生プラン", 1),  # ¥9,800 → ¥5,000 値下げ + 機能フル付与
+    # 💴 トリリオン AI学習アプリ (外部向け・月¥2,500・入塾金なし・2026-11-12 塾長決定)。
+    #   ★金額は plans.js / light.html と scripts/check_plan_price_sync.py で照合している。変えたら3か所とも直す。
+    #   ★表示名に「AI学習アプリ」が入るが、通塾生の月謝 webhook (api/stripe-webhook.py) は
+    #     metadata.registration_id / metadata.system を持つ決済しか扱わず (無いものは skip)、内訳文字列の
+    #     「AI学習アプリ」判定も register-subscribe が作った内訳にしか掛けないので取り違えない (2026-11-12 確認)。
+    "trillion_light": (STRIPE_PRICE_TRILLION_LIGHT, 2500, "トリリオン AI学習アプリ", 1),
     # 後方互換 (founder1 は 2026-04-28 廃止・新 founder_special に置換)
     "founder1": (STRIPE_PRICE_FOUNDER_SPECIAL, 14500, "創設メンバー (永年¥14,500)", 1),
     "ai": (STRIPE_PRICE_STANDARD, 24980, "スタンダード (旧・募集停止)", 1),
@@ -611,7 +619,7 @@ WHOIS_RENEWAL_REMINDER_MONTH = int(os.getenv("WHOIS_RENEWAL_REMINDER_MONTH", "0"
 WHOIS_RENEWAL_REMINDER_DAY = int(os.getenv("WHOIS_RENEWAL_REMINDER_DAY", "0"))
 
 # 入塾金を免除するプラン
-ENROLLMENT_FEE_EXEMPT = {"student_addon"}
+ENROLLMENT_FEE_EXEMPT = {"student_addon", "trillion_light"}  # trillion_light: 入塾金なし (2026-11-12 塾長決定)
 
 # キャンペーン: 先着N名は入塾金 (¥10,000) を免除
 # 環境変数で枠数 / 有効化を制御可能
@@ -639,9 +647,10 @@ PLAN_QUOTAS = {
     "ai":              {"problems": 50, "essays": 20, "textbooks": 5},         # 後方互換 (旧 standard)
     # トライアル中もスタンダードと同等の制限
     "trial":         {"problems": 50, "essays": 20, "textbooks": 5},
-    # 🪶 トリリオン・ライト。実効の縛りは「AI呼び出し 月10回」なので、ここは
-    #   trial fallback (50/20/5) が誤適用されないよう明示するだけ (回数の方が先に効く)。
-    "trillion_light": {"problems": 50, "essays": 20, "textbooks": 5},
+    # 💴 トリリオン AI学習アプリ (2026-11-12)。問題・参考書の AI 作成はなし、添削 月10回。
+    #   実効の縛りは feature_tier='light' の _light_quota_exceeded (体験中の添削2回もそちら)。
+    #   ここは trial fallback (50/20/5) が誤適用されないよう同じ数を明示する。plans.js の quotas と照合している。
+    "trillion_light": {"problems": 0, "essays": 10, "textbooks": 0},
 }
 # クォータ check 対象の機能名 (これ以外は制限なし)
 QUOTA_FEATURES = {"problems", "essays", "textbooks"}
@@ -682,11 +691,11 @@ PLAN_DAILY_TOKEN_BUDGET = {
     "student_addon":     200_000,
     # 体験
     "trial":             100_000,
-    # 🪶 トリリオン・ライト。★AI 呼び出し回数は別途 月 LIGHT_AI_CALLS_PER_MONTH 回で縛るので、
-    #   ここは「1回あたりが極端に大きい生成で焼かれない」ための保険。回数上限より先に
-    #   ここへ当たると、生徒には LP に書いていない「トークン」という単位で断ることになるため
-    #   やや余裕を持たせる (10回 × 24,000 tokens 相当)。
-    "trillion_light":    250_000,
+    # 💴 トリリオン AI学習アプリ (月¥2,500・2026-11-12)。AI チューターは回数無制限なので、
+    #   これが原価の唯一の歯止め。★実際の値は env LIGHT_DAILY_TOKEN_BUDGET (既定 100K) で、
+    #   _check_ai_budget が feature_tier='light' の生徒にはそちらを使う (plan は自称できるため tier で判定)。
+    #   ここは plan='trillion_light' で引かれたときの表示用に同じ既定値を置いているだけ。
+    "trillion_light":    100_000,
 }
 
 # 🏷 /api/ai/call が受け付ける kind の allowlist。events.name (`ai_call_{kind}`) と
@@ -812,6 +821,8 @@ def _lookup_plan_price_id(plan: str) -> str:
         env_pid = STRIPE_PRICE_FAMILY
     elif lookup_key == "standard":
         env_pid = STRIPE_PRICE_STANDARD
+    elif lookup_key == "trillion_light":
+        env_pid = STRIPE_PRICE_TRILLION_LIGHT
     if env_pid and not env_pid.endswith("_placeholder"):
         return env_pid
 
@@ -2475,9 +2486,9 @@ def init_db():
         #   ai_disabled=1 のままこの日時が未来の間だけ AI を開ける → 期限が来れば自動で塾生アプリのみに戻る
         #   (手で戻す運用が要らない)。判定は _ai_blocked_now() 一箇所のみ。naive UTC で保存する。
         ("students_ai_trial_until", "ALTER TABLE students ADD COLUMN ai_trial_until TIMESTAMP"),
-        # 🪶 [トリリオン・ライト 2026-08-20 塾長指示] 月¥3,000 の下位プラン (先行50名・外部流入の受け皿)。
-        #   'light' = AI は使えるが上限つき (AI呼び出し 月 LIGHT_AI_CALLS_PER_MONTH 回 / カリキュラム生成は
-        #   生涯 LIGHT_CURRICULUM_LIFETIME 回)。NULL / '' / 'full' = 従来どおり無制限。
+        # 🪶 [トリリオン・ライト 2026-08-20 塾長指示 → 2026-11-12「トリリオン AI学習アプリ」月¥2,500 に作り替え]
+        #   'light' = AI は使えるが機能と回数に制限あり (問題・参考書の AI 作成なし / 添削 月 LIGHT_ESSAYS_PER_MONTH 回 /
+        #   学習計画 月 LIGHT_CURRICULUM_PER_MONTH 回)。NULL / '' / 'full' = 従来どおり無制限。
         #   ★権限を students.plan で判定してはいけない: /api/trial/signup の plan は生徒が自由に送れる
         #     文字列で検証が無い (POST {"plan":"premium"} で自称できる)。だから専用列で持つ。
         ("students_feature_tier", "ALTER TABLE students ADD COLUMN feature_tier TEXT"),
@@ -3335,6 +3346,11 @@ _GATE_EVENT_NAMES = (
     "light_budget_label_failed",
     "ai_disabled_read_failed",
     "ai_budget_check_failed",
+    # 💴 2026-11-12 トリリオン AI学習アプリ・月¥2,500
+    #   ★この一覧のコメントに丸括弧を書かない。check_frontend_limit_messages.py の正規表現が
+    #   最初の閉じ丸括弧で一覧を読み終えてしまう
+    "light_tier_sync_failed",      # 決済後に feature_tier を付けられなかった = 上限が効かない契約者
+    "light_trial_tier_missing",    # 3日間の体験に feature_tier を付けられなかった = 列が無い
 )
 _GATE_EVENT_LAST: dict = {}        # event_name -> 最後に記録した時刻
 _GATE_EVENT_LOCK = threading.Lock()
@@ -3343,7 +3359,7 @@ _GATE_EVENT_LOCK = threading.Lock()
 def _record_gate_failure_async(event_name: str, props: dict) -> None:
     """権限/上限ゲートのフェイルオープンを、呼び出し元をブロックせずに events へ残す。
 
-    ★キーは _GATE_EVENT_NAMES の固定文字列 (現在9種) だけなので _GATE_EVENT_LAST は肥大化しない。
+    ★キーは _GATE_EVENT_NAMES の固定文字列 (現在12種) だけなので _GATE_EVENT_LAST は肥大化しない。
       **変数をキーにしないこと** (student_id 等を混ぜると生徒数ぶん増え、間隔制限も効かなくなる)。
     ★守る区間は dict の参照・比較・代入だけで I/O をまったく含まないので、素直にロックを取る。
       (「ロックは async middleware を待たせるから避ける」は**ここでは誤り**。待たせようがない。
@@ -3386,18 +3402,44 @@ def _record_gate_failure_async(event_name: str, props: dict) -> None:
 #     両者が食い違い「押しても戻される壊れたボタン」を再生産する ([[tsujuku-app-only-ai-disabled]])。
 _TIER_FULL = "full"
 _TIER_LIGHT = "light"
-# 月次 AI 呼び出し上限 (kind='curriculum' 以外の全 Anthropic 呼び出しが対象)。
-# ★塾長の意図は「原価対策」ではなく「上位プランとのカニバリ防止」(2026-08-20)。実測の粗利は
-#   月10回で 99%、月50回でも 95% 残る。数字を動かすときはカニバリ設計として判断すること。
-LIGHT_AI_CALLS_PER_MONTH = _env_int("LIGHT_AI_CALLS_PER_MONTH", 10, lo=0, hi=100000)
-# カリキュラム生成の生涯上限 (入会時に1回だけ学習計画を出す)。単価が全機能トップ ($0.154〜0.369/回)
-# かつ本体プランの看板機能なので、月次ではなく生涯で絞る。
-LIGHT_CURRICULUM_LIFETIME = _env_int("LIGHT_CURRICULUM_LIFETIME", 1, lo=0, hi=100000)
+# 💴 [2026-11-12 塾長決定] ライトを「トリリオン AI学習アプリ」(月¥2,500・外部向け) に作り替えた。
+#   内部キー (plan='trillion_light' / feature_tier='light') は据え置き。旧仕様 (月¥3,000・AI 合計 月10回・
+#   学習計画 生涯1回・無料体験なし) は一度も売っていない (受付スイッチ false のまま) ので互換は持たない。
+#   新仕様 (計画書: 塾運営/AIアプリ_月額2500円プラン案_20261112.md の 7・9章):
+#     - 問題の AI 生成・参考書の生成・模試の AI 分析は**使えない** (問題は既存の問題プールから出す)
+#     - 英作文・記述の添削: 契約後 月 LIGHT_ESSAYS_PER_MONTH 回 / 体験中 (status='trial') は体験期間で LIGHT_TRIAL_ESSAYS 回
+#     - 学習計画の自動作成: 月 LIGHT_CURRICULUM_PER_MONTH 回
+#     - AI チューター・学習診断・弱点分析など、それ以外の AI は回数で縛らない。
+#       ★原価の歯止めは「直近24時間の AI の量」(PLAN_DAILY_TOKEN_BUDGET['trillion_light']) だけ。
+#       kind は生徒側が選べる値なので、添削を "chat" として送れば添削の回数枠は避けられる —
+#       それは「AI チューターに添削を頼んだ」のと同じで、1日の量で必ず止まる。回数枠は案内の目安。
+LIGHT_ESSAYS_PER_MONTH = _env_int("LIGHT_ESSAYS_PER_MONTH", 10, lo=0, hi=100000)
+LIGHT_TRIAL_ESSAYS = _env_int("LIGHT_TRIAL_ESSAYS", 2, lo=0, hi=100000)
+# 学習計画の自動作成。単価が全機能トップ ($0.154〜0.369/回) なので月1回に絞る。
+LIGHT_CURRICULUM_PER_MONTH = _env_int("LIGHT_CURRICULUM_PER_MONTH", 1, lo=0, hi=100000)
+# 3日間の無料体験 (カード登録なし・延長なし・自動課金なし)。FOUNDER_TRIAL_DAYS (7日) は他の経路と
+#   共有しているので触らず、別の値で持つ。
+LIGHT_TRIAL_DAYS = _env_int("LIGHT_TRIAL_DAYS", 3, lo=1, hi=30)
+# 直近24時間の AI の量の上限 (input+output トークン)。AI チューターは回数無制限なので、これが原価の唯一の歯止め。
+#   ★仮の値。毎日上限まで使い切っても月の原価が売上 (¥2,500) を大きく超えない水準として trial と同じ 100K にした。
+#   実際の使い方 (anthropic_usage_log) を見て塾長と決め直すこと (env で変えられる)。
+LIGHT_DAILY_TOKEN_BUDGET = _env_int("LIGHT_DAILY_TOKEN_BUDGET", 100_000, lo=10_000, hi=5_000_000)
 # usage_monthly (PK = student_id, feature, year_month) に相乗りする feature キー。
-_LIGHT_AI_FEATURE = "light_ai_calls"
+_LIGHT_ESSAY_FEATURE = "light_essays"
 _LIGHT_CURRICULUM_FEATURE = "light_curriculum"
-# 生涯カウンタ用の擬似 year_month。'YYYYMM' と衝突しない値にする。
-_LIFETIME_PERIOD = "lifetime"
+# 体験中の添削は「体験期間で通算」なので月ではなく固定の擬似 year_month で数える ('YYYYMM' と衝突しない値)。
+_LIGHT_TRIAL_PERIOD = "trial"
+# 使えない機能の擬似 bucket (limit=0 で必ず断る・消費はしない)
+_LIGHT_DENIED_FEATURE = "light_denied"
+# 表示名 (生徒・保護者に出る名前)。内部キー trillion_light を画面に出さないこと。
+LIGHT_PLAN_LABEL = "トリリオン AI学習アプリ"
+# 💴 受付スイッチ (サーバー側)。light.html の LIGHT_SIGNUP_ENABLED は画面の中だけなので、
+#   こちらが閉じている間は /api/trial/signup と /api/stripe/checkout に直接 POST されても
+#   AI学習アプリの体験・申込を受け付けない (公開前に値段入りのメールが出たり、決済が通ったりしない)。
+#   ★開けるのは塾長の「公開して」の後。Railway の env LIGHT_SIGNUP_OPEN=1 と light.html のスイッチを両方開ける。
+LIGHT_SIGNUP_OPEN = os.getenv("LIGHT_SIGNUP_OPEN", "").strip().lower() in ("1", "true", "yes", "on")
+LIGHT_SIGNUP_CLOSED_DETAIL = (f"{LIGHT_PLAN_LABEL} の受付はまだ始まっていません。"
+                              "お問い合わせは info@trillion-ai-juku.com までお願いします。")
 
 # 🚫 ライトでは丸ごと使えない AI ルート。★ここは「上限を消費させる前に、はっきり断る」ための
 #   早期ゲート。★「ここに書き忘れても backstop が拾うから安全」ではない —
@@ -3413,6 +3455,10 @@ _LIGHT_DENIED_EXACT = frozenset({
     "/api/mock-exam/grade-essay",          # 英作文 AI 採点
     "/api/mock-exam/grade-essay-multiview",
     "/api/curricula/ai-generate",          # 学習管理側のカリキュラム生成 (本体プランの看板)
+    "/api/weak-points/generate-worksheet",  # AI が弱点プリントの問題を新しく作る (2026-11-12「生徒は新しく作れない」)。
+                                            #   plan の文字列でしか止めていなかったので、tier でも断る
+    "/api/textbooks/request-generation",   # 参考書の作成依頼 (2026-11-12 塾長決定「参考書は作成不可」)。
+                                           #   既存の参考書の検索 (/api/textbooks/search) は止めない。
 })
 _LIGHT_DENIED_PREFIXES = (
     "/api/curricula/",                     # gap-analyze / apply-gap-fix / expand-to-plans (全部 AI)
@@ -3729,7 +3775,8 @@ async def _ai_disabled_route_gate(request: Request, call_next):
                     #     (40名) の挙動は完全に不変。full の生徒もこの分岐に入らない。
                     if _tier == _TIER_LIGHT and _is_light_denied_path(_p):
                         return JSONResponse(
-                            {"detail": "この機能は トリリオン・ライト ではご利用いただけません。上位プランでご利用いただけます。"},
+                            {"detail": f"この機能は {LIGHT_PLAN_LABEL} ではご利用いただけません。"
+                                       "問題は問題プールの演習・単元ドリルからお使いください。"},
                             status_code=403,
                         )
     except Exception as _me:
@@ -17847,6 +17894,7 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
                 )
                 conn.commit()
                 reconciled.append({"student_id": sid, "email": email, "old_status": status, "new_status": "paid", "plan": plan or db_plan})
+                _reconcile_sync_light_tier(c, conn, sid, plan or db_plan)
             elif db_plan != plan and plan:
                 # plan だけ違う → 更新
                 c.execute(
@@ -17855,6 +17903,7 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
                 )
                 conn.commit()
                 reconciled.append({"student_id": sid, "email": email, "plan_change": f"{db_plan} → {plan}"})
+                _reconcile_sync_light_tier(c, conn, sid, plan)
             elif row["trial_end"]:
                 # 🛡️ 2026-06-12: status='paid' なのに trial_end が残る stale 行の Stripe 検証付き backfill。
                 # monthly webhook が paid 化時に trial_end をクリアしなかった fix 前の残留データで、
@@ -31675,7 +31724,7 @@ def auth_me(authorization: Optional[str] = Header(None)):
             raise HTTPException(status_code=401, detail="Unauthorized")
         _conn = db(); _c = _conn.cursor()
         try:
-            _c.execute("SELECT id, name, email, grade, status, trial_end, course FROM students WHERE id = ?", (_claims["student_id"],))
+            _c.execute("SELECT id, name, email, grade, status, trial_end, course, plan FROM students WHERE id = ?", (_claims["student_id"],))
             _row = _c.fetchone()
         finally:
             _conn.close()
@@ -31692,6 +31741,9 @@ def auth_me(authorization: Optional[str] = Header(None)):
             "grade": _row["grade"], "status": _row["status"], "course": _row["course"],
             "entitled": False, "access_status": _row["status"],
             "account_merged": _is_retired_merge,
+            # 💴 upgrade.html が AI学習アプリ (¥2,500) の人を light.html の申込へ回すのに使う
+            #   (¥14,500 等の別プランの値段を見せない)。表示の振り分けだけで、権限には使わない。
+            "plan": _row["plan"],
         }}
     # last_login_at リフレッシュ: 4 時間に 1 回まで (DB 書込抑制)
     try:
@@ -31740,6 +31792,9 @@ def auth_me(authorization: Optional[str] = Header(None)):
             conn.close()
         if _ca_row is not None:
             student["plan_label"] = _summer_cohort_plan_label(_ca_row)
+        # 💴 トリリオン AI学習アプリ (2026-11-12): 内部キー trillion_light を画面に出さない
+        if not student.get("plan_label") and (student.get("plan") or "") == "trillion_light":
+            student["plan_label"] = LIGHT_PLAN_LABEL
         _ca_val = _ca_row["cancel_at"] if _ca_row else None
         if _ca_val:
             if isinstance(_ca_val, str):
@@ -32431,6 +32486,22 @@ def trial_signup(payload: TrialSignup, request: Request):
 
     now = datetime.now(timezone.utc)
     trial_end = now + timedelta(days=FOUNDER_TRIAL_DAYS)  # 14 日間の完全無料体験 (2026-05-19 拡張)
+    # 💴 [2026-11-12 塾長決定] トリリオン AI学習アプリ (plan='trillion_light') の体験は 3日間だけ
+    #   (カード登録なし・延長なし・自動課金なし)。体験の初めから feature_tier='light' を付け、
+    #   契約後と同じ制限 (問題・参考書の AI 作成なし・添削は体験中2回) で使ってもらう。
+    #   夏期講習の合言葉つき申込は plan を founder_special に固定するので、ここには入らない。
+    light_trial = (plan == "trillion_light") and not _cohort
+    light_granted = False   # 実際に 3日間の体験を付けた (= 新規 INSERT か、再付与の UPDATE が走った)
+    if light_trial:
+        if not LIGHT_SIGNUP_OPEN:
+            raise HTTPException(status_code=403, detail=LIGHT_SIGNUP_CLOSED_DETAIL)
+        # ★制限を付ける列が無い (または一時的に読めない) ときは体験を付けない。
+        #   付けると 3日間フル機能の体験になる (2,500円のつもりが全機能)。
+        if not _students_has_feature_tier():
+            log.error("[light-trial] feature_tier 列を確認できないため受付を止めた")
+            _record_gate_failure_async("light_trial_tier_missing", {"stage": "precheck"})
+            raise HTTPException(status_code=503, detail="ただ今受付を一時停止しています。少し時間をおいて再度お試しください。")
+        trial_end = now + timedelta(days=LIGHT_TRIAL_DAYS)
 
     # 🌻 夏期講習コホート (2026-07-25 塾長指示): 合言葉コード付きの専用URLからの申込は
     #   「登録日から N 日」ではなく固定の一斉終了日 (SUMMER_COHORT_END) を trial_end にする。
@@ -32544,6 +32615,17 @@ def trial_signup(payload: TrialSignup, request: Request):
         student_id = returned["id"] if returned else None
         conn.commit()
         summer_granted = summer_cohort  # 新規 INSERT = 固定終了日を実際に書けた
+        if light_trial and student_id:
+            # ★体験の初めから 2,500円プランの制限を掛ける。付け損ねると 3日間フル機能になる。
+            #   列が無い (デプロイ直後の ALTER 未適用) ときは付けられないので、light.html の受付スイッチを
+            #   開ける前に本番で列の存在を確かめること。
+            if _students_has_feature_tier():
+                c.execute("UPDATE students SET feature_tier=? WHERE id=?", (_TIER_LIGHT, student_id))
+                conn.commit()
+            else:
+                log.error(f"[light-trial] feature_tier 列が無いため制限を付けられない student={student_id}")
+                _record_gate_failure_async("light_trial_tier_missing", {"student_id": student_id})
+            light_granted = True
         # 🛡️ 2026-06-12 security review: 新規行の student_email はこの申込で初めて設定された
         # = 未確認 (student_email_verified は DEFAULT 0)。welcome は magicv リンクで送る。
         student_email_newly_set = bool(student_email_norm)
@@ -32555,13 +32637,22 @@ def trial_signup(payload: TrialSignup, request: Request):
         is_existing = True
         student_email_newly_set = False
         c.execute(
-            "SELECT id, status, trial_end, student_email, ai_disabled, stripe_subscription_id "
+            "SELECT id, status, trial_end, student_email, ai_disabled, stripe_subscription_id, plan, course "
             "FROM students WHERE LOWER(email) = ? LIMIT 1", (email_norm,))
         row = c.fetchone()
         student_id = row["id"] if row else None
         if not student_id:
             conn.close()
             raise HTTPException(status_code=400, detail="Email conflict")
+        # 💴 トリリオン AI学習アプリの申込が既存アカウントに当たったときは、塾生・契約中・カード登録の体験中を
+        #   明示的に断る (下の再付与 UPDATE は plan/tier を書き換えるので、通塾生や上位プランの契約者を
+        #   2,500円の制限に落とす事故になる)。★この raise は下の内側 try (except Exception で握り潰す) より前に置く。
+        if light_trial:
+            _lx_block = _light_signup_block(row)
+            if _lx_block:
+                conn.close()
+                log.warning(f"[light-trial] 既存アカウントへの体験の付与を断った student={student_id}")
+                raise HTTPException(status_code=400, detail=_lx_block)
         # 🌻 夏期講習コホートで「既にアカウントがある」に当たった時の扱い (2026-07-25 review 指摘)。
         #   ai_disabled=1 (塾生アプリ/AIなし枠) は _ai_disabled_route_gate が AI 系 API を 403 で
         #   弾き続けるので、trial_end だけ伸ばすと「登録完了・終了日まで使えます」と案内した直後に
@@ -32659,6 +32750,18 @@ def trial_signup(payload: TrialSignup, request: Request):
                              f"→ 据え置き (短縮しない) student={student_id}")
                 else:
                     allow_regrant = True
+            # 💴 トリリオン AI学習アプリ: 既存の体験の方が長いときは 3日に縮めない (短縮で締め出さない)
+            if light_trial and allow_regrant and prev_trial_end:
+                try:
+                    _lt_prev = (datetime.fromisoformat(prev_trial_end.replace("Z", "+00:00"))
+                                if isinstance(prev_trial_end, str) else prev_trial_end)
+                    if _lt_prev.tzinfo is None:
+                        _lt_prev = _lt_prev.replace(tzinfo=timezone.utc)
+                    if _lt_prev > trial_end:
+                        allow_regrant = False
+                        log.info(f"[light-trial] 既存 trial_end({_lt_prev}) の方が長い → 据え置き student={student_id}")
+                except Exception:
+                    allow_regrant = False   # 読めないときは触らない (縮めて締め出すより安全)
             if existing_status not in ("paid", "past_due"):
                 if allow_regrant:
                     # 既存生徒の student_email も更新 (空白のままなら新値で上書き、既存値があれば保持)。
@@ -32673,7 +32776,30 @@ def trial_signup(payload: TrialSignup, request: Request):
                         (now.isoformat(), trial_end.isoformat(), student_email_norm,
                          _pipe_parent or '', _pipe_parent or '', _pipe_parent or '', student_id)
                     )
+                    _prev_plan_rg = str((row["plan"] if "plan" in row.keys() else "") or "").strip()
+                    if light_trial:
+                        # 再付与した体験も 2,500円プランの制限で使う (plan と tier をそろえる)。
+                        # ★trial の UPDATE と同じ commit にする。別々だと tier だけ失敗したとき
+                        #   3日間フル機能の体験が残る (列の有無は受付の入口で確認済み)。
+                        c.execute("UPDATE students SET plan=?, feature_tier=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                                  ("trillion_light", _TIER_LIGHT, student_id))
+                    elif _prev_plan_rg == "trillion_light" and _students_has_feature_tier():
+                        # ★アプリ版を試した人に通常の体験 (夏期講習・14日体験) を付け直すときは、
+                        #   アプリ版の制限を外す。外さないと「14日間無料」の案内どおりに使えない。
+                        #   夏期講習は下で plan を founder_special にそろえる。通常の体験は申込の plan にする。
+                        c.execute("UPDATE students SET feature_tier=NULL WHERE id=? AND LOWER(COALESCE(feature_tier,''))=?",
+                                  (student_id, _TIER_LIGHT))
+                        if not summer_cohort:
+                            c.execute("UPDATE students SET plan=? WHERE id=? AND plan=?",
+                                      ((plan if plan and plan != "trillion_light" else "founder_special"),
+                                       student_id, "trillion_light"))
                     conn.commit()
+                    if light_trial:
+                        light_granted = True
+                    try:
+                        _AI_DISABLED_CACHE.pop(int(student_id), None)
+                    except Exception:
+                        pass
                     summer_granted = summer_cohort  # UPDATE が実際に走った = 固定終了日を書けた
                     # 🌻 コホート識別子は「空のときだけ」刻む (元の流入元 attribution は壊さない。
                     #   AI 上限の判定は _check_ai_budget 側で trial_end 一致もみるので取りこぼさない)
@@ -32825,6 +32951,15 @@ def trial_signup(payload: TrialSignup, request: Request):
                     f"夏期講習のAI管理({_te_jst.year}年{_te_jst.month}月{_te_jst.day}日まで)が始まりました。"
                     "期間が終わると自動で終了し、料金は一切かかりません。"
                 )
+            elif light_granted:
+                _welcome_trial_note = (
+                    f"{LIGHT_PLAN_LABEL}の{LIGHT_TRIAL_DAYS}日間の無料体験が始まりました。"
+                    "カードの登録はなく、体験が終わっても料金はかかりません。"
+                    "続けてご利用の場合は、体験の終了後に月額2,500円（税込）でお申し込みください。"
+                )
+            elif light_trial:
+                # 体験を付けなかった (60日以内に体験済み・既存の期限の方が長い) = 期間を断定しない
+                _welcome_trial_note = "ご登録ありがとうございます。ログインしてご利用ください。"
             elif summer_cohort:
                 # 据え置き分岐 (既存の期限の方が長い / カード登録済み) = 期間を断定してはいけない。
                 # 既存の「{FOUNDER_TRIAL_DAYS}日間の無料体験が始まりました」も嘘になるので中立文にする
@@ -32911,6 +33046,9 @@ def trial_signup(payload: TrialSignup, request: Request):
         #   実際に付与できた時だけ (据え置き分岐では期間を返さない = 完了パネルも断定しない)
         "cohort": SUMMER_COHORT_ID if summer_granted else None,
         "cohort_end_jst": trial_end.astimezone(JST).isoformat() if summer_granted else None,
+        # 💴 トリリオン AI学習アプリ: 3日間の体験を実際に付けたか (付けなかったら light.html は申込へ案内する)
+        "light_trial_granted": light_granted if light_trial else None,
+        "light_trial_end_jst": trial_end.astimezone(JST).isoformat() if light_granted else None,
     }
 
 # ==========================================================================
@@ -33102,6 +33240,34 @@ def create_checkout_session(payload: CheckoutRequest, request: Request):
         raise HTTPException(status_code=400, detail=f"Invalid plan: {payload.plan}")
     price_id, amount, plan_name, max_students = price_info
 
+    # 💴 [2026-11-12] トリリオン AI学習アプリ: 受付スイッチと、既存アカウントの断り (体験と同じ条件)。
+    #   ★断らないと、通塾生・上位プランの契約者がこのプランを買ったとき webhook がメール一致で
+    #     plan / feature_tier を書き換え、元のサブスク (創設メンバー等) を置き換えで即時解約する。
+    if payload.plan == "trillion_light":
+        if not LIGHT_SIGNUP_OPEN:
+            raise HTTPException(status_code=403, detail=LIGHT_SIGNUP_CLOSED_DETAIL)
+        _lc_email = (payload.email or "").strip().lower()
+        if _lc_email or payload.student_id:
+            _lc_conn = db()
+            try:
+                _lc_c = _lc_conn.cursor()
+                if _lc_email:
+                    _lc_c.execute("SELECT * FROM students WHERE LOWER(email) = ? OR LOWER(COALESCE(student_email, '')) = ?",
+                                  (_lc_email, _lc_email))
+                    _lc_rows = list(_lc_c.fetchall())
+                else:
+                    _lc_rows = []
+                if payload.student_id:
+                    _lc_c.execute("SELECT * FROM students WHERE id = ?", (payload.student_id,))
+                    _lc_rows += list(_lc_c.fetchall())
+            finally:
+                _lc_conn.close()
+            for _lc_row in _lc_rows:
+                _lc_block = _light_signup_block(_lc_row)
+                if _lc_block:
+                    log.warning(f"[Checkout] trillion_light を既存アカウントに断った student={_lc_row['id']}")
+                    raise HTTPException(status_code=409, detail=_lc_block)
+
     # 子メール → 親メール差し替えの追跡 (応答の billing_email_switched と invite 照合で使用)
     _input_email_lower = (payload.email or "").strip().lower()
     _billing_email_switched = False
@@ -33233,13 +33399,16 @@ def create_checkout_session(payload: CheckoutRequest, request: Request):
     # FOUNDER_LIMIT に達している場合はここで停止する。これがないと URL 直打ちで
     # 101名目以降の決済が通ってしまい、マーケ上の約束を破ることになる。
     # ただし、既存 paid 生徒の更新（再課金・プラン変更）は許可する。
-    if not payload.student_id:
+    # 💴 [2026-11-12] トリリオン AI学習アプリ (trillion_light) は人数枠なし (塾長決定「先着の枠は付けない」)。
+    #   枠のチェックをせず、枠の数 (創設メンバー50名) にも数えない (数えると 2,500円の会員が増えるだけで
+    #   創設メンバー以外の全プランの申込が「募集終了」で止まる)。
+    if not payload.student_id and payload.plan != "trillion_light":
         conn_fc = db()
         c_fc = conn_fc.cursor()
         try:
             c_fc.execute(
                 # past_due (決済失敗の猶予中) も枠を占有しているとみなす (2026-05-29)
-                "SELECT COUNT(*) FROM students WHERE status IN ('paid','past_due') AND plan IS NOT NULL AND plan != '' AND plan != 'student_addon'"
+                "SELECT COUNT(*) FROM students WHERE status IN ('paid','past_due') AND plan IS NOT NULL AND plan != '' AND plan != 'student_addon' AND plan != 'trillion_light'"
             )
             paid_count = c_fc.fetchone()[0]
         except Exception as e:
@@ -33364,7 +33533,7 @@ def create_checkout_session(payload: CheckoutRequest, request: Request):
             "student_id": str(payload.student_id or ""),
             "name": (payload.name or "")[:200],  # 2026-05-07: Reviewer C 指摘・webhook 側で name lost を防ぐ
             "max_students": str(max_students),
-            "founder": "1",
+            "founder": "0" if payload.plan == "trillion_light" else "1",
             "needs_enrollment_fee": "1" if needs_enrollment_fee else "0",
             "enrollment_waiver_applied": "1" if waiver_eligible else "0",
             "purchase_type": "monthly",
@@ -33485,7 +33654,8 @@ def founders_count(public: bool = False):
     try:
         c.execute(
             # past_due (決済失敗の猶予中) も枠を占有しているとみなす (2026-05-29)
-            "SELECT COUNT(*) FROM students WHERE status IN ('paid','past_due') AND plan IS NOT NULL AND plan != '' AND plan != 'student_addon'"
+            # trillion_light (月¥2,500・人数枠なし) は創設メンバーの枠に数えない (2026-11-12)
+            "SELECT COUNT(*) FROM students WHERE status IN ('paid','past_due') AND plan IS NOT NULL AND plan != '' AND plan != 'student_addon' AND plan != 'trillion_light'"
         )
         paid = c.fetchone()[0]
     except Exception as e:
@@ -33928,6 +34098,20 @@ def stripe_webhook(
                 conn.commit()
                 if _te_updated > 0:
                     log.info(f"[Stripe webhook trial_extended] updated student {target_id}, trial_end={trial_end.isoformat()}")
+                    # 💴 [2026-11-12] plan を founder_special にしたので、AI学習アプリの制限 (light) が残っていれば外す。
+                    #   外さないと 21日体験もその後の ¥14,500 の契約も 2,500円の制限のまま。非throw。
+                    try:
+                        _sync_feature_tier_after_checkout(c, conn, target_id, None, "founder_special")
+                    except Exception as _tte:
+                        try:
+                            conn.rollback()
+                        except Exception:
+                            pass
+                        log.warning(f"[Stripe webhook trial_extended] feature_tier の同期に失敗: {type(_tte).__name__}: {_tte}")
+                        _record_gate_failure_async("light_tier_sync_failed", {
+                            "student_id": str(target_id), "plan": "founder_special",
+                            "error": f"{type(_tte).__name__}: {_tte}"[:200],
+                        })
                     # 🔁 [upgrade-supersede] trial_extended 再申込: 旧 subscription を残すと
                     # 旧側の trial 明けに二重課金が始まるため、置換が成立した時点で即時解約
                     _cancel_superseded_subscription(s, _old_sub_te, subscription, target_id, "trial_extended-recheckout-supersede")
@@ -34039,7 +34223,8 @@ def stripe_webhook(
             # 修正: 有効 plan key (founder_special/founder1/premium/family/standard/student_addon) でない場合、
             #       student_id 既存ならそのまま UPDATE (signup flow からの再決済を許容)、
             #       新規 INSERT は skip して warning ログ + critical event 記録 (audit 用)。
-            _VALID_PLAN_KEYS = {"founder_special", "founder1", "premium", "family", "standard", "student_addon"}
+            _VALID_PLAN_KEYS = {"founder_special", "founder1", "premium", "family", "standard", "student_addon",
+                                "trillion_light"}  # 💴 2026-11-12 トリリオン AI学習アプリ
             plan_valid = bool(plan) and plan in _VALID_PLAN_KEYS
 
             # 🔁 [upgrade-supersede] (2026-06-12): 上書き前に旧 subscription を捕捉する。
@@ -34110,6 +34295,25 @@ def stripe_webhook(
                         except Exception:
                             pass
             conn.commit()
+
+            # 💴 [2026-11-12] トリリオン AI学習アプリ: 決済が済んだら機能層 (feature_tier) を plan に合わせる。
+            #   ★これを付けないと上限 (問題・参考書の AI 作成なし・添削 月10回) が一切効かない。
+            #   逆に 2,500円の会員が上位プラン (premium 等) を買ったときは light を外す (外さないと上位プランを
+            #   払っているのに制限されたままになる)。非throw: 失敗しても paid 化は済んでいる (ログと events に残す)。
+            try:
+                _sync_feature_tier_after_checkout(c, conn, student_id or None, email, plan if plan_valid else "")
+            except Exception as _fte:
+                # ★rollback する。Postgres は失敗した時点で txn が中断し、同じ c を使う下の処理
+                #   (入塾金マーカー・紹介報酬) が連鎖して落ちる。
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
+                log.warning(f"[Stripe webhook monthly] feature_tier の同期に失敗 plan={plan}: {type(_fte).__name__}: {_fte}")
+                _record_gate_failure_async("light_tier_sync_failed", {
+                    "student_id": str(student_id or ""), "plan": plan,
+                    "error": f"{type(_fte).__name__}: {_fte}"[:200],
+                })
 
             # 🔁 [upgrade-supersede] DB が新 subscription を指した後に旧サブスクを即時解約する
             # (subscription.deleted webhook は sub_id 厳密一致 → 置換済みの生徒は canceled 化されない)
@@ -37423,10 +37627,14 @@ def admin_trial_rescue_now(
     fallback_count = 0
     failed = 0
     preview = []
+    _light_ids = _light_member_ids()  # 💴 トリリオン AI学習アプリ (2,500円) の会員・体験生
     conn = db()
     c = conn.cursor()
     try:
         for stu in at_risk:
+            # ★_light_ids は関数の先頭で1回だけ読む (2026-11-12)
+            if stu["id"] in _light_ids:  # 💴 2,500円プランの体験生には創設メンバー向けの案内を送らない
+                continue
             sid = stu["id"]
             email = stu["email"]
             name = stu["name"] or ""
@@ -37513,6 +37721,7 @@ def cron_trial_followups(x_cron_secret: str = Header(None), dry_run: bool = Fals
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     import urllib.parse as _urlparse
+    _light_ids = _light_member_ids()  # 💴 トリリオン AI学習アプリ (2,500円) の会員・体験生
     conn = db()
     c = conn.cursor()
     try:
@@ -37535,6 +37744,9 @@ def cron_trial_followups(x_cron_secret: str = Header(None), dry_run: bool = Fals
         skipped_silent_ids = []
         preview = []
         for row in expired_students:
+            # ★_light_ids は関数の先頭で1回だけ読む (2026-11-12)
+            if row["id"] in _light_ids:  # 💴 2,500円プランの体験生には創設メンバー向けの案内を送らない
+                continue
             # サイレント顧客スキップ: 一度もログインしていない = 継続の連絡がない顧客 (塾長指示 2026-05-06)
             try:
                 _last_login = row["last_login_at"]
@@ -37749,6 +37961,8 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
     if not x_cron_secret or not hmac.compare_digest(x_cron_secret, CRON_SECRET):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
+    _light_ids = _light_member_ids()  # 💴 トリリオン AI学習アプリ (2,500円) の会員・体験生
+
     conn = db()
     c = conn.cursor()
     now = datetime.now(timezone.utc)
@@ -37785,6 +37999,9 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
     silent_card_ids = []
     preview = []
     for row in candidates:
+        # ★_light_ids は関数の先頭で1回だけ読む (2026-11-12)
+        if row["id"] in _light_ids:  # 💴 2,500円プランの体験生には創設メンバー向けの案内を送らない
+            continue
         # 国公立難関大学コース ('kokuritsu_nankan') は塾の通塾生 = SaaS 体験課金 funnel の対象外。
         # 体験終了リマインド (継続登録の案内) を送らない (塾長指示 2026-06-04・過去の事例)。
         try:
@@ -37972,6 +38189,8 @@ def cron_trial_nurture(x_cron_secret: str = Header(None), dry_run: bool = False)
     if not x_cron_secret or not hmac.compare_digest(x_cron_secret, CRON_SECRET):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
+    _light_ids = _light_member_ids()  # 💴 トリリオン AI学習アプリ (2,500円) の会員・体験生
+
     conn = db()
     c = conn.cursor()
     now = datetime.now(timezone.utc)
@@ -37995,6 +38214,9 @@ def cron_trial_nurture(x_cron_secret: str = Header(None), dry_run: bool = False)
             (d2_lower.isoformat(), d2_upper.isoformat(), trial_end_threshold)
         )
         for row in c.fetchall():
+            # ★_light_ids は関数の先頭で1回だけ読む (2026-11-12)
+            if row["id"] in _light_ids:  # 💴 2,500円プランの体験生には創設メンバー向けの案内を送らない
+                continue
             # silent skip (last_login_at IS NULL) - cron_trial_unused_warning に任せる
             try: _last_login = row["last_login_at"]
             except (KeyError, IndexError): _last_login = None
@@ -38033,6 +38255,9 @@ def cron_trial_nurture(x_cron_secret: str = Header(None), dry_run: bool = False)
             (d5_lower.isoformat(), d5_upper.isoformat(), trial_end_threshold)
         )
         for row in c.fetchall():
+            # ★_light_ids は関数の先頭で1回だけ読む (2026-11-12)
+            if row["id"] in _light_ids:  # 💴 2,500円プランの体験生には創設メンバー向けの案内を送らない
+                continue
             try: _last_login = row["last_login_at"]
             except (KeyError, IndexError): _last_login = None
             if not _last_login:
@@ -38089,6 +38314,8 @@ def cron_trial_unused_warning(x_cron_secret: str = Header(None), dry_run: bool =
     if not x_cron_secret or not hmac.compare_digest(x_cron_secret, CRON_SECRET):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
+    _light_ids = _light_member_ids()  # 💴 トリリオン AI学習アプリ (2,500円) の会員・体験生
+
     conn = db()
     c = conn.cursor()
     now = datetime.now(timezone.utc)
@@ -38107,6 +38334,9 @@ def cron_trial_unused_warning(x_cron_secret: str = Header(None), dry_run: bool =
             (early_lower.isoformat(), early_upper.isoformat())
         )
         for row in c.fetchall():
+            # ★_light_ids は関数の先頭で1回だけ読む (2026-11-12)
+            if row["id"] in _light_ids:  # 💴 2,500円プランの体験生には創設メンバー向けの案内を送らない
+                continue
             # dedup
             c.execute(
                 "SELECT id FROM notifications WHERE student_id=? AND template='trial_unused_early' AND success=1 LIMIT 1",
@@ -38152,6 +38382,9 @@ def cron_trial_unused_warning(x_cron_secret: str = Header(None), dry_run: bool =
             (late_lower.isoformat(), late_upper.isoformat(), TRIAL_FOLLOWUP_NEW_FROM)
         )
         for row in c.fetchall():
+            # ★_light_ids は関数の先頭で1回だけ読む (2026-11-12)
+            if row["id"] in _light_ids:  # 💴 2,500円プランの体験生には創設メンバー向けの案内を送らない
+                continue
             c.execute(
                 "SELECT id FROM notifications WHERE student_id=? AND template='trial_unused_late' AND success=1 LIMIT 1",
                 (row["id"],)
@@ -39644,6 +39877,15 @@ def _check_ai_budget_inner(student_id: int, conn) -> None:
         budget = PLAN_DAILY_TOKEN_BUDGET.get("premium", 2_000_000)
     else:
         budget = PLAN_DAILY_TOKEN_BUDGET.get(plan, AI_DAILY_TOKEN_BUDGET)
+    # 💴 [2026-11-12] トリリオン AI学習アプリ (feature_tier='light') は plan に関係なく専用の量にする。
+    #   ★plan は /api/trial/signup で自称できる (例: plan='premium' を送ると 2M/日) ので、tier で上書きする。
+    #   AI チューターが回数無制限なので、ここが原価の唯一の歯止め。
+    if _course != "kokuritsu_nankan":
+        try:
+            if _student_tier(student_id) == _TIER_LIGHT:
+                budget = LIGHT_DAILY_TOKEN_BUDGET
+        except Exception as _lbe:
+            log.warning(f"[Light] 日次の量の層判定に失敗 (plan の値で続行): {type(_lbe).__name__}: {_lbe}")
     # 🌻 夏期講習コホート (無料・約1ヶ月) はプレミアム同等の 2M/日 では原価上限が大きすぎるので
     #   専用上限を掛ける。実運用の1人あたり消費 (塾全体で月 $65-70) から見て十分に余裕がある一方、
     #   合言葉が流出した場合の1アカウント最大原価を 1/5 に抑える (env SUMMER_COHORT_TOKEN_BUDGET)。
@@ -39694,7 +39936,7 @@ def _check_ai_budget_inner(student_id: int, conn) -> None:
         else:
             detail = f"AI_BUDGET_TRIAL:直近24時間のAI利用が上限({budget:,}トークン)に達しました。{_wait}"
         # 🪶 ライトは接頭辞を LIGHT に差し替える。★これが無いと AI_BUDGET_TRIAL: のまま返り、
-        #   フロントが「プレミアム相当ではない」と判定して **月¥3,000 の生徒に ¥39,800 の勧誘**を出す。
+        #   フロントが「プレミアム相当ではない」と判定して **月¥2,500 の生徒にプレミアムの勧誘**を出す。
         #   (この日次判定はライトの月次判定より先に走るので、先にこちらへ当たることがある)
         try:
             if _student_tier(student_id) == _TIER_LIGHT:
@@ -39702,8 +39944,8 @@ def _check_ai_budget_inner(student_id: int, conn) -> None:
                                .replace("AI_BUDGET_STANDARD:", "AI_BUDGET_LIGHT:", 1) \
                                .replace("AI_BUDGET_PREMIUM:", "AI_BUDGET_LIGHT:", 1)
         except Exception as _tier_e:
-            # ★黙って握り潰さない。ここで失敗すると月¥3,000 の生徒に "AI_BUDGET_PREMIUM:" が渡り、
-            #   フロントが ¥39,800 のプレミアム勧誘を出す (誤案内としての実害がある)。
+            # ★黙って握り潰さない。ここで失敗すると月¥2,500 の生徒に "AI_BUDGET_PREMIUM:" が渡り、
+            #   フロントがプレミアムの勧誘を出す (誤案内としての実害がある)。
             #   上限そのものは下の 429 で正しく効くので通すが、失敗した事実は必ず残す。
             log.warning(f"[Light] 上限メッセージの層判定に失敗 (文言はそのまま): {type(_tier_e).__name__}: {_tier_e}")
             _record_gate_failure_async("light_budget_label_failed", {
@@ -39838,61 +40080,221 @@ def _increment_usage(student_id: int, feature: str) -> int:
     return new_count
 
 
-# ── 🪶 トリリオン・ライト (月¥3,000) の AI 上限 ─────────────────────────────────
-#  ★カウントの根拠を「クライアントが送る値」に置かないこと。
+# ── 🪶 トリリオン AI学習アプリ (内部キー trillion_light / feature_tier='light'・月¥2,500) の AI 上限 ──
+#  ★カウントの根拠を「クライアントが送る値」だけに置かないこと。
 #    - payload.feature は省略できる (省略すると _check_quota が丸ごと走らない)
 #    - payload.kind は allowlist されるだけで値は client が選べる
-#    → よって「kind が curriculum かどうか」だけで2つの上限に振り分け、**どちらの枝に落ちても
-#      必ず上限がある** 形にする。片方を無制限にすると、そちらに寄せるだけで回避できてしまう。
+#  2026-11-12 塾長決定で「AI チューター等は回数無制限」になったため、旧ライトの「どの枝に落ちても
+#  必ず回数上限がある」設計はやめた。回数で縛るのは添削と学習計画だけで、それ以外の AI の原価は
+#  直近24時間の量 (LIGHT_DAILY_TOKEN_BUDGET) で止める。使えない機能 (問題の AI 生成・参考書・模試の AI 分析)
+#  は limit=0 の bucket に落として必ず断る。
 
-def _light_bucket_for_kind(kind) -> tuple:
-    """ライトの AI 呼び出しを、どのカウンタで数えるか。→ (feature, period, limit, 表示名)
+# 使えない機能の kind (部分一致)。/api/ai/call の allowlist 後の値 (problems / textbook / exam_photo_scan /
+#   exam_pdf_scan) と、サーバ側の生成 (past_exam_similar_gen = 過去問の類題生成) を含む。
+_LIGHT_DENIED_KIND_PARTS = ("problem", "textbook", "exam_photo", "exam_pdf", "similar_gen")
 
+
+def _light_signup_block(row) -> Optional[str]:
+    """既存アカウントに AI学習アプリの体験・申込を付けてよいか。断るときは生徒向けの文言を返す。
+
+    体験 (/api/trial/signup) と決済 (/api/stripe/checkout) で **同じ条件** を使う。片方だけだと、
+    断ったはずの相手 (通塾生・上位プランの契約者・カード登録つきの体験中) が、もう片方から入って
+    webhook で plan / feature_tier を 2,500円の制限に書き換えられ、元のサブスクも置き換えで解約される。"""
+    try:
+        keys = row.keys()
+    except Exception:
+        return None
+    def _g(k, d=None):
+        return row[k] if k in keys else d
+    status = str(_g("status") or "").strip()
+    plan = str(_g("plan") or "").strip()
+    course = str(_g("course") or "").strip()
+    if (_g("ai_disabled", 0) or 0) or plan == "student_addon" or course:
+        return ("このメールアドレスは既に塾生としてご登録済みです。"
+                "AI学習アプリのご利用は塾長にご相談ください。")
+    if status in ("paid", "past_due"):
+        if plan == "trillion_light":
+            return (f"このメールアドレスは既に {LIGHT_PLAN_LABEL} をご契約中です。"
+                    "ログインページからそのままご利用いただけます。")
+        return ("このメールアドレスは既に月額プランでご登録済みです。"
+                "プランの変更は info@trillion-ai-juku.com までご連絡ください。")
+    if status == "trial" and _g("stripe_subscription_id"):
+        return ("このメールアドレスはカード登録つきの無料体験中です。"
+                "プランの変更は info@trillion-ai-juku.com までご連絡ください。")
+    return None
+
+
+def _light_member_ids() -> set:
+    """トリリオン AI学習アプリ (plan='trillion_light' または feature_tier='light') の生徒 id。
+
+    体験の自動メール (創設メンバー ¥14,500 や upgrade.html へ案内する) から外すために使う。
+    2,500円プランの体験生に別プランの値段を案内しないため (2026-11-12)。読めなければ空集合 (= 従来どおり)。"""
+    conn = None
+    try:
+        conn = db(); c = conn.cursor()
+        _has_tier = _students_has_feature_tier()
+        # ★カード登録つきの体験中 (status='trial' かつ subscription あり) は除外しない。
+        #   この除外は cron の「カード登録済みか」の判定より前に掛かるので、外すと
+        #   課金前のお知らせ (trial_ending_card) まで止まる。
+        c.execute("SELECT id FROM students WHERE (plan = ?"
+                  + (" OR LOWER(COALESCE(feature_tier,'')) = ?" if _has_tier else "")
+                  + ") AND NOT (status = 'trial' AND COALESCE(stripe_subscription_id, '') <> '')",
+                  (("trillion_light", _TIER_LIGHT) if _has_tier else ("trillion_light",)))
+        return {int(r["id"]) for r in c.fetchall()}
+    except Exception as _e:
+        log.warning(f"[Light] 会員 id の読み取りに失敗 (除外なしで続行): {type(_e).__name__}: {_e}")
+        return set()
+    finally:
+        try:
+            if conn is not None: conn.close()
+        except Exception:
+            pass
+
+
+def _sync_feature_tier_after_checkout(c, conn, student_id, email, plan: str) -> None:
+    """月額の決済が済んだ生徒の feature_tier を plan に合わせる (Stripe webhook から呼ぶ)。
+
+    - plan='trillion_light' → 'light' を付ける
+    - それ以外の有効なプラン → 'light' だったら外す (NULL = full)。light 以外の値は触らない
+    - plan が空 (外部経路など) → 何もしない
+    student_id が無ければ email (保護者メール) で探す。webhook の UPDATE/INSERT と同じ照合。"""
+    plan = (plan or "").strip()
+    if not plan or not _students_has_feature_tier():
+        return
+    sid = None
+    if student_id:
+        try:
+            sid = int(student_id)
+        except (TypeError, ValueError):
+            sid = None
+    if sid is None and email:
+        c.execute("SELECT id FROM students WHERE LOWER(email) = ? ORDER BY id LIMIT 1", (str(email).strip().lower(),))
+        r = c.fetchone()
+        sid = int(r["id"]) if r else None
+    if sid is None:
+        return
+    if plan == "trillion_light":
+        c.execute("UPDATE students SET feature_tier = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (_TIER_LIGHT, sid))
+    else:
+        c.execute("UPDATE students SET feature_tier = NULL, updated_at = CURRENT_TIMESTAMP "
+                  "WHERE id = ? AND LOWER(COALESCE(feature_tier, '')) = ?", (sid, _TIER_LIGHT))
+    conn.commit()
+    try:
+        _AI_DISABLED_CACHE.pop(sid, None)  # ★30秒 TTL を待たず即時反映
+    except Exception:
+        pass
+    log.info(f"[Light] checkout 後に feature_tier を同期 student_id={sid} plan={plan}")
+
+
+def _reconcile_sync_light_tier(c, conn, student_id, plan) -> None:
+    """日次の照合 (admin_stripe_reconcile) で paid 化・plan 変更をしたときも feature_tier を合わせる。
+    webhook が届かなかった ¥2,500 の会員がフル機能になる (逆に上位プランへ移った人が制限されたまま) のを防ぐ。非throw。"""
+    if (plan or "").strip() not in PRICE_MAP:
+        return
+    try:
+        _sync_feature_tier_after_checkout(c, conn, student_id, None, plan)
+    except Exception as _e:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        log.warning(f"[Reconcile] feature_tier の同期に失敗 student={student_id} plan={plan}: {type(_e).__name__}: {_e}")
+        _record_gate_failure_async("light_tier_sync_failed", {
+            "student_id": str(student_id), "plan": str(plan or ""),
+            "error": f"{type(_e).__name__}: {_e}"[:200],
+        })
+
+
+def _light_in_trial(student_id) -> bool:
+    """体験中 (status='trial') か。読めなければ False (= 契約後の月の枠で数える)。"""
+    try:
+        sid = int(student_id)
+    except (TypeError, ValueError):
+        return False
+    conn = None
+    try:
+        conn = db(); c = conn.cursor()
+        c.execute("SELECT status FROM students WHERE id = ?", (sid,))
+        r = c.fetchone()
+        return bool(r) and str(r["status"] or "").lower() == "trial"
+    except Exception as _e:
+        log.warning(f"[Light] status の読み取りに失敗 (契約後の枠で数える) student_id={sid}: {type(_e).__name__}: {_e}")
+        return False
+    finally:
+        try:
+            if conn is not None: conn.close()
+        except Exception:
+            pass
+
+
+def _light_bucket_for_kind(kind, in_trial: bool = False) -> tuple:
+    """AI 呼び出しを、どのカウンタで数えるか。→ (feature, period, limit, 表示名)
+
+    feature=None は「回数で縛らない」(消費もしない・日次の量だけで止まる)。
     ★完全一致で書いてはいけない。呼び出し側が kind を素通しで渡してこないため:
-      - /api/ai/call は kind=f"call_{payload.kind}" を渡す → "call_curriculum"
+      - /api/ai/call は kind=f"call_{payload.kind}" を渡す → "call_curriculum" / "call_essay"
       - /api/curriculum/generate は kind="curriculum_generate"
       - 疎通確認は kind=f"probe_call_{kind}"
-      完全一致 ("curriculum") で判定していたせいで、**生涯1回の枠が一度も発火しない**バグを
-      作った (2026-08-20 レビュー指摘)。部分一致にして、どの接頭/接尾が付いても同じ枝に落とす。
-      誤って月次側がカリキュラム扱いになる方向 (=より厳しい) は安全側なので許容する。"""
+      完全一致で判定していたせいで、枠が一度も発火しないバグを作った (2026-08-20 レビュー指摘)。"""
     k = str(kind or "").strip().lower()
+    if any(part in k for part in _LIGHT_DENIED_KIND_PARTS):
+        return (_LIGHT_DENIED_FEATURE, "", 0, "問題・参考書の AI 作成")
     if "curricul" in k:   # curriculum / curricula / curriculum_generate / call_curriculum
-        return (_LIGHT_CURRICULUM_FEATURE, _LIFETIME_PERIOD, LIGHT_CURRICULUM_LIFETIME, "学習計画の自動作成")
-    # ★ラベルは「AIチューターへの質問」ではない。この枠を食うのはチャットだけでなく、写真つき質問・
-    #   英作文添削・問題生成・週次診断・教材写真の自動判別・模試結果の写真読み取りなど **AI を使う操作すべて**。
-    #   「質問した覚えはないのに上限と言われた」という問い合わせにならない名前にする。
-    return (_LIGHT_AI_FEATURE, _jst_year_month(), LIGHT_AI_CALLS_PER_MONTH, "AI機能のご利用")
+        return (_LIGHT_CURRICULUM_FEATURE, _jst_year_month(), LIGHT_CURRICULUM_PER_MONTH, "学習計画の自動作成")
+    if "essay" in k:      # essay / call_essay / grade_essay
+        if in_trial:
+            return (_LIGHT_ESSAY_FEATURE, _LIGHT_TRIAL_PERIOD, LIGHT_TRIAL_ESSAYS, "英作文・記述の添削")
+        return (_LIGHT_ESSAY_FEATURE, _jst_year_month(), LIGHT_ESSAYS_PER_MONTH, "英作文・記述の添削")
+    return (None, "", None, "")
 
 
 def _light_usage_snapshot(student_id: int) -> dict:
-    """ライトの残回数 (フロント表示用)。full の生徒には使わない。"""
+    """残回数 (フロント表示用)。full の生徒には使わない。"""
     try:
         sid = int(student_id)
     except (TypeError, ValueError):
         return {}
-    used_ai = _get_monthly_usage(sid, _LIGHT_AI_FEATURE, _jst_year_month())
-    used_cur = _get_monthly_usage(sid, _LIGHT_CURRICULUM_FEATURE, _LIFETIME_PERIOD)
+    in_trial = _light_in_trial(sid)
+    _ef, _ep, essays_limit, _el = _light_bucket_for_kind("essay", in_trial=in_trial)
+    used_essays = _get_monthly_usage(sid, _ef, _ep)
+    used_cur = _get_monthly_usage(sid, _LIGHT_CURRICULUM_FEATURE, _jst_year_month())
     return {
-        "ai_calls_limit": LIGHT_AI_CALLS_PER_MONTH,
-        "ai_calls_used": used_ai,
-        "ai_calls_remaining": max(0, LIGHT_AI_CALLS_PER_MONTH - used_ai),
-        "curriculum_limit": LIGHT_CURRICULUM_LIFETIME,
+        "plan_label": LIGHT_PLAN_LABEL,
+        "in_trial": in_trial,
+        # 体験中は「体験期間で通算」、契約後は「今月」の数
+        "essays_period": "trial" if in_trial else "month",
+        "essays_limit": essays_limit,
+        "essays_used": used_essays,
+        "essays_remaining": max(0, essays_limit - used_essays),
+        "curriculum_limit": LIGHT_CURRICULUM_PER_MONTH,
         "curriculum_used": used_cur,
-        "curriculum_remaining": max(0, LIGHT_CURRICULUM_LIFETIME - used_cur),
+        "curriculum_remaining": max(0, LIGHT_CURRICULUM_PER_MONTH - used_cur),
+        # 使えない機能 (画面でボタンを隠す・案内を出すため)
+        "problem_generation": False,
+        "textbook_generation": False,
     }
 
 
 def _light_quota_exceeded(student_id, kind) -> tuple:
-    """ライトの上限に達しているか。→ (超過か, ユーザ向け文言)。判定不能なら (False, "") = 通す。
+    """上限に達しているか。→ (超過か, ユーザ向け文言)。判定不能なら (False, "") = 通す。
 
-    ★通すのは「DB が読めなかったとき」だけ。上限に達していることが読めた場合は必ず止める。"""
+    ★通すのは「DB が読めなかったとき」だけ。上限に達していることが読めた場合は必ず止める。
+    ★使えない機能 (limit=0) は DB を読まずに必ず止める。"""
     try:
         sid = int(student_id)
     except (TypeError, ValueError):
         return (False, "")
-    feature, period, limit, label = _light_bucket_for_kind(kind)
-    if limit is None:
+    k = str(kind or "").strip().lower()
+    _in_trial = _light_in_trial(sid) if "essay" in k else False
+    feature, period, limit, label = _light_bucket_for_kind(kind, in_trial=_in_trial)
+    if feature is None or limit is None:
         return (False, "")
+    # ★接頭辞 AI_BUDGET_LIGHT: を必ず付ける。フロントは既に `/^AI_BUDGET_[A-Z0-9_]+:/` という
+    #   **総称**で接頭辞を剥がし、その有無で「上限系の 429 か」を判定している (app.js / mypage.js)。
+    #   ★文言の推敲でこの接頭辞を消さないこと。消すと判定が静かに壊れる (画面は正常に見えるまま)。
+    if feature == _LIGHT_DENIED_FEATURE:
+        return (True, f"AI_BUDGET_LIGHT:{LIGHT_PLAN_LABEL} では、AI で新しく問題・参考書を作ることはできません。"
+                      "問題は問題プールの演習・単元ドリル・弱点ドリルからお使いください。")
     try:
         used = _get_monthly_usage(sid, feature, period)
     except Exception as _e:
@@ -39906,27 +40308,27 @@ def _light_quota_exceeded(student_id, kind) -> tuple:
         return (False, "")
     if used < limit:
         return (False, "")
-    # ★接頭辞 AI_BUDGET_LIGHT: を必ず付ける。フロントは既に `/^AI_BUDGET_[A-Z0-9_]+:/` という
-    #   **総称**で接頭辞を剥がし、その有無で「上限系の 429 か」を判定している (app.js / mypage.js)。
-    #   ここを日本語本文だけにしていたため、mypage 側は「混み合っています」と誤案内していた。
-    #   ★文言の推敲でこの接頭辞を消さないこと。消すと判定が静かに壊れる (画面は正常に見えるまま)。
-    if period == _LIFETIME_PERIOD:
-        msg = (f"AI_BUDGET_LIGHT:{label}は トリリオン・ライト では {limit} 回かぎりです"
-               f"（すでに {used} 回ご利用済み）。作り直しは上位プランでご利用いただけます。")
+    if period == _LIGHT_TRIAL_PERIOD:
+        msg = (f"AI_BUDGET_LIGHT:{label}は 無料体験中は {limit} 回までです"
+               f"（すでに {used} 回ご利用済み）。ご契約後は 月 {LIGHT_ESSAYS_PER_MONTH} 回までお使いいただけます。")
     else:
-        msg = (f"AI_BUDGET_LIGHT:{label}は トリリオン・ライト では 合計 月 {limit} 回までです"
+        msg = (f"AI_BUDGET_LIGHT:{label}は {LIGHT_PLAN_LABEL} では 月 {limit} 回までです"
                f"（今月 {used} 回ご利用済み）。翌月1日にリセットされます。"
-               f"単元ドリル・演習ドリル・AI単語帳・弱点克服は上限に関係なくお使いいただけます。")
+               f"AI チューター・単元ドリル・弱点ドリル・AI単語帳は上限に関係なくお使いいただけます。")
     return (True, msg)
 
 
 def _light_consume(student_id, kind) -> None:
-    """ライトの上限を1つ消費する。★非throw (計上に失敗しても AI 応答自体は返す)。"""
+    """上限を1つ消費する。★非throw (計上に失敗しても AI 応答自体は返す)。回数で縛らない kind は何もしない。"""
     try:
         sid = int(student_id)
     except (TypeError, ValueError):
         return
-    feature, period, _limit, _label = _light_bucket_for_kind(kind)
+    k = str(kind or "").strip().lower()
+    _in_trial = _light_in_trial(sid) if "essay" in k else False
+    feature, period, _limit, _label = _light_bucket_for_kind(kind, in_trial=_in_trial)
+    if feature is None or feature == _LIGHT_DENIED_FEATURE:
+        return
     conn = None
     try:
         conn = db(); c = conn.cursor()
@@ -40050,12 +40452,16 @@ def ai_proxy(payload: AIProxyRequest, request: Request, authorization: Optional[
         #   正規化済みの kind だけで必ずどちらかのカウンタに落とす。
         #   ここは「上限に当たったことが生徒に分かる」ための早期判定。backstop (_call_anthropic_safe)
         #   は student_id が渡った呼び出しにしか効かないので、この早期判定を消してはいけない。
-        if not _impersonating and _student_tier(payload.student_id) == _TIER_LIGHT:
+        _is_light_caller = _student_tier(payload.student_id) == _TIER_LIGHT
+        if not _impersonating and _is_light_caller:
             _light_over, _light_msg = _light_quota_exceeded(payload.student_id, payload.kind)
             if _light_over:
                 raise HTTPException(status_code=429, detail=_light_msg)
         # 機能別月次クォータ check (problems / essays / textbooks)
-        if payload.feature:
+        # ★AI学習アプリ (light) は上の専用の枠だけで数える。汎用の枠も通すと、体験中の添削が
+        #   今月の分として二重に数えられて契約後 8回目で止まり、しかも「プレミアムに
+        #   アップグレード」の 429 (接頭辞なし) が出てしまう (2026-11-12 review)。
+        if payload.feature and not _is_light_caller:
             _check_quota(student_row, payload.feature)
     except HTTPException as e:
         # 4xx はそのまま伝搬するが、events に詳細を記録 (塾長デバッグ用)
@@ -52633,7 +53039,15 @@ def admin_set_student_plan(student_id: int, payload: StudentPlanSetRequest, auth
             )
         except Exception as ev_err:
             log.warning(f"[Admin] plan_change event log failed: {ev_err}")
+        if (old_plan or "").strip() == "trillion_light" and new_plan != "trillion_light" and _students_has_feature_tier():
+            # 💴 AI学習アプリから他のプランへ移したら、アプリ版の制限 (light) も外す
+            c.execute("UPDATE students SET feature_tier = NULL WHERE id = ? AND LOWER(COALESCE(feature_tier,'')) = ?",
+                      (student_id, _TIER_LIGHT))
         conn.commit()
+        try:
+            _AI_DISABLED_CACHE.pop(int(student_id), None)
+        except Exception:
+            pass
         log.info(f"[Admin] set plan student={student_id} {old_plan} -> {new_plan}")
 
         # 🔧 [admin-plan-stripe-sync] DB 更新後に Stripe サブスクの price も同期 (塾長承認: proration なし)。
@@ -52894,8 +53308,8 @@ def admin_set_recording_lesson_date(recording_id: int, payload: dict, authorizat
 def admin_set_student_feature_tier(student_id: int, payload: dict, authorization: Optional[str] = Header(None)):
     """🪶 [トリリオン・ライト 2026-08-20] 生徒の機能層を切替。payload: {feature_tier: "light"|"full"}。
 
-    'light' = AI は使えるが上限つき (AI呼び出し 月 LIGHT_AI_CALLS_PER_MONTH 回 /
-              カリキュラム生成は生涯 LIGHT_CURRICULUM_LIFETIME 回)。
+    'light' = トリリオン AI学習アプリ (月¥2,500) の制限 (問題・参考書の AI 作成なし /
+              添削 月 LIGHT_ESSAYS_PER_MONTH 回 / 学習計画 月 LIGHT_CURRICULUM_PER_MONTH 回)。
     'full'  = 従来どおり無制限 (NULL 相当に戻す)。
 
     ★これが無いと feature_tier を書く経路が本番に1つも無く、上限層が完全に死んだままになる

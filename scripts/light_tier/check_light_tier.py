@@ -1,4 +1,4 @@
-"""トリリオン・ライト (feature_tier='light') の AI 上限テスト。
+"""トリリオン AI学習アプリ (旧ライト・feature_tier='light') の AI 上限テスト。
 
 ★最重要は「既存2層 (AI管理フル / 塾生アプリのみ枠) が1ビットも変わっていない」ことの確認。
    新しい層を足したときに既存の許可集合が黙って広がる/狭まるのが一番怖い事故なので、
@@ -103,52 +103,140 @@ for p in DENY:
 for p in ALLOW:
     ok(main._is_light_denied_path(p) is False, f"ALLOW {p}")
 
-print("\n[3] _light_bucket_for_kind — どの kind でも必ず上限のある枝に落ちる")
-for kind in ["chat", "vision", "problems", "essay", "other", None, "", "CHAT", "textbook", "speaking",
-             "call_chat", "call_vision", "call_essay", "proxy_messages", "grade_essay",
-             "weekly_report_comment"]:
+print("\n[3] _light_bucket_for_kind — kind ごとの枠 (2026-11-12 新仕様: AI学習アプリ ¥2,500)")
+import datetime as _dt
+# 回数で縛らない (AI チューター等。費用は 1日あたりのトークン予算で抑える)
+for kind in ["chat", "vision", "other", None, "", "CHAT", "speaking", "call_chat", "call_vision",
+             "proxy_messages", "weekly_report_comment", "diagnostic", "call_diagnostic"]:
     feat, period, limit, _label = main._light_bucket_for_kind(kind)
-    ok(feat == main._LIGHT_AI_FEATURE and limit == main.LIGHT_AI_CALLS_PER_MONTH,
-       f"kind={kind!r} → 月次カウンタ(上限{limit})")
+    ok(feat is None and limit is None, f"kind={kind!r} → 回数で数えない")
+# ★作成系は必ず断る (limit=0)。/api/ai/call は "call_" を前置するので、その形も入れる
+for kind in ["problems", "call_problems", "textbook", "call_textbook", "exam_photo_scan",
+             "call_exam_pdf_scan", "similar_gen", "PROBLEMS", " textbook "]:
+    feat, period, limit, _label = main._light_bucket_for_kind(kind)
+    ok(feat == main._LIGHT_DENIED_FEATURE and limit == 0, f"★kind={kind!r} → 必ず断る")
+# 添削: 契約後は今月の枠、体験中は体験の枠
+for kind in ["essay", "call_essay", "grade_essay", "ESSAY"]:
+    feat, period, limit, _label = main._light_bucket_for_kind(kind)
+    ok(feat == main._LIGHT_ESSAY_FEATURE and limit == main.LIGHT_ESSAYS_PER_MONTH and period != main._LIGHT_TRIAL_PERIOD,
+       f"kind={kind!r} (契約後) → 今月の添削枠(上限{limit})")
+    feat, period, limit, _label = main._light_bucket_for_kind(kind, in_trial=True)
+    ok(feat == main._LIGHT_ESSAY_FEATURE and limit == main.LIGHT_TRIAL_ESSAYS and period == main._LIGHT_TRIAL_PERIOD,
+       f"kind={kind!r} (体験中) → 体験の添削枠(上限{limit})")
 # ★実際にバグの原因だった文字列を必ず入れる。/api/ai/call は "call_" を前置し、
 #   単数形の public endpoint は "curriculum_generate" を渡す。ここに無かったせいで
-#   「生涯枠が一度も発火しない」バグを緑のまま通した (2026-08-20)。
+#   「枠が一度も発火しない」バグを緑のまま通した (2026-08-20)。
 for kind in ["curriculum", "CURRICULUM", " curriculum ", "call_curriculum",
              "curriculum_generate", "probe_call_curriculum"]:
     feat, period, limit, _label = main._light_bucket_for_kind(kind)
-    ok(feat == main._LIGHT_CURRICULUM_FEATURE and period == main._LIFETIME_PERIOD
-       and limit == main.LIGHT_CURRICULUM_LIFETIME,
-       f"kind={kind!r} → 生涯カウンタ(上限{limit})")
+    ok(feat == main._LIGHT_CURRICULUM_FEATURE and period != main._LIGHT_TRIAL_PERIOD
+       and limit == main.LIGHT_CURRICULUM_PER_MONTH,
+       f"kind={kind!r} → 学習計画の月次カウンタ(上限{limit})")
+# 体験の日数・添削回数・料金ラベルの既定値 (塾長決定 2026-11-12)
+ok(main.LIGHT_TRIAL_DAYS == 3, f"体験は3日間 (LIGHT_TRIAL_DAYS={main.LIGHT_TRIAL_DAYS})")
+ok(main.LIGHT_TRIAL_ESSAYS == 2 and main.LIGHT_ESSAYS_PER_MONTH == 10 and main.LIGHT_CURRICULUM_PER_MONTH == 1,
+   "添削 体験2回/月10回・学習計画 月1回")
+ok(main.LIGHT_PLAN_LABEL == "トリリオン AI学習アプリ", "表示名")
 
 print("\n[4] 上限の実挙動 (実 DB)")
-mkstudent(9001, feature_tier="light")
+mkstudent(9001, feature_tier="light")   # status='trial' = 体験中
 ok(main._student_tier(9001) == "light", "feature_tier='light' → _student_tier=light")
-over, _ = main._light_quota_exceeded(9001, "chat")
-ok(over is False, "0回目: 通る")
-for i in range(main.LIGHT_AI_CALLS_PER_MONTH):
+ok(main._light_in_trial(9001) is True, "status='trial' → 体験中と判定")
+# チャットは何回使っても回数では止まらない
+for i in range(30):
     main._light_consume(9001, "chat")
-over, msg = main._light_quota_exceeded(9001, "chat")
-ok(over is True, f"{main.LIGHT_AI_CALLS_PER_MONTH}回消費後: 止まる")
-ok(msg.startswith("AI_BUDGET_LIGHT:") and f"月 {main.LIGHT_AI_CALLS_PER_MONTH} 回" in msg,
+over, _ = main._light_quota_exceeded(9001, "chat")
+ok(over is False, "★chat は30回使っても回数では止まらない")
+conn = main.db(); c = conn.cursor()
+c.execute("SELECT COUNT(*) FROM usage_monthly WHERE student_id = ?", (9001,))
+ok(c.fetchone()[0] == 0, "★chat はカウンタ行を作らない")
+conn.close()
+# 作成系は 0 回目から止まる
+for k in ("problems", "textbook"):
+    over, msg = main._light_quota_exceeded(9001, k)
+    ok(over is True and msg.startswith("AI_BUDGET_LIGHT:") and "作ることはできません" in msg,
+       f"★{k} は0回目から断る: {msg[:50]}")
+# 体験中の添削は2回まで
+over, _ = main._light_quota_exceeded(9001, "essay")
+ok(over is False, "体験中の添削 0回目: 通る")
+for i in range(main.LIGHT_TRIAL_ESSAYS):
+    main._light_consume(9001, "essay")
+over, msg = main._light_quota_exceeded(9001, "essay")
+ok(over is True, f"体験中の添削 {main.LIGHT_TRIAL_ESSAYS}回消費後: 止まる")
+# ★接頭辞 AI_BUDGET_LIGHT: は フロント (app.js / mypage.js) が「上限系の429か」を判定する鍵。
+#   文言の推敲でこれを落とすと、判定が静かに壊れて誤案内に戻る。
+ok(msg.startswith("AI_BUDGET_LIGHT:") and f"{main.LIGHT_TRIAL_ESSAYS} 回まで" in msg and "体験中" in msg,
    f"文言に接頭辞と上限が入る: {msg[:70]}")
-# ★kind を変えて回避できないこと
-over_v, _ = main._light_quota_exceeded(9001, "vision")
-over_o, _ = main._light_quota_exceeded(9001, "other")
-over_n, _ = main._light_quota_exceeded(9001, None)
-ok(over_v and over_o and over_n, "★kind を vision/other/未指定 に変えても回避できない")
-# curriculum は別枠なのでまだ通る
+snap = main._light_usage_snapshot(9001)
+ok(snap["in_trial"] is True and snap["essays_remaining"] == 0 and snap["essays_limit"] == main.LIGHT_TRIAL_ESSAYS,
+   f"snapshot(体験中): {snap}")
+ok(snap["problem_generation"] is False and snap["textbook_generation"] is False, "snapshot: 作成は不可と返す")
+# 契約後 (paid) は「今月」の枠に切り替わる。体験で使った分は持ち越さない
+conn = main.db(); c = conn.cursor()
+c.execute("UPDATE students SET status='paid' WHERE id=?", (9001,)); conn.commit(); conn.close()
+ok(main._light_in_trial(9001) is False, "status='paid' → 体験中ではない")
+over, _ = main._light_quota_exceeded(9001, "essay")
+ok(over is False, "★契約後は今月の添削枠 (体験の消費を持ち越さない)")
+for i in range(main.LIGHT_ESSAYS_PER_MONTH):
+    main._light_consume(9001, "essay")
+over, msg = main._light_quota_exceeded(9001, "essay")
+ok(over is True and f"月 {main.LIGHT_ESSAYS_PER_MONTH} 回" in msg and msg.startswith("AI_BUDGET_LIGHT:"),
+   f"契約後の添削 {main.LIGHT_ESSAYS_PER_MONTH}回で止まる: {msg[:60]}")
+# ★kind を変えて添削枠を「回数で」回避できるのは chat 等だけ (仕様上の既知の制約。費用は日次予算で抑える)
+over_v, _ = main._light_quota_exceeded(9001, "call_essay")
+ok(over_v is True, "★call_essay でも同じ添削枠で止まる")
+# 学習計画は月1回
 over_c, _ = main._light_quota_exceeded(9001, "curriculum")
 ok(over_c is False, "curriculum は別カウンタなのでまだ通る")
 main._light_consume(9001, "curriculum")
 over_c2, msg_c = main._light_quota_exceeded(9001, "curriculum")
-ok(over_c2 is True, f"curriculum {main.LIGHT_CURRICULUM_LIFETIME}回で止まる")
-# ★接頭辞 AI_BUDGET_LIGHT: は フロント (app.js / mypage.js) が「上限系の429か」を判定する鍵。
-#   文言の推敲でこれを落とすと、判定が静かに壊れて誤案内に戻る。
-ok(msg_c.startswith("AI_BUDGET_LIGHT:") and str(main.LIGHT_CURRICULUM_LIFETIME) in msg_c,
+ok(over_c2 is True, f"curriculum {main.LIGHT_CURRICULUM_PER_MONTH}回で止まる")
+ok(msg_c.startswith("AI_BUDGET_LIGHT:") and str(main.LIGHT_CURRICULUM_PER_MONTH) in msg_c,
    f"文言に接頭辞と上限が入る: {msg_c[:70]}")
-# 生涯カウンタは翌月になっても戻らない (year_month が 'lifetime' 固定)
+# 翌月になれば戻る (year_month が今月だけを数える)
+conn = main.db(); c = conn.cursor()
+c.execute("UPDATE usage_monthly SET year_month = '2000-01' WHERE student_id = ? AND year_month <> ?",
+          (9001, main._LIGHT_TRIAL_PERIOD))
+conn.commit(); conn.close()
+over_c3, _ = main._light_quota_exceeded(9001, "curriculum")
+over_e3, _ = main._light_quota_exceeded(9001, "essay")
+ok(over_c3 is False and over_e3 is False, "★翌月は学習計画・添削とも戻る")
 snap = main._light_usage_snapshot(9001)
-ok(snap["curriculum_remaining"] == 0 and snap["ai_calls_remaining"] == 0, f"snapshot: {snap}")
+ok(snap["in_trial"] is False and snap["curriculum_remaining"] == main.LIGHT_CURRICULUM_PER_MONTH
+   and snap["essays_remaining"] == main.LIGHT_ESSAYS_PER_MONTH, f"snapshot(翌月): {snap}")
+
+print("\n[4b] ★1日あたりのトークン量 — plan を自称しても AI学習アプリの量で止まる")
+import json as _json
+from datetime import datetime as _dtm, timezone as _tz, timedelta as _td
+def _add_tokens(sid, n):
+    conn = main.db(); c = conn.cursor()
+    c.execute("INSERT INTO events (name, props, session_id, created_at) VALUES (?, ?, ?, ?)",
+              ("ai_call_chat", _json.dumps({"input_tokens": n, "output_tokens": 0}), str(sid),
+               _dtm.now(_tz.utc) - _td(minutes=5)))
+    conn.commit(); conn.close()
+def _budget_detail(sid):
+    try:
+        main._check_ai_budget(sid)
+        return None
+    except main.HTTPException as e:
+        return (e.status_code, str(e.detail))
+# /api/trial/signup では plan を自称できる。premium を名乗っても light の量で止まること
+mkstudent(9011, feature_tier="light")
+conn = main.db(); c = conn.cursor()
+c.execute("UPDATE students SET plan='premium' WHERE id=?", (9011,)); conn.commit(); conn.close()
+ok(_budget_detail(9011) is None, "使用 0: 通る")
+_add_tokens(9011, main.LIGHT_DAILY_TOKEN_BUDGET)
+d = _budget_detail(9011)
+ok(d is not None and d[0] == 429 and d[1].startswith("AI_BUDGET_LIGHT:")
+   and f"{main.LIGHT_DAILY_TOKEN_BUDGET:,}" in d[1],
+   f"★plan=premium を名乗っても light の量 ({main.LIGHT_DAILY_TOKEN_BUDGET:,}) で止まり、接頭辞は LIGHT: {d}")
+# full の premium 生徒は同じ量では止まらない (light の上書きが full に漏れていない)
+mkstudent(9012, feature_tier=None)
+conn = main.db(); c = conn.cursor()
+c.execute("UPDATE students SET plan='premium' WHERE id=?", (9012,)); conn.commit(); conn.close()
+_add_tokens(9012, main.LIGHT_DAILY_TOKEN_BUDGET)
+ok(main.PLAN_DAILY_TOKEN_BUDGET.get("premium", 0) > main.LIGHT_DAILY_TOKEN_BUDGET and _budget_detail(9012) is None,
+   "★full の premium は light の量では止まらない")
 
 print("\n[5] full の生徒は一切影響を受けない")
 mkstudent(9002, feature_tier=None)
@@ -431,10 +519,14 @@ class _PoisonConn:
 
 def _run_budget_with(conn):
     """差し替えた接続で _check_ai_budget を1回走らせ、漏れた例外を返す (無ければ None)。"""
-    _rd, _rr = main.db, main._record_ai_critical_event
+    _rd, _rr, _rg = main.db, main._record_ai_critical_event, main._load_student_gate
     try:
         main.db = lambda: conn
         main._record_ai_critical_event = lambda _n, _p: True   # スレッドから実DBを触らせない
+        # ★層の判定 (_load_student_gate) は本番では **別の接続** を開く (2026-11-12 に AI学習アプリの
+        #   日次の量で追加)。ここでは db() を1本の毒入り接続に差し替えているので、そのままだと
+        #   別接続のはずの読み取りが同じ接続を汚し、_check_ai_budget の rollback の検査にならない。
+        main._load_student_gate = lambda _sid: (False, "full")
         main._GATE_EVENT_LAST.clear()
         try:
             main._check_ai_budget(999999)
@@ -444,6 +536,7 @@ def _run_budget_with(conn):
     finally:
         main.db = _rd
         main._record_ai_critical_event = _rr
+        main._load_student_gate = _rg
         main._GATE_EVENT_LAST.clear()
 
 

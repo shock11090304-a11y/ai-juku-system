@@ -450,11 +450,14 @@ def main():
     academy = open(os.path.join(REPO, "academy.html"), encoding="utf-8").read()
     check("light.html・academy.html に「週1回の弱点プリント」「毎週の弱点プリント」が無い",
           not any(w in t for t in (light, academy) for w in ("週1回の弱点プリント", "毎週の弱点プリント")))
-    can = light[light.index("✅ ライトで使えるもの"):light.index("ライトでは使えないもの")]
+    # 2026-11-12 light.html を「トリリオン AI学習アプリ」の申込ページに作り替え、見出しが変わった
+    can = light[light.index("<h3>✅ 使えるもの</h3>"):light.index("<h3>使えないもの</h3>")]
     item = can[can.index("<li>3日ごとの弱点ドリル"):]
     item = item[:item.index("</li>")]
-    check("light.html の 3日ドリルの行に「小学生には届きません」の注記がある (申込フォームは 小学5年・小学6年 を選べる)",
-          "小学生には届きません" in item and "中学生・高校生" in item and '<option value="小学5年">' in light, item[:200])
+    # ★申込ページに学年の選択は無くなった (体験・申込はメールアドレスと氏名だけ) が、
+    #   小学生も申し込めることに変わりはないので注記は要る。
+    check("light.html の 3日ドリルの行に「小学生には届きません」の注記がある (小学生も申し込める)",
+          "小学生には届きません" in item and "中学生・高校生" in item, item[:200])
     # 注記の中身をコードと突き合わせる (配る学年・科目を変えたら公開ページも直す)
     bands = mod._ROUTINE_SUBJECTS_BY_BAND
     check("3日ドリルは小学生に配らない (_ROUTINE_SUBJECTS_BY_BAND に shougaku が無い = 注記どおり)",

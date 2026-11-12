@@ -136,6 +136,13 @@
                 ['ai_juku_session_token', 'ai_juku_session_expires', 'ai_juku_session_student'].forEach(function (k) { localStorage.removeItem(k); });
               } catch (_) {}
               window.location.replace('login.html?reason=account_merged');
+              return;
+            }
+            // 💴 [2026-11-12] トリリオン AI学習アプリ (月2,500円) の体験が終わった人は、その申込ページへ回す。
+            //   auth-guard は使えない生徒を一律ここへ送るので、ここで振り分けないと ¥14,500 等の値段を見せてしまう。
+            if (d && d.student && d.student.plan === 'trillion_light') {
+              var _em = (d.student.email || '');
+              window.location.replace('light.html?apply=1' + (_em ? '&email=' + encodeURIComponent(_em) : ''));
             }
           })
           .catch(function () {});

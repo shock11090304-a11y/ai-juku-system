@@ -113,6 +113,24 @@ const PLAN_CONFIG = {
     },
   },
 
+  // 💴 トリリオン AI学習アプリ (外部向け・月¥2,500・2026-11-12 塾長決定)。内部キー trillion_light。
+  //   ★plans の中に置かないこと: lp.html の料金カードは plans の legacy 以外を全部出すので、
+  //     ここに入れた瞬間に公開ページへ値段が出る (受付開始は塾長の「公開して」の後)。申込ページは light.html。
+  //   ★price / quotas / trialDays は server/main.py の PRICE_MAP・PLAN_QUOTAS・LIGHT_TRIAL_DAYS と
+  //     scripts/check_plan_price_sync.py で照合している。変えたら両方とも直すこと。
+  aiApp: {
+    id: 'trillion_light',
+    name: 'トリリオン AI学習アプリ',
+    price: 2500,
+    priceLabel: '¥2,500',
+    trialDays: 3,           // カード登録なし・延長なし・自動課金なし
+    enrollmentFee: 0,       // 入塾金なし
+    quotas: { problems: 0, essays: 10, textbooks: 0 },  // 問題・参考書の AI 作成なし / 添削 月10回 (体験中は2回)
+    trialEssays: 2,         // 無料体験中の添削 (server LIGHT_TRIAL_ESSAYS と一致)
+    curriculumPerMonth: 1,  // 学習計画の自動作成 月1回
+    signupPage: 'light.html',
+  },
+
   // 完全無料 7日間体験 (FOUNDER_TRIAL_DAYS と一致・2026-06-30 14→7 短縮)
   trial: {
     price: 0,

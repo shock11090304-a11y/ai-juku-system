@@ -89,7 +89,7 @@ if True:
             detail = (r.json() or {}).get("detail", "")
         except Exception:
             pass
-        ok(r.status_code == 403 and "トリリオン・ライト" in str(detail),
+        ok(r.status_code == 403 and "トリリオン AI学習アプリ" in str(detail),
            f"light  POST {path} → {r.status_code} / {str(detail)[:40]}")
 
     print("\n[B] ★同じルートを full の生徒が叩いても、ライトの 403 にはならない")
@@ -106,7 +106,7 @@ if True:
             detail = (r.json() or {}).get("detail", "")
         except Exception:
             pass
-        ok(not (r.status_code == 403 and "トリリオン・ライト" in str(detail)),
+        ok(not (r.status_code == 403 and "トリリオン AI学習アプリ" in str(detail)),
            f"full   POST {path} → {r.status_code} (ライトの403ではない)")
 
     print("\n[C] ★塾生アプリのみ枠の挙動が不変 (従来の 403 文言のまま)")
@@ -131,25 +131,39 @@ if True:
     ok(rl.status_code == 403 and rf.status_code == 403,
        f"curricula/me は light={rl.status_code} / full={rf.status_code} (どちらも既存ゲートで403)")
 
-    print("\n[E] /api/ai/call の月次上限が middleware ではなくハンドラで効く")
-    for _ in range(main.LIGHT_AI_CALLS_PER_MONTH):
-        main._light_consume(LIGHT, "chat")
-    r = client.post("/api/ai/call", json={"system": "s", "kind": "chat", "messages": [{"role": "user", "content": "hi"}]},
+    print("\n[E] /api/ai/call の上限が middleware ではなくハンドラで効く (2026-11-12 新仕様)")
+    # mkstudent は status='trial' で作る = 体験中。体験中の添削は LIGHT_TRIAL_ESSAYS 回まで。
+    for _ in range(main.LIGHT_TRIAL_ESSAYS):
+        main._light_consume(LIGHT, "essay")
+    r = client.post("/api/ai/call", json={"system": "s", "kind": "essay", "messages": [{"role": "user", "content": "hi"}]},
                     headers={**H[LIGHT], "Origin": "https://trillion-ai-juku.com"})
     detail = ""
     try:
         detail = (r.json() or {}).get("detail", "")
     except Exception:
         pass
-    ok(r.status_code == 429 and "月 10 回" in str(detail) and str(detail).startswith("AI_BUDGET_LIGHT:"),
-       f"light POST /api/ai/call (上限到達) → {r.status_code} / {str(detail)[:50]}")
-    # ★kind を変えて回避できないこと (HTTP 経由でも)
-    r2 = client.post("/api/ai/call", json={"system": "s", "kind": "vision", "messages": [{"role": "user", "content": "hi"}]},
-                     headers={**H[LIGHT], "Origin": "https://trillion-ai-juku.com"})
-    ok(r2.status_code == 429, f"★kind=vision に変えても 429 のまま → {r2.status_code}")
-    r3 = client.post("/api/ai/call", json={"system": "s", "messages": [{"role": "user", "content": "hi"}]},
-                     headers={**H[LIGHT], "Origin": "https://trillion-ai-juku.com"})
-    ok(r3.status_code == 429, f"★kind 未指定でも 429 のまま → {r3.status_code}")
+    ok(r.status_code == 429 and f"{main.LIGHT_TRIAL_ESSAYS} 回まで" in str(detail) and "体験中" in str(detail)
+       and str(detail).startswith("AI_BUDGET_LIGHT:"),
+       f"light POST /api/ai/call kind=essay (体験中の上限到達) → {r.status_code} / {str(detail)[:60]}")
+    # ★問題・参考書の AI 作成は回数に関係なく必ず断る (塾長決定「生徒は新しく作れない」)
+    for _k in ("problems", "textbook", "exam_photo_scan", "exam_pdf_scan"):
+        r2 = client.post("/api/ai/call", json={"system": "s", "kind": _k, "messages": [{"role": "user", "content": "hi"}]},
+                         headers={**H[LIGHT], "Origin": "https://trillion-ai-juku.com"})
+        d2 = ""
+        try:
+            d2 = (r2.json() or {}).get("detail", "")
+        except Exception:
+            pass
+        ok(r2.status_code == 429 and str(d2).startswith("AI_BUDGET_LIGHT:") and "作ることはできません" in str(d2),
+           f"★kind={_k} は必ず断る → {r2.status_code} / {str(d2)[:40]}")
+    # ★AI の弱点プリント生成も middleware で 403 (plan ではなく tier で止める)
+    r5 = client.post("/api/weak-points/generate-worksheet", json={}, headers=H[LIGHT])
+    ok(r5.status_code == 403, f"★light POST /api/weak-points/generate-worksheet → {r5.status_code}")
+    # ★参考書の作成依頼ルートは middleware で 403
+    r3 = client.post("/api/textbooks/request-generation", json={"subject": "英語", "topic": "x"}, headers=H[LIGHT])
+    ok(r3.status_code == 403, f"★light POST /api/textbooks/request-generation → {r3.status_code}")
+    r4 = client.post("/api/textbooks/request-generation", json={"subject": "英語", "topic": "x"}, headers=H[FULL])
+    ok(r4.status_code != 403, f"full POST /api/textbooks/request-generation はライトの403にならない → {r4.status_code}")
 
     print("\n[F] /api/usage/me が残回数を返す (full には付けない)")
     r = client.get("/api/usage/me", headers=H[LIGHT])
@@ -233,57 +247,80 @@ if True:
               "Origin": "https://trillion-ai-juku.com"}
         ym = main._jst_year_month()
 
-        # (1) 通常のチャット → 月次カウンタが +1
+        # (1) ★通常のチャットは回数で数えない (AI チューターは回数無制限・2026-11-12 塾長決定)
         r = client.post("/api/ai/call",
                         json={"system": "s", "kind": "chat", "messages": [{"role": "user", "content": "hi"}]},
                         headers=HG)
         cnt = _counters(G)
-        ok(r.status_code == 200 and cnt.get((main._LIGHT_AI_FEATURE, ym)) == 1,
-           f"chat 成功 → 月次 +1 (status={r.status_code} counters={cnt})")
+        ok(r.status_code == 200 and cnt == {},
+           f"★chat 成功 → カウンタを作らない (status={r.status_code} counters={cnt})")
 
-        # (2) ★kind='curriculum' → 生涯カウンタが +1 (月次ではない)
+        # (2) ★kind='curriculum' → 今月のカウンタが +1
         #     /api/ai/call は backstop に "call_curriculum" を渡すので、完全一致だとここで落ちる
         r = client.post("/api/ai/call",
                         json={"system": "s", "kind": "curriculum", "messages": [{"role": "user", "content": "hi"}]},
                         headers=HG)
         cnt = _counters(G)
-        ok(r.status_code == 200
-           and cnt.get((main._LIGHT_CURRICULUM_FEATURE, main._LIFETIME_PERIOD)) == 1
-           and cnt.get((main._LIGHT_AI_FEATURE, ym)) == 1,
-           f"★curriculum 成功 → 生涯 +1 / 月次は据置 (status={r.status_code} counters={cnt})")
+        ok(r.status_code == 200 and cnt.get((main._LIGHT_CURRICULUM_FEATURE, ym)) == 1,
+           f"★curriculum 成功 → 今月 +1 (status={r.status_code} counters={cnt})")
 
-        # (3) ★2回目の curriculum は生涯上限で 429
+        # (3) ★2回目の curriculum は月1回の上限で 429
         r = client.post("/api/ai/call",
                         json={"system": "s", "kind": "curriculum", "messages": [{"role": "user", "content": "hi"}]},
                         headers=HG)
-        ok(r.status_code == 429, f"★curriculum 2回目 → 429 (生涯1回が効く) → {r.status_code}")
+        ok(r.status_code == 429, f"★curriculum 2回目 → 429 (月1回が効く) → {r.status_code}")
 
-        # (4) ★model='gemini-*' でも数える (_call_anthropic_safe を通らない経路)
-        before = _counters(G).get((main._LIGHT_AI_FEATURE, ym), 0)
+        # (4) ★model='gemini-*' でも添削を数える (_call_anthropic_safe を通らない経路)。体験中なので体験の枠
+        before = _counters(G).get((main._LIGHT_ESSAY_FEATURE, main._LIGHT_TRIAL_PERIOD), 0)
         r = client.post("/api/ai/call",
-                        json={"system": "s", "kind": "chat", "model": "gemini-2.5-flash",
+                        json={"system": "s", "kind": "essay", "model": "gemini-2.5-flash",
                               "messages": [{"role": "user", "content": "hi"}]},
                         headers=HG)
-        after = _counters(G).get((main._LIGHT_AI_FEATURE, ym), 0)
+        after = _counters(G).get((main._LIGHT_ESSAY_FEATURE, main._LIGHT_TRIAL_PERIOD), 0)
         ok(r.status_code == 200 and after == before + 1 and _gemini_calls["n"] == 1,
-           f"★gemini 直行でも月次 +1 ({before}→{after} status={r.status_code} "
+           f"★gemini 直行でも添削 +1 ({before}→{after} status={r.status_code} "
            f"gemini実呼び出し={_gemini_calls['n']}回)")
         # ★「本当に Gemini 分岐を通ったか」を別軸で確かめる。通っていなければ
         #   Anthropic フォールバックを測っているだけで、この検査は無意味になる。
         ok(_gemini_calls["n"] == 1, "★Gemini 分岐を実際に通った (フォールバックではない)")
 
         # (5) ★なりすまし (塾長の確認入室) は消費しない
-        before = _counters(G).get((main._LIGHT_AI_FEATURE, ym), 0)
+        before = _counters(G).get((main._LIGHT_ESSAY_FEATURE, main._LIGHT_TRIAL_PERIOD), 0)
         HI = {"Authorization": "Bearer " + main._sign_session_token(G, token_type="impersonation"),
               "Origin": "https://trillion-ai-juku.com"}
         r = client.post("/api/ai/call",
-                        json={"system": "s", "kind": "chat", "messages": [{"role": "user", "content": "hi"}]},
+                        json={"system": "s", "kind": "essay", "messages": [{"role": "user", "content": "hi"}]},
                         headers=HI)
-        after = _counters(G).get((main._LIGHT_AI_FEATURE, ym), 0)
+        after = _counters(G).get((main._LIGHT_ESSAY_FEATURE, main._LIGHT_TRIAL_PERIOD), 0)
         # ★status も見る。401/403 で弾かれてもカウンタは据置なので、それだけだと
         #   「なりすましが通ったうえで数えなかった」ことの検査にならない。
         ok(after == before and r.status_code == 200,
            f"★なりすましは通るが残回数を減らさない ({before}→{after} status={r.status_code})")
+
+        # (5b) ★契約後 (status='paid') の添削は「今月」の枠で数える (体験の枠ではない)
+        _cp = main.db(); _cpc = _cp.cursor()
+        _cpc.execute("UPDATE students SET status='paid' WHERE id=?", (G,)); _cp.commit(); _cp.close()
+        r = client.post("/api/ai/call",
+                        json={"system": "s", "kind": "essay", "messages": [{"role": "user", "content": "hi"}]},
+                        headers=HG)
+        cnt = _counters(G)
+        ok(r.status_code == 200 and cnt.get((main._LIGHT_ESSAY_FEATURE, ym)) == 1,
+           f"★paid の添削 → 今月の枠 +1 (status={r.status_code} counters={cnt})")
+
+        # (5c) ★汎用の月次クォータ (essays) で二重に止めない。体験中の添削が「今月の essays」にも
+        #      数えられていると、契約後に専用の枠が残っていても「プレミアムにアップグレード」の 429 で止まる。
+        _cp = main.db(); _cpc = _cp.cursor()
+        _cpc.execute("UPDATE students SET plan='trillion_light' WHERE id=?", (G,))
+        _cpc.execute("DELETE FROM usage_monthly WHERE student_id=? AND feature='essays'", (G,))
+        _cpc.execute("INSERT INTO usage_monthly (student_id, feature, year_month, used_count) VALUES (?, 'essays', ?, ?)",
+                     (G, ym, 50))
+        _cp.commit(); _cp.close()
+        r = client.post("/api/ai/call",
+                        json={"system": "s", "kind": "essay", "feature": "essays",
+                              "messages": [{"role": "user", "content": "hi"}]},
+                        headers=HG)
+        ok(r.status_code == 200,
+           f"★汎用の essays が上限でも、専用の枠が残っていれば通る (二重に数えない) → {r.status_code} {str(r.json())[:60]}")
 
         # (6) full の生徒は何回撃ってもカウンタ行が1つも増えない
         F2 = 9111
@@ -320,6 +357,83 @@ if True:
        f"AIなし枠の EXACT 許可が期待どおり ({sorted(set(main._AI_DISABLED_ALLOWED_EXACT) ^ EXPECTED_EXACT)})")
     ok(tuple(main._AI_DISABLED_ALLOWED_PREFIXES) == EXPECTED_PREFIXES,
        f"AIなし枠の PREFIX 許可が期待どおり ({main._AI_DISABLED_ALLOWED_PREFIXES})")
+
+print("\n[I] ★申込の受付スイッチと、既存アカウントの断り (体験・決済で同じ条件)")
+_SIGN = {"name": "仮名 一郎", "grade": "高校1年", "plan": "trillion_light"}
+def _mkrow(sid, email, **cols):
+    conn = main.db(); c = conn.cursor()
+    c.execute("DELETE FROM students WHERE id = ? OR LOWER(email) = ?", (sid, email))
+    keys = ["id", "name", "email"] + list(cols.keys())
+    c.execute(f"INSERT INTO students ({', '.join(keys)}) VALUES ({', '.join(['?'] * len(keys))})",
+              (sid, "テスト生徒", email, *cols.values()))
+    conn.commit(); conn.close()
+    main._AI_DISABLED_CACHE.pop(sid, None)
+# (1) スイッチが閉じている間は、直接 POST しても体験も決済も受け付けない
+main.LIGHT_SIGNUP_OPEN = False
+r = client.post("/api/trial/signup", json={**_SIGN, "email": "closed1@example.com"})
+ok(r.status_code == 403, f"★受付前: 体験の直接 POST → 403 ({r.status_code})")
+conn = main.db(); c = conn.cursor()
+c.execute("SELECT COUNT(*) FROM students WHERE LOWER(email) = ?", ("closed1@example.com",))
+ok(c.fetchone()[0] == 0, "★受付前: 生徒行を作らない")
+conn.close()
+r = client.post("/api/stripe/checkout", json={"plan": "trillion_light", "email": "closed1@example.com", "name": "仮名 一郎"})
+ok(r.status_code == 403, f"★受付前: 決済の直接 POST → 403 ({r.status_code})")
+# (2) 開けたら 3日間・light で体験が付く
+main.LIGHT_SIGNUP_OPEN = True
+try:
+    r = client.post("/api/trial/signup", json={**_SIGN, "email": "open1@example.com"})
+    j = r.json() if r.status_code == 200 else {}
+    conn = main.db(); c = conn.cursor()
+    c.execute("SELECT plan, feature_tier, status, trial_end FROM students WHERE LOWER(email) = ?", ("open1@example.com",))
+    row = c.fetchone(); conn.close()
+    ok(r.status_code == 200 and j.get("light_trial_granted") is True and row and row["plan"] == "trillion_light"
+       and row["feature_tier"] == "light" and row["status"] == "trial",
+       f"受付中: 新規の体験 → light で付く ({r.status_code} {dict(row) if row else None})")
+    if row:
+        _te = row["trial_end"]
+        _te = main.datetime.fromisoformat(str(_te).replace("Z", "+00:00"))
+        if _te.tzinfo is None:
+            _te = _te.replace(tzinfo=main.timezone.utc)
+        _days = (_te - main.datetime.now(main.timezone.utc)).total_seconds() / 86400
+        ok(2.9 < _days <= 3.01, f"★体験は3日間 ({_days:.2f}日)")
+    # (3) 塾生 (AIなし枠)・通塾生・契約中・カード登録つきの体験中は、体験も決済も断る
+    _cases = [
+        (9201, "jukusei@example.com", {"ai_disabled": 1, "status": "trial"}, "塾生"),
+        (9202, "addon@example.com", {"plan": "student_addon", "status": "paid"}, "塾生"),
+        (9203, "founder@example.com", {"plan": "founder_special", "status": "paid", "stripe_subscription_id": "sub_x"}, "月額プラン"),
+        (9204, "cardtrial@example.com", {"plan": "founder_special", "status": "trial", "stripe_subscription_id": "sub_y"}, "カード登録"),
+        (9205, "course@example.com", {"course": "kokuritsu_nankan", "status": "trial"}, "塾生"),
+    ]
+    for sid, em, cols, word in _cases:
+        _mkrow(sid, em, **cols)
+        main._RATE_LIMIT_STORE.clear()   # 同じ IP から続けて撃つので、申込の回数制限を毎回空にする
+        r1 = client.post("/api/trial/signup", json={**_SIGN, "email": em})
+        r2 = client.post("/api/stripe/checkout", json={"plan": "trillion_light", "email": em, "name": "仮名 一郎"})
+        d1 = (r1.json() or {}).get("detail", "") if r1.status_code != 200 else ""
+        d2 = (r2.json() or {}).get("detail", "") if r2.status_code != 200 else ""
+        conn = main.db(); c = conn.cursor()
+        c.execute("SELECT plan, feature_tier FROM students WHERE id = ?", (sid,))
+        after = dict(c.fetchone()); conn.close()
+        ok(r1.status_code == 400 and word in str(d1) and r2.status_code == 409 and word in str(d2)
+           and after.get("feature_tier") != "light" and after.get("plan") == cols.get("plan"),
+           f"★{em}: 体験 {r1.status_code} / 決済 {r2.status_code} で断り、plan・tier を変えない ({after})")
+    # (4) ★カード登録つきの体験中は、体験メールの除外 (_light_member_ids) に入らない (課金前のお知らせを止めない)
+    _mkrow(9206, "lightcard@example.com", plan="trillion_light", feature_tier="light", status="trial",
+           stripe_subscription_id="sub_z")
+    _mkrow(9207, "lightplain@example.com", plan="trillion_light", feature_tier="light", status="trial")
+    _ids = main._light_member_ids()
+    ok(9207 in _ids and 9206 not in _ids, f"★体験メールの除外: 通常の体験は除外 / カード登録つきは除外しない")
+    # (5) ★カード登録つき体験 (founder_special) へ移ったら light を外す
+    conn = main.db(); c = conn.cursor()
+    main._sync_feature_tier_after_checkout(c, conn, 9207, None, "founder_special")
+    c.execute("SELECT feature_tier FROM students WHERE id = ?", (9207,))
+    ok(c.fetchone()["feature_tier"] in (None, ""), "★別プランへの同期で light を外す")
+    main._sync_feature_tier_after_checkout(c, conn, 9207, None, "trillion_light")
+    c.execute("SELECT feature_tier FROM students WHERE id = ?", (9207,))
+    ok(c.fetchone()["feature_tier"] == "light", "trillion_light への同期で light を付ける")
+    conn.close()
+finally:
+    main.LIGHT_SIGNUP_OPEN = False
 
 print("\n" + "=" * 60)
 print(f"{N[0]} checks / FAIL {len(FAIL)}")

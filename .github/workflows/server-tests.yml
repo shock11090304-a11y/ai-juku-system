@@ -31,6 +31,11 @@ on:
       - 'payment/app.js'
       - 'payment/index.html'
       - 'scripts/check_course_price_sync.py'
+      # 💴 外部向け月額プランの価格照合 (2026-11-12・トリリオン AI学習アプリ 月¥2,500)。値段は plans.js / light.html / legal.html にも書いてある
+      - 'scripts/check_plan_price_sync.py'
+      - 'plans.js'
+      - 'light.html'
+      - 'legal.html'
       - '.github/workflows/server-tests.yml'
       # 🧒 中学の教科別ドリル (数学・理科・社会・国語) の回帰テストはシードと入試道場の単元カタログを読む (シードだけ直した push でも走らせる)
       - 'seed-data/chugaku_math_pool_v1.json'
@@ -307,6 +312,12 @@ jobs:
         run: |
           python3 scripts/health_check/test_enroll_first_charge.py
           python3 scripts/check_course_price_sync.py
+
+      # 💴 外部向け月額プランの価格照合 (2026-11-12): server/main.py の PRICE_MAP・PLAN_QUOTAS ⇄ plans.js ⇄ light.html ⇄ legal.html。
+      #   light.html の受付スイッチが開いているのに legal.html に表記が無ければ落とす。Stripe は見ない (--stripe は手で実行)。
+      - name: 外部向け月額プラン 価格照合
+        if: ${{ !cancelled() }}
+        run: python3 scripts/check_plan_price_sync.py
 
       # 🪪 月謝のカード変更リンク (2026-10-20): 塾長がリンクを作る → 保護者が新しいカードを入れる → 同じ登録 (rid) のカードだけ差し替える
       #   (rid・月額・台帳・名簿の紐付けは不変・前のカードを外す・本体 webhook は触らない)。KV / Stripe / Resend は偽物。
