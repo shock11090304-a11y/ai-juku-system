@@ -715,6 +715,9 @@
         💡 従来の大手個別指導塾の平均月額：<strong>5〜8万円</strong>。AIコーチングなら同等以上の内容を<strong>約1/3〜2/3の価格</strong>で。<br>
         ※ 別途、入塾金 <strong>¥10,000</strong>（初回のみ・<strong>トライアル後の初回請求書に追加</strong>）が必要です。
       </div>
+      <!-- 💴 2026-11-12 塾長指示「実際に販売して」: トリリオン AI学習アプリ (月¥2,500) の案内。
+           値段・回数は plans.js の aiApp から入れる (ここに数字を直書きしない)。上の3プランとは別の商品なので plans の中には入れない。 -->
+      <div id="aiAppOffer" style="max-width:640px;margin:2.5rem auto 0;"></div>
     </div>
   </section>
 
@@ -1036,6 +1039,34 @@
           </div>
         `;
       }).join('');
+
+      // 💴 トリリオン AI学習アプリ (月¥2,500・入塾金なし・3日間の無料体験)。申込は light.html
+      const app = window.PLAN_CONFIG.aiApp;
+      const box = document.getElementById('aiAppOffer');
+      if (app && box) {
+        const q = app.quotas || {};
+        const feats = [
+          [true, 'AIチューター（質問の回数に上限なし。1日に使えるAIの量には目安があります）'],
+          [true, '学習診断・弱点分析・単元ドリル・弱点ドリル・AI単語帳'],
+          [true, `英作文・記述のAI添削 月${q.essays}回（無料体験中は${app.trialEssays}回）`],
+          [true, `学習計画の自動作成 月${app.curriculumPerMonth}回`],
+          [false, 'AIで新しい問題・参考書を作る機能（問題は問題プールから出題）'],
+        ];
+        box.innerHTML = `
+          <div class="pricing-card">
+            <div class="plan-badge">📱 アプリだけで始めたい方へ</div>
+            <div class="plan-name">${app.name}</div>
+            <div class="plan-desc">入塾金なし・${app.trialDays}日間の無料体験つき（カード登録不要・自動課金なし）</div>
+            <div class="plan-price">
+              <span class="price-num">${app.priceLabel}</span>
+              <span class="price-unit">/月（税込）</span>
+            </div>
+            <ul class="plan-features">
+              ${feats.map(([ok, name]) => `<li>${ok ? '✅' : '❌'} ${name}</li>`).join('')}
+            </ul>
+            <a href="${app.signupPage}" class="btn-primary btn-block">${app.trialDays}日間 無料で試す</a>
+          </div>`;
+      }
     })();
   </script>
   <script>
