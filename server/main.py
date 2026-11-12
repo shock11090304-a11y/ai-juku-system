@@ -692,12 +692,13 @@ PLAN_DAILY_TOKEN_BUDGET = {
     # 体験
     "trial":             100_000,
     # 💴 トリリオン AI学習アプリ (月¥2,500・2026-11-12)。AI チューターは回数無制限なので、
-    #   これが原価の唯一の歯止め。★実際の値は env LIGHT_DAILY_TOKEN_BUDGET (既定 100K) で、
+    #   これが原価の唯一の歯止め。★実際の値は env LIGHT_DAILY_TOKEN_BUDGET (既定 40K・2026-11-12 塾長決定) で、
     #   _check_ai_budget が feature_tier='light' の生徒にはそちらを使う (plan は自称できるため tier で判定)。
     #   ここは plan='trillion_light' で引かれたときの表示用に同じ既定値を置いているだけ。
-    #   ★モデルは Sonnet に固定 (LIGHT_AI_MODEL)。Sonnet で毎日 100K 使い切ると月 約$20 (粗い見積もり)。
+    #   ★モデルは Sonnet に固定 (LIGHT_AI_MODEL)。Sonnet 4.6 (入力$3・出力$15/1M、入力8割と仮定) で
+    #     毎日 40K 使い切ると月 約$6.5 ≒ 970円 (1ドル150円)。100K だと約2,400円で売上をほぼ食うので 40K にした。
     #     判定は呼び出しの前なので、同時に投げた分は少し超えうる。値は本番の使用量を見て決め直す。
-    "trillion_light":    100_000,
+    "trillion_light":    40_000,
 }
 
 # 🏷 /api/ai/call が受け付ける kind の allowlist。events.name (`ai_call_{kind}`) と
@@ -3426,7 +3427,7 @@ LIGHT_TRIAL_DAYS = _env_int("LIGHT_TRIAL_DAYS", 3, lo=1, hi=30)
 #   ★仮の値。毎日上限まで使い切っても月の原価が売上 (¥2,500) を大きく超えない水準として trial と同じ 100K にした。
 #     この見積もりは Sonnet が前提 (light は LIGHT_AI_MODEL で Opus を使わない・2026-11-12 塾長決定)。
 #   実際の使い方 (anthropic_usage_log) を見て塾長と決め直すこと (env で変えられる)。
-LIGHT_DAILY_TOKEN_BUDGET = _env_int("LIGHT_DAILY_TOKEN_BUDGET", 100_000, lo=10_000, hi=5_000_000)
+LIGHT_DAILY_TOKEN_BUDGET = _env_int("LIGHT_DAILY_TOKEN_BUDGET", 40_000, lo=10_000, hi=5_000_000)
 # usage_monthly (PK = student_id, feature, year_month) に相乗りする feature キー。
 _LIGHT_ESSAY_FEATURE = "light_essays"
 _LIGHT_CURRICULUM_FEATURE = "light_curriculum"
