@@ -711,7 +711,7 @@
       return '<div class="res-row"><span class="res-icon">📄</span>'
         + '<span class="res-name">' + esc(f.title) + sub + '</span>' + action + '</div>';
     }
-    // 📎 クラス別 配布ファイル (時間割クラスごと・全通塾生に表示)
+    // 📎 クラス別 配布ファイル (時間割クラスごと・自分の受講クラスの分だけ。絞り込みはサーバ側 2026-11-13)
     function labeledFilesHtml() {
       var lf = (feedData && feedData.labeled_files) || [];
       if (!lf.length) return '';

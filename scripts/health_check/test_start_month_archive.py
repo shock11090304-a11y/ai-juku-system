@@ -355,6 +355,47 @@ def main():
     check("週次レポート dry_run (start_month 列つき SELECT) → 200", r.status_code == 200, r.text[:160])
     check("開始前の B は週次 dry_run の preview に居ない (活動なし → skip)", all(p.get("student_id") != sid_b for p in (r.json().get("preview") or [])) if r.status_code == 200 else False)
 
+    print("\n[8] クラス別 配布ファイルは受講クラスの生徒だけ (2026-11-13 塾長指示)")
+    OTHER = "金曜2限 英検2級対策"
+    conn = mod.db(); c = conn.cursor()
+    for title, label in (("自クラスの配布", CLASS), ("他クラスの配布", OTHER)):
+        c.execute("INSERT INTO class_files (session_id, title, filename, mime, file_size, data_b64, is_published, class_label) "
+                  "VALUES (NULL, ?, 'x.pdf', 'application/pdf', 3, ?, 1, ?)", (title, base64.b64encode(b"abc").decode(), label))
+    c.execute("INSERT INTO class_files (session_id, title, filename, mime, file_size, data_b64, is_published, class_label) "
+              "VALUES (NULL, '全体向けの資料', 'y.pdf', 'application/pdf', 3, ?, 1, NULL)", (base64.b64encode(b"xyz").decode(),))
+    c.execute("SELECT id, title FROM class_files")
+    fid = {r["title"]: r["id"] for r in c.fetchall()}
+    conn.commit(); conn.close()
+    sid_e = make_student(mod, "配布テスト E", "cf-e@example.org")   # 受講クラス未設定
+    sid_f = make_student(mod, "配布テスト F", "cf-f@example.org")   # 他クラスだけ
+    sid_g = make_student(mod, "配布テスト G", "cf-g@example.org")   # 両方
+    sid_h = make_student(mod, "配布テスト H", "cf-h@example.org")   # 自クラスだけ (CLASS)
+    conn = mod.db(); c = conn.cursor()
+    c.execute("UPDATE students SET class_labels = NULL WHERE id = ?", (sid_e,))
+    c.execute("UPDATE students SET class_labels = ? WHERE id = ?", (json.dumps([OTHER], ensure_ascii=False), sid_f))
+    c.execute("UPDATE students SET class_labels = ? WHERE id = ?", (json.dumps([CLASS, OTHER], ensure_ascii=False), sid_g))
+    conn.commit(); conn.close()
+    for s_ in (sid_e, sid_f, sid_g, sid_h):
+        tok[s_] = {"Authorization": "Bearer " + student_token(mod, s_)}
+
+    def lf(s_):
+        d = feed(s_)
+        return sorted(x["title"] for x in d.get("labeled_files", [])), sorted(x["title"] for x in d.get("loose_files", []))
+
+    def dl(s_, title):
+        mod._RATE_LIMIT_STORE.clear()
+        return client.get(f"/api/student/class/files/{fid[title]}/download", headers=tok[s_]).status_code
+
+    check("H (自クラス): 自クラスの配布だけ", lf(sid_h)[0] == ["自クラスの配布"], str(lf(sid_h)))
+    check("F (他クラス): 他クラスの配布だけ", lf(sid_f)[0] == ["他クラスの配布"], str(lf(sid_f)))
+    check("G (両方): 2 件とも", lf(sid_g)[0] == ["他クラスの配布", "自クラスの配布"], str(lf(sid_g)))
+    check("E (未設定): クラス別は 0 件", lf(sid_e)[0] == [], str(lf(sid_e)))
+    check("全体向けの資料 (class_label なし) は全員に出る", all(lf(s_)[1] == ["全体向けの資料"] for s_ in (sid_h, sid_e, sid_f, sid_g)))
+    check("開く: H は自クラス 200・他クラス 404", dl(sid_h, "自クラスの配布") == 200 and dl(sid_h, "他クラスの配布") == 404)
+    check("開く: F は他クラス 200・自クラス 404", dl(sid_f, "他クラスの配布") == 200 and dl(sid_f, "自クラスの配布") == 404)
+    check("開く: E (未設定) はクラス別 404・全体向け 200", dl(sid_e, "自クラスの配布") == 404 and dl(sid_e, "全体向けの資料") == 200)
+    check("開く: G は両方 200", dl(sid_g, "自クラスの配布") == 200 and dl(sid_g, "他クラスの配布") == 200)
+
     print()
     if FAILURES:
         print(f"❌ FAIL: {len(FAILURES)} 件")

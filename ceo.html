@@ -2969,7 +2969,7 @@
       <!-- 📎 クラスにファイルを送る -->
       <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
         <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.3rem;">📎 クラスにファイルを送る</div>
-        <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">時間割のクラスを選んでファイルをアップ → 生徒アプリ「予定」タブの「クラス別 配布ファイル」に表示(全通塾生が閲覧可・10MBまで)。</p>
+        <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">時間割のクラスを選んでファイルをアップ → 生徒アプリ「予定」タブの「クラス別 配布ファイル」に表示(<b>そのクラスの受講生だけ</b>が閲覧可・10MBまで。<span style="color:#fca5a5;">受講クラスが未設定の生徒には出ません</span>→下の「🏫 クラス別 受講生 一括登録」で設定)。</p>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
           <select id="cfClass" style="padding:0.55rem; min-width:190px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;"><option value="">クラスを選択…</option></select>
           <input id="cfTitle" type="text" placeholder="表示タイトル(任意)" style="flex:1; min-width:130px; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
@@ -2983,7 +2983,7 @@
       <!-- 🏫 クラス別 受講生 一括登録 (クラス→生徒チェック→保存) ※受講クラスの設定はまずここで -->
       <div style="background:rgba(6,199,85,0.06); border:1px solid rgba(6,199,85,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
         <div style="font-size:0.95rem; color:#34d399; font-weight:700; margin-bottom:0.3rem;">🏫 クラス別 受講生 一括登録 <span style="font-size:0.72rem; color:#86efac; font-weight:600;">(まずここで各クラスの受講生を登録)</span></div>
-        <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">クラスを選び、そのクラスに来る生徒に<b>チェック → 保存</b>。<b>これを設定すると、下の「クラスに宿題を出す」の対象になり、そのクラスの授業録画が生徒アプリに表示されます</b>(<span style="color:#fca5a5;">未設定の生徒は録画0本</span>。ファイル配布・出欠は未設定でも全員に表示)。各生徒の他クラスの所属はそのまま保持されます。</p>
+        <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">クラスを選び、そのクラスに来る生徒に<b>チェック → 保存</b>。<b>これを設定すると、下の「クラスに宿題を出す」の対象になり、そのクラスの授業録画とクラス別 配布ファイルが生徒アプリに表示されます</b>(<span style="color:#fca5a5;">未設定の生徒は録画もクラス別ファイルも0件</span>。出欠は未設定でも全員に表示)。各生徒の他クラスの所属はそのまま保持されます。</p>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin-bottom:0.5rem;">
           <select id="crClass" style="padding:0.55rem; min-width:200px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;"><option value="">クラスを選択…</option></select>
           <span id="crCount" style="font-size:0.82rem; color:#86efac;"></span>
@@ -11201,7 +11201,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         : `<span style="color:#71717a;">未登録 (親メールのみ)</span>`;
       // 🎒 [2026-09-24 塾長「ここに在籍クラスを出すことは可能？」] 通塾クラス (students.class_labels) を申込内容に出し、その場で編集できる。
       //    🏫 通塾クラス管理の「生徒別」と同じ API (/api/admin/class/student-classes)。この値で決まるのは 出欠の絞り込み・録画の表示・
-      //    クラス宿題の一括配信・一斉送信 (クラス指定) の宛先 (配布ファイルは全通塾生に出る)。
+      //    クラス宿題の一括配信・一斉送信 (クラス指定) の宛先・クラス別 配布ファイルの表示先 (2026-11-13 から受講クラスの生徒だけ)。
       //    旧サーバ (class_labels を返さない) では「反映待ち」と出し、編集ボタンは出さない (空配列と区別する)。
       //    編集ボタンは通塾生 (受講開始月ブロックと同じ判定) にだけ出す: 通塾生以外に label を付けても feed には効かず、一斉送信の宛先にだけ入って
       //    🏫 の名簿からは外せないため。

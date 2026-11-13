@@ -56191,6 +56191,11 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
                     sessions[sid_]["files"].append(item)
                 # else: 親授業が非公開 → 出さない (非公開で資料を撤回できるように)
             elif r["class_label"]:
+                # 📎 [2026-11-13 塾長指示] クラス別 配布ファイルは **自分の受講クラスの分だけ** 返す (録画と同じ決まり)。
+                #   旧実装は全通塾生に全クラス分を出していた。受講クラス未設定 (my_classes 空) の生徒には出さない。
+                #   名簿の埋め方: CEO「🏫 クラス別 受講生 一括登録」。開くとき (download) も同じ照合をする。
+                if r["class_label"] not in my_classes:
+                    continue
                 item["class_label"] = r["class_label"]
                 labeled_files.append(item)          # 時間割クラスに紐づく配布ファイル
             else:
@@ -56291,7 +56296,7 @@ def student_class_file_download(file_id: int, authorization: Optional[str] = Hea
         # 親授業の公開状態も見る (授業を非公開にしたら添付ファイルも配信停止)。
         # session_id IS NULL のルース資料は授業に依存しないのでそのまま配信。
         c.execute(
-            "SELECT f.filename, f.mime, f.data_b64, f.is_published, f.session_id, s.is_published AS sess_pub "
+            "SELECT f.filename, f.mime, f.data_b64, f.is_published, f.session_id, f.class_label, s.is_published AS sess_pub "
             "FROM class_files f LEFT JOIN class_sessions s ON s.id = f.session_id WHERE f.id = ?",
             (int(file_id),)
         )
@@ -56300,6 +56305,17 @@ def student_class_file_download(file_id: int, authorization: Optional[str] = Hea
             raise HTTPException(status_code=404, detail="ファイルが見つかりません")
         if row["session_id"] is not None and not row["sess_pub"]:
             raise HTTPException(status_code=404, detail="ファイルが見つかりません")
+        # 📎 [2026-11-13] クラス別 配布ファイル (授業に紐づかず class_label あり) は受講クラスの生徒だけ開ける。
+        #   一覧 (class/feed) で隠すだけだとリンクを知っていれば開けてしまうので、ここでも照合する。
+        if row["session_id"] is None and row["class_label"]:
+            c.execute("SELECT class_labels FROM students WHERE id = ?", (student["id"],))
+            _cl = c.fetchone()
+            try:
+                _mine = json.loads(_cl["class_labels"]) if (_cl and _cl["class_labels"]) else []
+            except Exception:
+                _mine = []
+            if not isinstance(_mine, list) or row["class_label"] not in _mine:
+                raise HTTPException(status_code=404, detail="ファイルが見つかりません")
         if not row["data_b64"]:
             raise HTTPException(status_code=404, detail="ファイルの実体がありません")
         import base64 as _b64
