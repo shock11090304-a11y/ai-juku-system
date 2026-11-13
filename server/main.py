@@ -57880,6 +57880,8 @@ WINTER_ITEMS = {
     "pack-h1": {"name": "高1パック（英語・数学 2講座10本）", "price": 13000, "deadline": _WINTER_DL_LATE, "delivery": "2026-12-19"},
     "pack-h2": {"name": "高2パック（英語・数学 2講座10本）", "price": 14500, "deadline": _WINTER_DL_LATE, "delivery": "2026-12-19"},
     "pack-c3": {"name": "中3パック（英数国理社 5教科25本）", "price": 15000, "deadline": _WINTER_DL_LATE, "delivery": "2026-12-19"},
+    # 中2パック (2026-11-14 塾長「中2から作る」→ 英数各10本・¥13,000 のまま)。申込ページは winter-chugaku.html
+    "pack-c2": {"name": "中2パック（英語・数学 2講座20本）", "price": 13000, "deadline": _WINTER_DL_LATE, "delivery": "2026-12-19"},
 }
 # 大学別パック (締切 = その大学のいちばん早い試験日の 1 週間前・塾長決定 2026-11-10)
 # 定員: 各パック先着 20 名 (塾長決定 2026-11-11)。★「限定」と告知しているので、満員後に枠を足さない (景品表示法の有利誤認)。

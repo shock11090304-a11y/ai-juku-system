@@ -132,7 +132,7 @@ def main():
     a8 = P(["h3-r", "h3-b"], "2027-01-13")
     check("A8. 1/13 は共通テストの講座が締切・私大文法は買える", a8["closed"] == ["h3-r"], a8)
     check("A9. 大学別の締切 (関西大 1/25 まで・1/26 から締切)", not P(["u-kansai"], "2027-01-25")["closed"] and P(["u-kansai"], "2027-01-26")["closed"] == ["u-kansai"])
-    check("A10. 18 大学・高3 5・パック 3 = 26 講座", len(mod.WINTER_ITEMS) == 26 and sum(1 for k in mod.WINTER_ITEMS if k.startswith("u-")) == 18)
+    check("A10. 18 大学・高3 5・パック 4 (高1・高2・中3・中2) = 27 講座", len(mod.WINTER_ITEMS) == 27 and sum(1 for k in mod.WINTER_ITEMS if k.startswith("u-")) == 18)
     # 有効期限: 23 時間を上限に、締切の 23:59:59 JST を越えない・最低 31 分
     now = int(datetime.datetime(2027, 1, 12, 23, 50, tzinfo=mod.JST).timestamp())
     check("A11. 締切 10 分前の決済画面は 31 分 (Stripe の下限)", mod._winter_expires_at(["h3-set-ei"], now) == now + 31 * 60)
