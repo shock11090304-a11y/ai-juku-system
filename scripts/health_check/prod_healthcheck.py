@@ -570,6 +570,7 @@ def check_monitor_storm(cur):
 OPTIONAL_UNTIL_FIRST_RUN = {
     "weakness_drill_routine_run",   # 🎯 3日ドリル (毎日 5:30・WEAKNESS_DRILL_ROUTINE_ENABLED・2026-10-15 の既定は OFF)
     "class_hw_auto_run",            # 🏫 クラス自動宿題 (毎朝 6:00・CLASS_HW_AUTO_ENABLED・2026-10-15 の既定は OFF)
+    "light_engagement_run",         # 🌱 AI学習アプリ会員へのドリル配布 (毎時 20 分・2026-11-14 追加。最初の実行までは履歴なし)
 }
 
 
@@ -592,6 +593,9 @@ def check_scheduler_live(cur):
         "weakness_drill_routine_run": 2,
         # 🏫 クラス自動宿題 (毎朝 6:00。ON の間は配る生徒がいない日も実行記録を残す)。OFF の間は履歴が無い → OPTIONAL_UNTIL_FIRST_RUN で PASS
         "class_hw_auto_run": 2,
+        # 🌱 AI学習アプリ会員へのドリル配布 (毎時 20 分。毎日最初の回は見守りの人数つきで必ず記録する)。
+        #   ★API の env LIGHT_ENGAGE_ENABLED=0 で止めたら、ここと OPTIONAL_UNTIL_FIRST_RUN から外す (外さないと 2 日後から WARN)
+        "light_engagement_run": 2,
     }
     for name, max_days in watched.items():
         try:

@@ -4074,6 +4074,14 @@ async def _start_background_tasks():
         _BACKGROUND_TASKS.append(task)
         log.info("[Startup] Weakness drill routine scheduler launched (target JST 5:30 daily, gated by WEAKNESS_DRILL_ROUTINE_ENABLED)")
 
+    # 🌱 AI学習アプリ (light) の会員へのドリル配布と見守り (毎時 20 分・JST 7〜21 時・env LIGHT_ENGAGE_ENABLED=0 で止まる)。
+    #   2026-11-14 塾長「新規の申込者が離脱しないように監視しながら適宜いい感じの問題を配布してあげて」。_run_light_engagement。
+    if CRON_SECRET:
+        task = asyncio.create_task(_light_engagement_scheduler())
+        _BACKGROUND_TASKS.append(task)
+        log.info(f"[Startup] Light engagement scheduler launched (hourly :20 JST 7-21, "
+                 f"LIGHT_ENGAGE_ENABLED={os.getenv('LIGHT_ENGAGE_ENABLED')!r} LIGHT_ENGAGE_EMAIL={os.getenv('LIGHT_ENGAGE_EMAIL')!r})")
+
     # 🏫 クラス自動宿題 scheduler (毎朝 JST 6:00・env CLASS_HW_AUTO_ENABLED で ON・2026-10-15 塾長決定):
     # 塾生アプリのみ枠 (AIなし) の通塾生に、英語のクラスの宿題としてレビュー済みの科目別ドリルを 2 日に 1 本 (_run_class_homework_routine)。
     # 5:30 の 3日ドリル (AIあり・AI 体験中) の後。お知らせはアプリ内表示だけ (source='auto')。登録は CRON_SECRET だけで決め、
@@ -8236,6 +8244,17 @@ def update_student_profile(
             c.execute(f"UPDATE students SET {', '.join(_sets)} WHERE id=?", tuple(_args))
         conn.commit()
 
+        # 🌱 AI学習アプリの会員が学年を選んだ (決済から直接入った会員は学年を聞いていない) → 最初のドリルをすぐ用意する
+        #   (毎時の見回りを待たない)。学年が中高に変わったときだけ。別スレッド・失敗しても保存は止めない。
+        try:
+            _old_band = _student_grade_band(row["grade"] if hasattr(row, "keys") else row[1])
+            if (grade is not None and _student_grade_band(grade) in ("kosei", "chugaku")
+                    and _old_band not in ("kosei", "chugaku") and _light_engage_enabled()
+                    and _student_tier(student_id) == _TIER_LIGHT):
+                threading.Thread(target=_light_engage_new_member, args=(int(student_id),), daemon=True).start()
+        except Exception as _le:
+            log.warning(f"[LightEngage] 学年の保存の後の配布を始められなかった: {type(_le).__name__}: {_le}")
+
         # 更新後の値を返却
         c.execute("SELECT id, grade, goal, exam_target_date FROM students WHERE id=?", (student_id,))
         row = c.fetchone()
@@ -10060,6 +10079,7 @@ def _evaluate_alerts(snapshot: dict) -> list:
             "midweek_nudge_run": "週半ばの一声 (水曜18時)",
             "weekly_worksheet_run": "週次弱点プリント (日曜5時)",
             "weakness_drill_routine_run": "弱点ドリル 3日ごと (毎日5時半)",
+            "light_engagement_run": "AI学習アプリ会員へのドリル配布 (毎時20分)",
             "class_hw_auto_run": "クラス自動宿題 (毎朝6時・塾生アプリのみ枠)",
             "weakness_aggregation_run": "弱点集計 (毎日)",
             "trial_mgmt_run": "体験フォロー (毎日)",
@@ -10089,6 +10109,7 @@ def _evaluate_alerts(snapshot: dict) -> list:
             "midweek_nudge_run": "週半ばの一声 (水曜18時)",
             "weekly_worksheet_run": "週次弱点プリント (日曜5時)",
             "weakness_drill_routine_run": "弱点ドリル 3日ごと (毎日5時半)",
+            "light_engagement_run": "AI学習アプリ会員へのドリル配布 (毎時20分)",
             "class_hw_auto_run": "クラス自動宿題 (毎朝6時・塾生アプリのみ枠)",
             "weakness_aggregation_run": "弱点集計 (毎日)",
             "trial_mgmt_run": "体験フォロー (毎日)",
@@ -31355,6 +31376,10 @@ _SCHEDULER_MAX_AGE_DAYS = {
     # 🏫 クラス自動宿題 (毎朝 6:00・塾生アプリのみ枠)。ON の間は配る生徒がいない日も実行記録を残すので 2 日で停止扱い。
     #   OFF の間は何も記録しないので監視から外す (2026-10-15。env を変えたら再起動で反映)。
     **({"class_hw_auto_run": 2} if _class_hw_routine_env_enabled() else {}),
+    # 🌱 AI学習アプリ会員へのドリル配布 (毎時 20 分・2026-11-14)。毎日最初の回は必ず記録する (見守りの人数つき) ので 2 日で停止扱い。
+    #   LIGHT_ENGAGE_ENABLED=0 の間は監視から外す (_light_engage_enabled は下で定義されるので env を直接読む)。
+    **({"light_engagement_run": 2}
+       if os.getenv("LIGHT_ENGAGE_ENABLED", "1").strip().lower() not in ("0", "false", "no", "off") else {}),
     "trial_mgmt_run": 2,             # 体験フォローの日次バッチ
     "daily_sns_post": 2,             # 日次 SNS 投稿
     # 🗄️ 2026-09-07: DB バックアップ (毎日 JST 3:00 → Cloudflare R2)。成功時に r2_backup_success を書くので
@@ -33093,6 +33118,14 @@ def trial_signup(payload: TrialSignup, request: Request):
         conn2.commit(); conn2.close()
     except Exception as _e:
         log.warning(f"[Signup] failed to record signup_email_status event: {_e}")
+
+    # 🌱 AI学習アプリの体験を付けた会員には、最初のドリル (はじめの力だめし 10 問) をすぐ用意する
+    #   (毎時の見回りを待たず、最初のログインでマイページの「📝 ドリル」に入っているように)。別スレッド・失敗しても申込は止めない。
+    if light_granted and student_id and _light_engage_enabled():
+        try:
+            threading.Thread(target=_light_engage_new_member, args=(int(student_id),), daemon=True).start()
+        except Exception as _le:
+            log.warning(f"[LightEngage] 申込直後の配布を始められなかった: {type(_le).__name__}: {_le}")
 
     return {
         "ok": True,
@@ -51364,7 +51397,7 @@ def _student_has_recent_routine_drill(c, sid, days=8):
 
 
 def _create_routine_grammar_drill(c, conn, subject, unit, count, sid, st, *, band, levels=None, qids=None, label=None,
-                                  cutoffs=None):
+                                  cutoffs=None, title_prefix="🎯弱点対策"):
     """1名分の弱点ルーティンドリルを作成 + 割当。在庫不足・読み直しで不合格・学年ガードなら None (書かない)、
     錠が取れない / 錠の中で読み直したら未提出か 3 日以内の 3日ドリルがあった (別のレプリカが先に配った) なら {'race': True}。
     成功時 {unit, subject, band, drill_id, qids, s (お知らせ用)}。created_by=_WEAKNESS_ROUTINE_CREATED_BY (周期・積まない判定に使う)。
@@ -51410,7 +51443,8 @@ def _create_routine_grammar_drill(c, conn, subject, unit, count, sid, st, *, ban
             return None
     cut = cutoffs or _weakness_routine_cutoffs()
     level_label = "・".join(GRAMMAR_LEVELS.get(l, l) for l in levels)
-    title = f"🎯弱点対策 {label or disp_unit}ドリル（{level_label}・{count}問）"
+    # title_prefix: AI学習アプリの最初の 10 問 (弱点のデータがまだない) は「🎯弱点対策」と呼ばない (_run_light_engagement)
+    title = f"{title_prefix} {label or disp_unit}ドリル（{level_label}・{count}問）"
     try:
         if USE_POSTGRES:
             c.execute(f"SELECT pg_try_advisory_xact_lock({int(_ROUTINE_PG_LOCK_KEY)}, {int(sid)}) AS ok")
@@ -51763,6 +51797,539 @@ def admin_weakness_drill_routine_run(
         "plan_version": 2,
         "last_run": _auto_delivery_last_run("weakness_drill_routine_run"),
     }
+
+
+# ==========================================================================
+# 🌱 トリリオン AI学習アプリ (light・月2,500円) の新規会員を離さないための問題配布と見守り
+#   (2026-11-14 塾長「新規の申込者が離脱しないように監視しながら適宜いい感じの問題を配布してあげて」)
+#   ★3日ドリル (_run_weakness_drill_routine・毎朝 5:30) は弱点のデータがある生徒にしか配らないので、申し込んだばかりの会員
+#     (まだ 1 問も解いていない) には何も届かず、3 日間の体験が空のまま終わる。ここで埋める:
+#     ① 弱点のデータがあれば、3日ドリルと同じ選び方 (_weakness_routine_plan) の弱点ドリル
+#     ② まだ無ければ「はじめの力だめし」= 科目まるごとのレビュー済み 10 問 (最初は基礎・標準。解くと弱点が集計され ① に移る)
+#     ③ 弱点がドリルにならない科目だけの会員には、科目を順番に回したおすすめドリル
+#   ★作るのは 3日ドリルと同じ関数・同じ印 (created_by='weakness_routine_3d') = 生徒ごとの錠と読み直しがそのまま効く
+#     (毎朝の 3日ドリルとこちらが同時に走っても 1 本だけ)・CEO の「3日ドリル」の一覧にも出る。
+#   ★間隔: 前のドリルを解き終えたら、次の日 (JST の日付) に次の 10 問 (1 日 1 本まで)。未提出が残っている間は積まない
+#     (3日ドリルと同じ 14 日の境目)。体験が 3 日しかないので、3日周期のままだと体験中に 1 本しか届かない。
+#   ★お知らせはアプリ内 (マイページの「📝 ドリル」)。メール (_send_light_engage_email) は env LIGHT_ENGAGE_EMAIL=1 のときだけ
+#     (文面を塾長が確かめてから開ける)。
+#   ★env LIGHT_ENGAGE_ENABLED=0 で全部止まる (既定は動く)。
+# ==========================================================================
+_LIGHT_ENGAGE_RUN_EVENT = "light_engagement_run"
+_LIGHT_STARTER_LEVELS = ["basic", "standard"]      # 最初の 1 本はやさしめ (最初でつまずいて離れないように)
+_LIGHT_ENGAGE_HOURS_JST = range(7, 22)              # 毎時 20 分に見回る (7:20〜21:20)
+_LIGHT_ENGAGE_REMIND_AFTER_DAYS = 2                 # 配ってから 2 日たっても開いていない会員に 1 回だけメール (メールが ON のとき)
+_LIGHT_ENGAGE_REMIND_AFTER_DAYS_TRIAL = 1           # 体験中 (3 日しかない) は 1 日で
+_LIGHT_ENGAGE_MAIL_MAX_FAILS = 3                    # 送れなかったメールの送り直しは 1 日 1 回・3 回まで
+_LIGHT_ENGAGE_PG_LOCK_KEY = 8675314                 # メールの取り合いの錠 pg_try_advisory_xact_lock(8675314, 生徒ID) (3日ドリルの 8675313 の隣)
+
+
+def _light_engage_enabled() -> bool:
+    return os.getenv("LIGHT_ENGAGE_ENABLED", "1").strip().lower() not in ("0", "false", "no", "off")
+
+
+def _light_engage_email_enabled() -> bool:
+    return os.getenv("LIGHT_ENGAGE_EMAIL", "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _light_member_sql(has_tier: bool) -> str:
+    """AI学習アプリの会員の条件 (定数だけの SQL 片)。_light_member_ids と同じ見方 (plan か feature_tier)。"""
+    return ("(plan = 'trillion_light'"
+            + (f" OR LOWER(COALESCE(feature_tier, '')) = '{_TIER_LIGHT}'" if has_tier else "") + ")")
+
+
+def _light_engage_cutoffs(now: datetime) -> dict:
+    """3日ドリルの境目 (_weakness_routine_cutoffs) のうち、間隔だけを「JST の今日の 0:00」にしたもの
+    (= 今日すでに配っていれば配らない・昨日までに配った分は解き終えていれば次を配る)。未提出の 14 日の境目は 3日ドリルと同じ。"""
+    cut = dict(_weakness_routine_cutoffs(now))
+    cut["cadence"] = _jst_day_start_utc_txt(now, 0)
+    return cut
+
+
+def _light_starter_plan(c, st, band, *, first: bool, count: int, rng=None) -> dict:
+    """弱点のデータがまだない (か、弱点がドリルにならない) 会員に出す科目まるごとの 10 問。
+    科目は 3日ドリルの科目 (_ROUTINE_SUBJECTS_BY_BAND) から、これまでに受け取った本数の少ない順 (同じなら英語が先)。
+    最初の 1 本 (first) は基礎・標準。在庫が足りなければその学年のふだんのレベル (_routine_levels) で選び直す。"""
+    sid = _routine_row_val(st, "id")
+    subjects = list(_ROUTINE_SUBJECTS_BY_BAND.get(band, ()))
+    if not subjects:
+        return {"ok": False, "reason": "no_subject"}
+    # ★失敗を握りつぶさない (Postgres ではトランザクションが壊れたまま次の SELECT が全部落ちる)。
+    #   呼び出し側 (_run_light_engagement) が生徒ごとに巻き戻して次の生徒へ進む。
+    c.execute(
+        "SELECT d.subject AS subject, COUNT(*) AS n FROM grammar_drill_assignments a "
+        "JOIN grammar_drills d ON d.id = a.drill_id WHERE d.created_by = ? AND a.student_id = ? GROUP BY d.subject",
+        (_WEAKNESS_ROUTINE_CREATED_BY, sid),
+    )
+    got = {str(r["subject"]): int(r["n"] or 0) for r in c.fetchall()}
+    order = {s: i for i, s in enumerate(subjects)}
+    subjects.sort(key=lambda s: (got.get(s, 0), order[s]))
+    normal = _routine_levels(band, _routine_row_val(st, "grade"))
+    level_sets = [_LIGHT_STARTER_LEVELS, normal] if first and normal != _LIGHT_STARTER_LEVELS else [normal]
+    seen = _student_seen_grammar_qids(c, sid)
+    for levels in level_sets:
+        for subj in subjects:
+            if not _drill_subject_band_ok(subj, band):
+                continue
+            excl = _ROUTINE_SUBJECT_LEVEL_EXCLUDE_UNIT_PREFIXES.get(subj, ())
+            r = _auto_pick_reviewed_question_ids(c, subj, "", levels, count, seen, excl, rng=rng)
+            if r["ids"]:
+                return {"ok": True, "subject": subj, "unit": "", "label": _grammar_subject_label_ja(subj),
+                        "levels": list(levels), "qids": r["ids"]}
+    return {"ok": False, "reason": "no_reviewed_inventory"}
+
+
+def _light_engagement_funnel(c, now: Optional[datetime] = None) -> dict:
+    """👀 AI学習アプリの会員の見守り (人数だけ。名前・メール・id は出さない)。
+    in_trial = 体験中 / trial_ended_unpaid = 体験が終わって申し込んでいない / paying = 支払い中 (paid・past_due) /
+    never_logged_in = 使える状態でまだ 1 回もログインしていない / active_24h = 使える状態で 24 時間以内にログイン /
+    no_grade = 使える状態で学年が無い・読めない・小学生 (ドリルが届かない。マイページで学年を選ぶと届く) /
+    quiet_3d = 使える状態で登録から 3 日以上たち、3 日以上ログインしていない (離れかけ) /
+    drills_30d = この 30 日に配ったドリル {delivered, completed, open} / members_completed_any = 1 本でも解き終えた会員。"""
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    nu = now.astimezone(timezone.utc).replace(tzinfo=None)
+    t_now = nu.strftime("%Y-%m-%d %H:%M:%S")
+    t_1d = (nu - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
+    t_3d = (nu - timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")
+    t_7d = (nu - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
+    t_30d = (nu - timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S")
+    out = {"members": 0, "signups_7d": 0, "in_trial": 0, "trial_ended_unpaid": 0, "paying": 0, "other_status": 0,
+           "never_logged_in": 0, "active_24h": 0, "quiet_3d": 0, "no_grade": 0,
+           "drills_30d": {"delivered": 0, "completed": 0, "open": 0}, "members_completed_any": 0}
+    has_tier = _students_has_feature_tier()
+    c.execute(f"SELECT id, status, grade, trial_end, last_login_at, created_at FROM students "
+              f"WHERE {_light_member_sql(has_tier)} AND {_synth_exclude_sql('students')}")
+    ids = []
+    for r in c.fetchall():
+        out["members"] += 1
+        ids.append(int(r["id"]))
+        status = str(r["status"] or "")
+        created, last = _ts_text(r["created_at"]), _ts_text(r["last_login_at"])
+        if created and created >= t_7d:
+            out["signups_7d"] += 1
+        usable = False
+        if status in ("paid", "past_due"):
+            out["paying"] += 1
+            usable = True
+        elif status == "trial":
+            if _ts_text(r["trial_end"]) > t_now:
+                out["in_trial"] += 1
+                usable = True
+            else:
+                out["trial_ended_unpaid"] += 1
+        else:
+            out["other_status"] += 1
+        if not usable:
+            continue
+        if _student_grade_band(r["grade"]) not in ("kosei", "chugaku"):
+            out["no_grade"] += 1   # 学年が無い・読めない・小学生 = ドリルが届かない (決済から直接入った会員は学年を聞いていない)
+        if not last:
+            out["never_logged_in"] += 1
+        elif last >= t_1d:
+            out["active_24h"] += 1
+        if created and created < t_3d and (not last or last < t_3d):
+            out["quiet_3d"] += 1
+    if ids:
+        done_members = set()
+        for i in range(0, len(ids), 500):
+            chunk = ids[i:i + 500]
+            ph = ",".join(["?"] * len(chunk))
+            c.execute(
+                "SELECT a.student_id AS sid, a.status AS status FROM grammar_drill_assignments a "
+                "JOIN grammar_drills d ON d.id = a.drill_id "
+                f"WHERE d.created_by = ? AND a.assigned_at >= ? AND a.student_id IN ({ph})",
+                (_WEAKNESS_ROUTINE_CREATED_BY, t_30d, *chunk),
+            )
+            for r in c.fetchall():
+                out["drills_30d"]["delivered"] += 1
+                if str(r["status"] or "open") == "completed":
+                    out["drills_30d"]["completed"] += 1
+                    done_members.add(int(r["sid"]))
+                else:
+                    out["drills_30d"]["open"] += 1
+        out["members_completed_any"] = len(done_members)
+    return out
+
+
+def _light_engage_claim_mail(c, conn, sid, template, drill_id, today_start: str) -> Optional[int]:
+    """メールを送る権利を取る (取れたら notifications の行 id・取れなければ None)。レプリカが 2 つでも 1 通だけにするため、
+    送る前に「送信中」の行 (success=0, error='sending') を錠の中で書いて commit し、送ったあとで結果に書き換える。
+    取らない: 送れた行か送信中の行がある / 今日 (JST) すでに送れなかった / 送れなかったのが _LIGHT_ENGAGE_MAIL_MAX_FAILS 回。
+    ★送信中のまま (送る途中でプロセスが落ちた) の行は二度と送らない側に倒す。"""
+    payload = json.dumps({"drill_id": int(drill_id)})
+    try:
+        if USE_POSTGRES:
+            c.execute(f"SELECT pg_try_advisory_xact_lock({int(_LIGHT_ENGAGE_PG_LOCK_KEY)}, {int(sid)}) AS ok")
+            lk = c.fetchone()
+            if not (lk is not None and lk["ok"]):
+                conn.rollback()
+                return None
+        c.execute("SELECT success, error, sent_at FROM notifications WHERE student_id = ? AND template = ? AND payload = ?",
+                  (sid, template, payload))
+        fails = 0
+        for r in c.fetchall():
+            if int(r["success"] or 0) == 1 or str(r["error"] or "") == "sending":
+                conn.rollback()
+                return None
+            fails += 1
+            if _ts_text(r["sent_at"]) >= today_start:
+                conn.rollback()
+                return None
+        if fails >= _LIGHT_ENGAGE_MAIL_MAX_FAILS:
+            conn.rollback()
+            return None
+        c.execute("INSERT INTO notifications (student_id, channel, template, payload, success, error) "
+                  "VALUES (?, 'email', ?, ?, 0, 'sending') RETURNING id", (sid, template, payload))
+        row = c.fetchone()
+        conn.commit()
+        return int(row["id"] if hasattr(row, "keys") else row[0]) if row else None
+    except Exception as e:
+        log.warning(f"[LightEngage] メールの権利を取れなかった sid={sid}: {type(e).__name__}: {e}")
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        return None
+
+
+def _light_engage_email_text(kind: str, drill_title: str, trial_end_jst: Optional[datetime],
+                             student_name: str = "") -> dict:
+    """メールの件名と本文 (テキスト)。kind = 'new' (ドリルが届いた) / 'reminder' (開いていない)。
+    宛先は申込のメールアドレス (保護者の方のことが多い) なので、生徒本人にではなく「〇〇さんの」と書く。
+    ★文面は塾長の確認待ち (env LIGHT_ENGAGE_EMAIL を開けるまで送らない)。"""
+    who = f"{student_name}さんの" if student_name else ""
+    if kind == "reminder":
+        subject = f"【{LIGHT_PLAN_LABEL}】{who}ドリルが待っています（10問）"
+        body = (f"{who}マイページの「{drill_title}」が、まだ手つかずのようです。\n"
+                "その場で採点と解説が出ます。解き終えると、間違えた問題から苦手を見つけて、次の10問をお届けします。")
+    else:
+        subject = f"【{LIGHT_PLAN_LABEL}】{who}新しいドリルが届きました（10問）"
+        body = (f"{who}マイページに「{drill_title}」が届きました。\n"
+                "その場で採点と解説が出ます。解き終えると、間違えた問題から苦手を見つけて、次の10問をお届けします。")
+    if trial_end_jst is not None:
+        body += (f"\n\n無料体験は {trial_end_jst.month}月{trial_end_jst.day}日 {trial_end_jst.hour}時{trial_end_jst.minute:02d}分 までです。"
+                 "体験が終わっても料金はかかりません。続けてお使いになる場合は、マイページの「続けて使う」から"
+                 "月額2,500円（税込）でお申し込みいただけます（お申し込みの日から有料になります）。")
+    return {"subject": subject, "body": body}
+
+
+def _send_light_engage_email(to_email: str, student_name: str, kind: str, drill_title: str,
+                             trial_end_jst: Optional[datetime] = None) -> dict:
+    """🌱 AI学習アプリの会員へのドリルのお知らせメール (env LIGHT_ENGAGE_EMAIL=1 のときだけ呼ばれる)。"""
+    import html as _html
+    if not RESEND_API_KEY:
+        log.warning("[DEV-MODE] light engage email skipped")
+        return {"sent": False, "dev_mode": True}
+    t = _light_engage_email_text(kind, drill_title, trial_end_jst, student_name or "")
+    greeting = "いつもご利用いただき、ありがとうございます。"
+    url = f"{BASE_URL}/mypage.html?focus=homework"
+    html = f"""<!DOCTYPE html>
+<html><body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 560px; margin: 0 auto; padding: 2rem;">
+<h1 style="font-size: 1.3rem; color: #0f766e;">🌱 {_html.escape(LIGHT_PLAN_LABEL)}</h1>
+<p>{greeting}</p>
+<p style="white-space:pre-line;">{_html.escape(t["body"])}</p>
+<p style="text-align:center; margin: 2rem 0;">
+  <a href="{url}" style="display:inline-block; padding: 1rem 2rem; background:linear-gradient(135deg,#14b8a6,#6366f1); color:white; text-decoration:none; border-radius:8px; font-weight:700; font-size:1.05rem;">
+    📝 ドリルを解く
+  </a>
+</p>
+<hr style="margin:2rem 0; border:none; border-top:1px solid #eee;">
+<p style="font-size:0.8rem; color:#999;">
+  このお知らせを止めたい場合は、下のアドレスまでご連絡ください（お知らせのメールを止めます）。<br>
+  お問い合わせ: <a href="mailto:info@trillion-ai-juku.com" style="color:#0f766e;">info@trillion-ai-juku.com</a>
+</p>
+</body></html>"""
+    try:
+        import urllib.request
+        _email_rate_limit(1.1)
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({"from": FROM_EMAIL, "to": [to_email], "subject": t["subject"], "html": html}).encode("utf-8"),
+            headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json", "User-Agent": "ai-juku-system/1.0"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode())
+            return {"sent": True, "resend_id": result.get("id")}
+    except Exception as e:
+        log.error(f"[LightEngage] email failed: {type(e).__name__}: {e}")
+        return {"sent": False, "error": str(e)[:200]}
+
+
+def _run_light_engagement(only_student_id: Optional[int] = None, dry_run: bool = False, *,
+                          now: Optional[datetime] = None, seed=None, send_email: Optional[bool] = None) -> dict:
+    """🌱 AI学習アプリの会員にドリルを配る (毎時の見回り・体験の申込の直後・塾長の手動)。
+    対象 = AI学習アプリの会員 (plan か feature_tier)・合成とテストの名前を除く・支払い中 (paid/past_due) か体験の期限内・
+    学年の区分が高校生か中学生 (読めない学年は配らない = 中高の取り違えをしない)。
+    返り値は人数と生徒 id だけ (名前は入れない)。dry_run=True は書かない・送らない。"""
+    import random as _random
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    nu = now.astimezone(timezone.utc).replace(tzinfo=None)
+    t_now = nu.strftime("%Y-%m-%d %H:%M:%S")
+    cut = _light_engage_cutoffs(now)
+    count = _WEAKNESS_ROUTINE_DRILL_COUNT
+    email_on = _light_engage_email_enabled() if send_email is None else bool(send_email)
+    summary = {"targets": 0, "delivered": 0, "delivered_weakness": 0, "delivered_starter": 0, "delivered_rotation": 0,
+               "skipped_open": 0, "skipped_today": 0, "skipped_grade": 0, "skipped_test_name": 0,
+               "skipped_no_inventory": 0, "skipped_race": 0, "create_failed": 0,
+               "emails_sent": 0, "emails_failed": 0, "email_enabled": email_on, "dry_run": bool(dry_run),
+               "delivered_ids": [], "reasons": {}}
+    conn = db()
+    c = conn.cursor()
+    try:
+        has_tier = _students_has_feature_tier()
+        sql = (f"SELECT id, name, email, line_user_id, grade, status, trial_end, last_login_at, created_at, parent_email_enabled "
+               f"FROM students "
+               f"WHERE {_light_member_sql(has_tier)} AND {_synth_exclude_sql('students')} "
+               "AND (status IN ('paid', 'past_due') OR (status = 'trial' AND trial_end IS NOT NULL AND trial_end > ?)) ")
+        params = [t_now]
+        if only_student_id:
+            sql += "AND id = ? "
+            params.append(int(only_student_id))
+        # 新しい会員から読む (この機能がいちばん届けたいのは申し込んだばかりの会員。2000 名を超えたら古い会員から外れる)
+        c.execute(sql + "ORDER BY id DESC LIMIT 2000", tuple(params))
+        students = c.fetchall() or []
+        sids = [int(s["id"]) for s in students]
+
+        # この会員たちの 3日ドリルの印の行 (最後に配った日・未提出・いちばん新しい未提出のドリル)
+        state = {}
+        for i in range(0, len(sids), 500):
+            chunk = sids[i:i + 500]
+            ph = ",".join(["?"] * len(chunk))
+            c.execute(
+                "SELECT a.student_id AS sid, a.drill_id AS drill_id, a.status AS status, a.assigned_at AS assigned_at, "
+                "d.title AS title FROM grammar_drill_assignments a JOIN grammar_drills d ON d.id = a.drill_id "
+                f"WHERE d.created_by = ? AND a.student_id IN ({ph})",
+                (_WEAKNESS_ROUTINE_CREATED_BY, *chunk),
+            )
+            for r in c.fetchall():
+                s = state.setdefault(int(r["sid"]), {"n": 0, "last_at": "", "open": None})
+                s["n"] += 1
+                at = _ts_text(r["assigned_at"])
+                s["last_at"] = max(s["last_at"], at)
+                if str(r["status"] or "open") != "completed":
+                    fresh = (not at) or (not cut.get("open_stale")) or at >= cut["open_stale"]
+                    if fresh and (s["open"] is None or at > s["open"]["at"]):
+                        s["open"] = {"drill_id": int(r["drill_id"]), "at": at, "title": str(r["title"] or "")}
+        try:
+            conn.rollback()   # 読むだけのトランザクションを閉じる (作る関数は生徒ごとに commit する)
+        except Exception:
+            pass
+
+        mails = []   # (kind, student row, drill_id, title)
+
+        def _one(st):
+            sid = int(st["id"])
+            band = _student_grade_band(st["grade"])
+            if band not in ("kosei", "chugaku"):
+                summary["skipped_grade"] += 1
+                return
+            if _is_blocked_test_name(st["name"]):
+                summary["skipped_test_name"] += 1
+                return
+            summary["targets"] += 1
+            s = state.get(sid) or {"n": 0, "last_at": "", "open": None}
+            if s["open"] is not None:
+                summary["skipped_open"] += 1
+                # 配ってから 2 日 (体験中は 1 日) たっても、そのあとログインしていない → 1 回だけメール (メールが ON のとき)
+                o = s["open"]
+                last = _ts_text(st["last_login_at"])
+                _rd = _LIGHT_ENGAGE_REMIND_AFTER_DAYS_TRIAL if str(st["status"] or "") == "trial" else _LIGHT_ENGAGE_REMIND_AFTER_DAYS
+                remind_at = (nu - timedelta(days=_rd)).strftime("%Y-%m-%d %H:%M:%S")
+                if o["at"] and o["at"] <= remind_at and (not last or last < o["at"]):
+                    mails.append(("reminder", st, o["drill_id"], o["title"]))
+                return
+            if s["last_at"] and s["last_at"] >= cut["cadence"]:
+                summary["skipped_today"] += 1
+                return
+            rng = _random.Random(f"{seed}:{sid}") if seed is not None else _random.Random()
+            plan = _weakness_routine_plan(c, st, band, count=count, rng=rng, reasons=summary["reasons"])
+            kind, prefix = "weakness", "🎯弱点対策"
+            if not plan["ok"]:
+                first = s["n"] == 0
+                plan = _light_starter_plan(c, st, band, first=first, count=count, rng=rng)
+                kind, prefix = ("starter", "🌱はじめの力だめし") if first else ("rotation", "📝おすすめ")
+            if not plan["ok"]:
+                summary["skipped_no_inventory"] += 1
+                return
+            if dry_run:
+                summary["delivered"] += 1
+                summary[f"delivered_{kind}"] += 1
+                summary["delivered_ids"].append({"id": sid, "kind": kind, "subject": plan["subject"],
+                                                 "unit": plan["unit"], "levels": plan["levels"]})
+                return
+            created = _create_routine_grammar_drill(
+                c, conn, plan["subject"], plan["unit"], count, sid, st, band=band, levels=plan["levels"],
+                qids=plan["qids"], label=plan["label"], cutoffs=cut, title_prefix=prefix)
+            if created is None:
+                summary["create_failed"] += 1
+                return
+            if created.get("race"):
+                summary["skipped_race"] += 1
+                return
+            summary["delivered"] += 1
+            summary[f"delivered_{kind}"] += 1
+            summary["delivered_ids"].append({"id": sid, "kind": kind, "subject": plan["subject"],
+                                             "unit": plan["unit"], "drill_id": created["drill_id"]})
+            # 新しいドリルのメールは、この 24 時間にログインしていない会員だけ (毎日使っている会員に毎日メールを送らない)。
+            #   登録から 24 時間以内も送らない (申込の直後はウェルカムメールが届くので 2 通を重ねない)
+            last = _ts_text(st["last_login_at"])
+            t_1d = (nu - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
+            if (not last or last < t_1d) and _ts_text(st["created_at"]) < t_1d:
+                lv = "・".join(GRAMMAR_LEVELS.get(x, x) for x in plan["levels"])
+                mails.append(("new", st, created["drill_id"], f"{prefix} {plan['label']}ドリル（{lv}・{count}問）"))
+
+        for st in students:
+            # 生徒ごとに分ける: 1 名で SQL が落ちても (Postgres はトランザクションが壊れる) 巻き戻して次の生徒へ
+            try:
+                _one(st)
+            except Exception as e:
+                summary["errors"] = summary.get("errors", 0) + 1
+                log.warning(f"[LightEngage] sid={_routine_row_val(st, 'id')} failed: {type(e).__name__}: {e}")
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+
+        if mails and email_on and not dry_run:
+            today_start = _jst_day_start_utc_txt(now, 0)
+            for kind, st, drill_id, title in mails:
+                sid = int(st["id"])
+                to = (st["email"] or "").strip()
+                tmpl = f"light_drill_{kind}"
+                if not to or _routine_row_val(st, "parent_email_enabled") in (0, "0", False):
+                    continue   # アドレスが無い・お知らせのメールを止めた会員 (parent_email_enabled=0) には送らない
+                # 送る権利を取る (錠の中で「送信中」の行を書いて commit = レプリカが 2 つでも 1 通)。取れたあとはトランザクションを
+                #   閉じているので、送信の待ち (1 秒強) の間に読み取りのトランザクションを開けたままにしない
+                claim_id = _light_engage_claim_mail(c, conn, sid, tmpl, drill_id, today_start)
+                if claim_id is None:
+                    continue
+                te = None
+                if str(st["status"] or "") == "trial":
+                    _te = _ts_text(st["trial_end"])
+                    try:
+                        te = datetime.strptime(_te, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc).astimezone(JST) if _te else None
+                    except ValueError:
+                        te = None
+                res = _send_light_engage_email(to, st["name"] or "", kind, title, te)
+                ok = bool(res.get("sent"))
+                summary["emails_sent" if ok else "emails_failed"] += 1
+                try:
+                    c.execute("UPDATE notifications SET success = ?, error = ? WHERE id = ?",
+                              (1 if ok else 0, (None if ok else str(res.get("error") or "send failed")[:200]), claim_id))
+                    conn.commit()
+                except Exception as e:
+                    log.warning(f"[LightEngage] notifications の記録に失敗 sid={sid}: {type(e).__name__}: {e}")
+                    try:
+                        conn.rollback()
+                    except Exception:
+                        pass
+        else:
+            summary["emails_pending"] = len(mails)   # メールが OFF の間に送るはずだった数 (見守り用)
+        if not dry_run and summary["create_failed"] > 0 and summary["delivered"] == 0:
+            summary["error"] = f"ドリルを 1 本も作れませんでした (作成の失敗 {summary['create_failed']} 名)"
+        return summary
+    finally:
+        conn.close()
+
+
+def _light_engage_new_member(student_id: int) -> None:
+    """体験の申込の直後・マイページで学年を選んだ直後に、その会員の最初のドリルを用意する (別スレッド・失敗しても止めない)。"""
+    try:
+        # メールは送らない (申込の直後はウェルカムメールが届く。学年を選んだ直後は本人がマイページを見ている)
+        r = _run_light_engagement(only_student_id=int(student_id), send_email=False)
+        log.info(f"[LightEngage] new member sid={student_id}: delivered={r.get('delivered')} "
+                 f"grade_skip={r.get('skipped_grade')} no_inv={r.get('skipped_no_inventory')}")
+    except Exception as e:
+        log.warning(f"[LightEngage] new member sid={student_id} failed: {type(e).__name__}: {e}")
+
+
+async def _light_engagement_scheduler():
+    """🌱 毎時 20 分 (JST 7:20〜21:20) に AI学習アプリの会員を見回ってドリルを配る。
+    レプリカが 2 つでも、生徒ごとの錠と読み直し (_create_routine_grammar_drill) で 1 本だけ・メールは送る前に錠の中で
+    「送信中」の行を書く (_light_engage_claim_mail) ので 1 通だけ。
+    実行記録 (events: light_engagement_run) は、配った・メールを送った・失敗した回と、その日の最初の回 (見守りの人数つき) だけ残す。"""
+    log.info("[LightEngage] Scheduler started (hourly at :20 JST 7-21, env LIGHT_ENGAGE_ENABLED)")
+    while True:
+        try:
+            now_jst = datetime.now(JST)
+            target = now_jst.replace(minute=20, second=0, microsecond=0)
+            if target <= now_jst:
+                target += timedelta(hours=1)
+            await asyncio.sleep((target - now_jst).total_seconds())
+            if target.hour not in _LIGHT_ENGAGE_HOURS_JST or not _light_engage_enabled():
+                continue
+            try:
+                result = await asyncio.to_thread(_run_light_engagement)
+                first_today = not _check_scheduler_ran_today_jst(_LIGHT_ENGAGE_RUN_EVENT)
+                if first_today or result.get("delivered") or result.get("emails_sent") or result.get("emails_failed") \
+                        or result.get("error"):
+                    props = _compact_run_props(result)
+                    if first_today:
+                        try:
+                            def _f():
+                                cn = db()
+                                try:
+                                    return _light_engagement_funnel(cn.cursor())
+                                finally:
+                                    cn.close()
+                            props["funnel"] = await asyncio.to_thread(_f)
+                        except Exception as fe:
+                            log.warning(f"[LightEngage] funnel failed: {type(fe).__name__}: {fe}")
+                    _record_scheduler_run(_LIGHT_ENGAGE_RUN_EVENT, props)
+                log.info(f"[LightEngage] delivered={result.get('delivered')} open={result.get('skipped_open')} "
+                         f"today={result.get('skipped_today')} no_inv={result.get('skipped_no_inventory')} "
+                         f"mail={result.get('emails_sent')}/{result.get('emails_pending')}")
+            except Exception as e:
+                log.error(f"[LightEngage] failed: {type(e).__name__}: {e}", exc_info=True)
+                _record_scheduler_run(_LIGHT_ENGAGE_RUN_EVENT, {"error": f"{type(e).__name__}: {e}"[:300]})
+        except asyncio.CancelledError:
+            log.info("[LightEngage] Scheduler cancelled")
+            raise
+        except Exception as e:
+            log.error(f"[LightEngage] Scheduler loop error: {e}", exc_info=True)
+            await asyncio.sleep(3600)
+
+
+@app.get("/api/admin/light/engagement")
+def admin_light_engagement(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """👀 admin: AI学習アプリの会員の見守り (人数だけ) と、毎時の配布の最後の記録。"""
+    if not _grammar_admin_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    conn = db()
+    try:
+        funnel = _light_engagement_funnel(conn.cursor())
+    finally:
+        conn.close()
+    return {"ok": True, "enabled": _light_engage_enabled(), "email_enabled": _light_engage_email_enabled(),
+            "funnel": funnel, "last_run": _auto_delivery_last_run(_LIGHT_ENGAGE_RUN_EVENT)}
+
+
+@app.post("/api/admin/light/engagement/run")
+def admin_light_engagement_run(payload: Optional[dict] = None, authorization: Optional[str] = Header(None),
+                               x_cron_secret: Optional[str] = Header(None)):
+    """🌱 admin: AI学習アプリの会員へのドリル配布を手動で実行 / プレビュー。payload: {dry_run?: bool (既定 true), student_id?: int}。
+    メールは env LIGHT_ENGAGE_EMAIL に従う (dry_run では送らない)。応答は人数と生徒 id だけ。"""
+    if not _grammar_admin_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    payload = payload or {}
+    dry = payload.get("dry_run")
+    dry = True if dry is None else bool(dry)
+    sid = payload.get("student_id")
+    try:
+        sid = int(sid) if sid is not None else None
+    except (TypeError, ValueError):
+        sid = None
+    result = _run_light_engagement(only_student_id=sid, dry_run=dry)
+    return {"ok": True, **result, "enabled": _light_engage_enabled()}
 
 
 # 📋 CEO の配信済みドリル一覧の絞り込み (2026-10-15 塾長決定: 既定は塾長が配ったドリルだけ・自動配信は切り替えて見る)。

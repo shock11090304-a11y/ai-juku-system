@@ -480,6 +480,24 @@
       </div>
     </section>
 
+    <!-- 🌱 [2026-11-14] AI学習アプリ (light) の会員で学年が分からない人 (決済から直接申し込んだ人は学年を聞いていない) に学年を聞く。
+         学年が分かると、毎日のドリル (はじめの力だめし → 苦手の対策) が届く (サーバの _run_light_engagement)。
+         表示だけの振り分け (light で学年が中高に読めないときだけ)。小学生には出さない (小学生向けのドリルはまだない)。 -->
+    <section id="lightGradePrompt" style="display:none; margin:0 0 1.5rem 0; padding:1.1rem 1.25rem; background:linear-gradient(135deg,rgba(20,184,166,0.16),rgba(16,185,129,0.08)); border:1px solid rgba(20,184,166,0.45); border-radius:14px;">
+      <h3 style="margin:0 0 0.4rem 0; font-size:1rem; font-weight:800; color:#5eead4;">🌱 学年を教えてください</h3>
+      <p style="margin:0 0 0.8rem 0; font-size:0.84rem; color:#cbd5e1;">学年に合わせて、毎日のドリル（10問・自動採点つき）をお届けします。</p>
+      <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+        <select id="lightGradeSelect" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.2); border-radius:8px; color:#fff; padding:0.45rem 0.6rem; font-size:0.9rem;">
+          <option value="">選択してください</option>
+          <option value="中学1年">中学1年</option><option value="中学2年">中学2年</option><option value="中学3年">中学3年</option>
+          <option value="高校1年">高校1年</option><option value="高校2年">高校2年</option><option value="高校3年">高校3年</option>
+          <option value="既卒生">既卒生</option>
+        </select>
+        <button type="button" id="lightGradeSave" style="padding:0.45rem 1rem; background:#14b8a6; color:#fff; border:none; border-radius:8px; font-weight:800; font-size:0.88rem; cursor:pointer;">保存する</button>
+        <span id="lightGradeMsg" style="font-size:0.8rem;"></span>
+      </div>
+    </section>
+
     <!-- 📚 宿題 (Phase 5 - 国公立難関大学コース + 同等プラン限定・塾長指示 2026-05-24)
          3 視点 UX review 致命指摘で streak-section 直後に配置 (期限超過バッジを即座に発見可能)
          JS の initHomeworkSection() が auth/course を判定して表示制御 (ineligible は section ごと非表示) -->
@@ -1505,6 +1523,42 @@
   <!-- 💾 単元ドリルの解答の途中保存 (2026-10-18。class.html と共通)。mypage.js より前に読む。変えたら両方の ?v= を上げる -->
   <script src="gd-draft.js?v=20261018a-gd-draft"></script>
   <script src="mypage.js?v=20261019a-gap-analyze"></script>
+  <script>
+    // 🌱 AI学習アプリの会員で学年が分からない人に学年を聞く (#lightGradePrompt)。保存はサーバの PATCH /api/student/profile
+    //   (本人だけ)。保存するとサーバが最初のドリルを用意する → 少し待って宿題 (ドリル) の一覧を読み直す。
+    (function () {
+      function sess() { try { return JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null'); } catch (_) { return null; } }
+      function known(g) { return /(中学?\s*[1-3１-３一二三]|高校?\s*[1-3１-３一二三]|既卒|浪人)/.test(String(g || '')); }
+      function show() {
+        var s = sess(), box = document.getElementById('lightGradePrompt');
+        if (!s || !box) return;
+        var light = s.feature_tier ? s.feature_tier === 'light' : s.plan === 'trillion_light';
+        var g = String(s.grade || '');
+        box.style.display = (light && !known(g) && !/小/.test(g)) ? '' : 'none';
+      }
+      show();
+      [800, 2500, 6000].forEach(function (ms) { setTimeout(show, ms); });
+      var btn = document.getElementById('lightGradeSave');
+      if (!btn) return;
+      btn.addEventListener('click', async function () {
+        var s = sess(), sel = document.getElementById('lightGradeSelect'), msg = document.getElementById('lightGradeMsg');
+        var g = sel ? sel.value : '';
+        if (!s || !s.id) return;
+        if (!g) { msg.textContent = '学年を選んでください'; msg.style.color = '#fca5a5'; return; }
+        btn.disabled = true;
+        try {
+          await slApiFetch('/api/student/profile', { method: 'PATCH', body: JSON.stringify({ student_id: s.id, grade: g }) });
+          try { s.grade = g; localStorage.setItem('ai_juku_session_student', JSON.stringify(s)); } catch (_) {}
+          msg.textContent = '✅ 保存しました。まもなく最初のドリルが届きます'; msg.style.color = '#86efac';
+          // サーバが最初のドリルを作るのを少し待ってから開き直す (一覧の読み込みを 2 回走らせない)
+          setTimeout(function () { try { location.reload(); } catch (_) {} }, 4000);
+        } catch (e) {
+          msg.textContent = '❌ ' + ((e && e.message) || '保存できませんでした'); msg.style.color = '#fca5a5';
+          btn.disabled = false;
+        }
+      });
+    })();
+  </script>
   <script>
     // ウィジェット初期描画
     (function() {
