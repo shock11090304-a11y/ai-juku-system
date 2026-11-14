@@ -132,7 +132,8 @@ def main():
     a8 = P(["h3-r", "h3-b"], "2027-01-13")
     check("A8. 1/13 は共通テストの講座が締切・私大文法は買える", a8["closed"] == ["h3-r"], a8)
     check("A9. 大学別の締切 (関西大 1/25 まで・1/26 から締切)", not P(["u-kansai"], "2027-01-25")["closed"] and P(["u-kansai"], "2027-01-26")["closed"] == ["u-kansai"])
-    check("A10. 18 大学・高3 5・パック 4 (高1・高2・中3・中2) = 27 講座", len(mod.WINTER_ITEMS) == 27 and sum(1 for k in mod.WINTER_ITEMS if k.startswith("u-")) == 18)
+    check("A10. 19 大学・高3 5・パック 4 (高1・高2・中3・中2) = 28 講座", len(mod.WINTER_ITEMS) == 28 and sum(1 for k in mod.WINTER_ITEMS if k.startswith("u-")) == 19)
+    check("A10b. 明治 政治経済は 2/4 まで買える・2/5 から締切・定員20・14,500円", not P(["u-meiji-seikei"], "2027-02-04")["closed"] and P(["u-meiji-seikei"], "2027-02-05")["closed"] == ["u-meiji-seikei"] and mod.WINTER_ITEMS["u-meiji-seikei"]["cap"] == 20 and mod.WINTER_ITEMS["u-meiji-seikei"]["price"] == 14500)
     # 有効期限: 23 時間を上限に、締切の 23:59:59 JST を越えない・最低 31 分
     now = int(datetime.datetime(2027, 1, 12, 23, 50, tzinfo=mod.JST).timestamp())
     check("A11. 締切 10 分前の決済画面は 31 分 (Stripe の下限)", mod._winter_expires_at(["h3-set-ei"], now) == now + 31 * 60)
@@ -425,7 +426,7 @@ def main():
     # ---- H. 定員 (大学別パック 各先着20名・塾長決定 2026-11-11。満員後に枠を足さない) ----
     set_today("2026-11-20")
     mod.get_stripe = lambda: fake
-    check("H1. 大学別 18 パックすべて定員 20・高3/学年パックは定員なし",
+    check("H1. 大学別 19 パックすべて定員 20・高3/学年パックは定員なし",
           all(mod.WINTER_ITEMS[k].get("cap") == 20 for k in mod.WINTER_ITEMS if k.startswith("u-"))
           and not any(mod.WINTER_ITEMS[k].get("cap") for k in mod.WINTER_ITEMS if not k.startswith("u-")))
     base = mod._winter_paid_counts().get("u-doshisha", 0)
