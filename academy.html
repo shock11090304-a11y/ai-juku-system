@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <script>document.documentElement.className='js';</script>
 <title>Trillion English Academy｜全科目対応・本気で第一志望を目指すオンライン塾</title>
-<meta name="description" content="元大手予備校講師が主宰。英語・国語はプロ講師の生ライブ授業、数学・理科・社会はスタディサプリ個別カリキュラム（オプション）、24時間対応のAI学習アプリ（オプション）で全科目を下支え。弱点と志望校から逆算し、全科目で第一志望合格を本気で目指すオンライン塾。2026年春の入試で 東大・阪大・早慶・医学部 合格。">
+<meta name="description" content="元大手予備校講師が主宰。英語（高校生は国語も）はプロ講師の生ライブ授業、数学・理科・社会はスタディサプリ個別カリキュラム（オプション）、24時間対応のAI学習アプリ（オプション）で全科目を下支え。弱点と志望校から逆算し、全科目で第一志望合格を本気で目指すオンライン塾。2026年春の入試で 東大・阪大・早慶・医学部 合格。">
 <meta name="theme-color" content="#000000">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400&family=Noto+Sans+JP:wght@200;300;400;500&display=swap" rel="stylesheet">
@@ -18,12 +18,13 @@
 <meta property="og:title" content="Trillion English Academy｜全科目対応・本気で第一志望を目指すオンライン塾">
 <meta property="og:description" content="プロ講師の生ライブ授業に、AI学習アプリ（オプション）とスタディサプリの数学・理科・社会（オプション）。弱点と志望校から逆算し、全科目で第一志望合格を目指す。2026年春の入試で 東大・阪大・早慶・医学部 合格。">
 <meta property="og:url" content="https://trillion-ai-juku.com/academy">
-<meta property="og:image" content="https://trillion-ai-juku.com/academy-assets/ogp.jpg">
+<link rel="canonical" href="https://trillion-ai-juku.com/academy">
+<meta property="og:image" content="https://trillion-ai-juku.com/academy-assets/ogp-2026-11.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Trillion English Academy｜全科目対応で第一志望を目指すオンライン塾">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://trillion-ai-juku.com/academy-assets/ogp.jpg">
+<meta name="twitter:image" content="https://trillion-ai-juku.com/academy-assets/ogp-2026-11.jpg">
 
 <style>
   :root{
@@ -981,7 +982,8 @@
   /* 第6版：料金カードが4枚になったので 2×2（スマホは1列） */
   .fee-cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   @media(max-width:620px){ .fee-cards{grid-template-columns:1fr!important} }
-  /* 2026-11-16 スマホ点検：見出しは文節で折り返し、行の長さをそろえる */
+  .course .c-diff{font-size:.8rem;line-height:1.7;color:var(--ink-soft);margin:-.4rem 0 1rem;padding-left:.8em;border-left:2px solid #c8a24a}
+/* 2026-11-16 スマホ点検：見出しは文節で折り返し、行の長さをそろえる */
   h1,h2,h3,h4,.st-line,.winter-card h2{word-break:auto-phrase;text-wrap:balance}
   .op{grid-template-columns:minmax(0,1fr)}   /* TRILLION のアニメ中に列が広がって右端が切れるのを防ぐ */
   @media(max-width:620px){
@@ -1011,7 +1013,8 @@
   }
   a:focus-visible,summary:focus-visible,.btn:focus-visible,button:focus-visible{outline:2px solid #c8a24a;outline-offset:3px}
   @media(min-width:861px) and (max-height:820px){ nav.links .m-panel a{padding:.45em 0;font-size:clamp(1rem,2vw,1.5rem)} .m-panel{padding-top:96px;padding-bottom:32px} }
-  @media(max-width:360px){ .brand .jp{letter-spacing:.1em} .op-word{font-size:2.6rem} .op-kicker{letter-spacing:.04em} .op-lead{font-size:.8rem;line-height:1.85} }
+  @media(max-width:360px) and (max-height:640px){ .op{padding-top:72px} .op-word{margin-bottom:8px} .op-kicker{margin-bottom:12px} .op-h1{margin-bottom:14px} .op-lead{margin-top:14px;line-height:1.7} .op-cta{margin-top:16px} }
+@media(max-width:360px){ .flow{grid-template-columns:repeat(2,minmax(0,1fr))} .flow .step{padding:22px 14px} .flow .step h3{word-break:normal;overflow-wrap:anywhere;font-size:1rem} .course .ctop>div:first-child{min-width:0} .course .ctop h4{word-break:normal;overflow-wrap:anywhere} .brand .jp{letter-spacing:.1em} .op-word{font-size:2.6rem} .op-kicker{letter-spacing:.04em} .op-lead{font-size:.8rem;line-height:1.85} }
 </style>
 </head>
 <body>
@@ -1070,7 +1073,7 @@
   <div class="op-bottom">
     <p class="op-kicker">元大手予備校講師 主宰 ／ 全国対応オンライン塾</p>
     <h1 class="op-h1">「丸暗記」を捨てて、全科目で第一志望へ。</h1>
-    <p class="op-lead">中学生・高校生・受験生のためのオンライン塾。<br>英語・国語はプロ講師の生ライブ授業。<br>数学・理科・社会は動画のオプションでも学べます。</p>
+    <p class="op-lead">中学生・高校生・受験生のためのオンライン塾。<br>英語（高校生は国語も）はプロ講師の生ライブ授業。<br>数学・理科・社会は動画のオプションで学べます。</p>
     <div class="op-cta">
       <a href="taiken.html" class="op-btn op-btn-gold">体験授業を申し込む（¥1,500）</a>
       <a href="https://lin.ee/ZHlrRjh" target="_blank" rel="noopener" class="op-btn">LINEで相談する</a>
@@ -1099,7 +1102,7 @@
     <div class="g-track">
       <a class="g-item" href="#system"><span class="ph p1"></span><span class="g-name">LIVE LESSONS</span><span class="g-sub">01　英語・国語はプロ講師の生ライブ授業</span></a>
       <a class="g-item" href="#cycle"><span class="ph p2"></span><span class="g-name">ORIGINAL VIDEOS</span><span class="g-sub">02　基礎講座とレベル別の演習・解説動画</span></a>
-      <a class="g-item" href="#ai"><span class="ph p3"></span><span class="g-name">AI TUTOR</span><span class="g-sub">03　全科目対応の AI学習アプリ</span></a>
+      <a class="g-item" href="#ai"><span class="ph p3"></span><span class="g-name">AI TUTOR</span><span class="g-sub">03　全科目対応のAI学習アプリ</span></a>
       <a class="g-item" href="#app"><span class="ph p4"></span><span class="g-name">STUDENT APP</span><span class="g-sub">04　塾生アプリで学習管理</span></a>
       <a class="g-item" href="#results"><span class="ph p5"></span><span class="g-name">RESULTS 2026</span><span class="g-sub">05　合格実績　国公立11・私立24・医学部3</span></a>
       <a class="g-item" href="#courses"><span class="ph p6"></span><span class="g-name">COURSES</span><span class="g-sub">06　コースのご案内</span></a>
@@ -1115,13 +1118,13 @@
     <div class="winter-card reveal">
       <div class="w-k">WINTER INTENSIVE 2026</div>
       <h2>冬期講習2026（動画配信）の申し込みを受け付けています</h2>
-      <p class="w-lede">ライブ授業ではなく、好きな時間に何度でも見られる動画の講習です（1本 約40〜45分）。演習問題は当塾のオリジナルで、問題と解答解説は PDF でお渡しします。視聴は 2027年3月31日（水）まで。入塾金はなく、講習だけのお申し込みができます。</p>
+      <p class="w-lede">ライブ授業ではなく、好きな時間に何度でも見られる動画の講習です（1本 約30〜60分・講座によって異なります）。演習問題は当塾のオリジナルで、問題と解答解説は PDF でお渡しします。視聴は 2027年3月31日（水）まで。入塾金はなく、講習だけのお申し込みができます。</p>
       <div class="winter-grid">
         <div>
           <h3>高校生・受験生</h3>
           <ul>
             <li>高3・受験生：共通テスト（英語リーディング・リスニング・古文漢文・数学ⅠA）と私大英語の5講座　各7,500円（セット割あり）</li>
-            <li>志望校別の大学別パック　14,500円</li>
+            <li>志望校別の大学別パック　14,500円（過去3年分の詳解＋予想問題2回分・各パック先着20名。過去問はご自身でご用意ください）</li>
             <li>高1パック 13,000円・高2パック 14,500円</li>
           </ul>
           <a href="https://graceful-eclair-56bdac.netlify.app/winter.html" class="btn btn-gold">高校生の申込書を開く</a>
@@ -1150,7 +1153,7 @@
     </div>
     <div class="stats reveal">
       <div class="stat"><div class="num">11</div><div class="lbl">国公立大学 合格</div></div>
-      <div class="stat"><div class="num">24</div><div class="lbl">私立大学 合格</div></div>
+      <div class="stat"><div class="num">24</div><div class="lbl">私立大学 合格<small>（医学部を除く）</small></div></div>
       <div class="stat"><div class="num">3</div><div class="lbl">医学部医学科</div></div>
       <div class="stat"><div class="num">32</div><div class="lbl">英検 合格者</div></div>
     </div>
@@ -1190,7 +1193,7 @@
       <li class="cy-step reveal">
         <span class="cy-no">STEP 01</span>
         <h3>基礎講座の動画で、核心をつかむ</h3>
-        <p>文法の「なぜ」を、塾オリジナルの動画で先に押さえます。テキストに書き込みながら見る形なので、苦手な人も一つずつ確実に進めます。</p>
+        <p>文法の「なぜ」を、塾オリジナルの動画で先に押さえます。テキストに書き込みながら見る形なので、苦手な人も一つずつ進められます。</p>
         <span class="cy-tag">オリジナル動画</span>
       </li>
       <li class="cy-step reveal">
@@ -1202,7 +1205,7 @@
       <li class="cy-step reveal">
         <span class="cy-no">STEP 03</span>
         <h3>解説動画で、間違いの理由を知る</h3>
-        <p>解いた問題には解説動画がついています。答え合わせで終わらせず、「なぜ間違えたのか」まで確かめます。</p>
+        <p>解いた問題には解説動画がついています（順次公開）。答え合わせで終わらせず、「なぜ間違えたのか」まで確かめます。</p>
         <span class="cy-tag">オリジナル動画</span>
       </li>
       <li class="cy-step reveal">
@@ -1268,7 +1271,7 @@
   <div class="wrap">
     <div class="sec-head reveal">
       <div class="sec-kicker">AI Learning App</div>
-      <h2>全科目対応の AI 学習アプリ</h2>
+      <h2>全科目対応のAI学習アプリ</h2>
       <p>「わからない」を放置しない。質問も、演習も、弱点分析も、全教科ぜんぶAIが24時間サポートします。</p>
       <div class="rule"></div>
     </div>
@@ -1289,7 +1292,7 @@
         <span class="no" aria-hidden="true">03</span>
         <h3>弱点“習得”ループ</h3>
         <p>解答履歴からAIが「あなたの弱点TOP3」を自動抽出。3日ごとに届く弱点ドリル（レビュー済みの問題・自動採点）で、正答率が基準を超えて“習得”するまで出題し続けます。放置される苦手をなくす仕組みです。</p>
-        <div class="subj"><i>全科目対応</i></div>
+        <div class="subj"><i>高校：英文法・数学</i><i>中学：5教科</i></div>
         <span class="fine">※ 自動で届く弱点ドリルは、レビュー済みの問題がある科目から出題します（現在は高校生は英文法・数学、中学生は5教科）。</span>
       </div>
     </div>
@@ -1299,9 +1302,9 @@
       <div class="feat reveal">
         <span class="no" aria-hidden="true">04</span>
         <h3>大学別・出題傾向の類題</h3>
-        <p>東大・京大・早慶・医学部など、各大学の出題形式を再現したオリジナル問題で対策。志望校の“クセ”に、1問ずつ深く慣れていけます。</p>
+        <p>東大・京大・早慶・医学部など、各大学の出題形式に合わせたオリジナル問題で対策。志望校の“クセ”に、1問ずつ深く慣れていけます。</p>
         <div class="subj"><i>全科目対応</i></div>
-        <span class="fine">※ 実際の過去問の転載ではなく、出題傾向を再現したAIオリジナル問題です。</span>
+        <span class="fine">※ 実際の過去問の転載ではなく、出題傾向に合わせたAIオリジナル問題です。</span>
       </div>
       <div class="feat reveal">
         <span class="no" aria-hidden="true">05</span>
@@ -1403,9 +1406,9 @@
       </div>
     </div>
     </details>
-    <p class="misc-strip">さらに ── <b>英単語SRS（忘却曲線ドリル）</b>／<b>英作文・現代文の記述添削</b>／<b>本番想定の模試と偏差値の推移</b> も。</p>
+    <p class="misc-strip">さらに ── <b>英単語SRS（忘却曲線ドリル）</b>／<b>英作文・現代文の記述添削</b>／<b>本番想定の模試と偏差値の推移</b>も。</p>
     <div class="addon-note reveal">
-      <div class="an-l"><b>AI学習アプリのご利用</b>　通塾生は月謝に追加するだけで、利用回数の上限なしでお使いいただけます（入塾申込書でお選びいただけます。アプリ分の入塾金はかかりません）。<br>国公立難関大学コースの方は、受講料 25,000円に含まれています（このオプションの料金はかかりません）。</div>
+      <div class="an-l"><b>AI学習アプリのご利用</b>　通塾生は月謝に追加するだけで、利用回数の上限なしでお使いいただけます（1日に使える量には上限があります。入塾申込書でお選びいただけます。アプリ分の入塾金はかかりません）。<br>国公立難関大学コースの方は、受講料 25,000円に含まれています（このオプションの料金はかかりません）。</div>
       <div class="an-r">月額 <span>+5,000円</span></div>
     </div>
   </div>
@@ -1427,7 +1430,7 @@
       <div class="feat reveal">
         <span class="no" aria-hidden="true">01</span>
         <h3>予定・休塾日カレンダー</h3>
-        <p>週間時間割と、休塾日・特別予定・夏期講習などを月カレンダーで一覧。「今日は授業がある？」がひと目でわかります。</p>
+        <p>週間時間割と、休塾日・特別予定・講習などを月カレンダーで一覧。「今日は授業がある？」がひと目でわかります。</p>
       </div>
       <div class="feat reveal">
         <span class="no" aria-hidden="true">02</span>
@@ -1469,7 +1472,7 @@
     </div>
     <div class="concept-lead reveal">
       <p class="big">「なぜ、その答えになるのか」を、<em>理論で理解する</em>。</p>
-      <p>暗記に頼らず、初見の問題にも応用が効く文法力・読解力を育てます。中学部では高校入試対策にとどまらず、大学入試につながる知識まで指導します。</p>
+      <p>暗記に頼らず、初見の問題にも応用が利く文法力・読解力を育てます。中学部では高校入試対策にとどまらず、大学入試につながる知識まで指導します。</p>
     </div>
     <div class="features">
       <div class="feat reveal">
@@ -1512,7 +1515,7 @@
     <div class="sec-head reveal">
       <div class="sec-kicker">Time Table</div>
       <h2>授業スケジュール</h2>
-      <p>英語・国語のライブ授業スケジュールです（1限＝中学部が中心・高2英文法と英検準1級対策も／2限・3限＝高校部）。数学・理科・社会は、オプションのスタディサプリ（個別カリキュラム）やAI学習アプリで各自のペースで進めます。</p>
+      <p>英語・国語のライブ授業スケジュールです（1限＝中学部が中心・高2英文法と英検準1級対策も／2限・3限＝高校部が中心・英検2級対策は中高合同）。数学・理科・社会は、オプションのスタディサプリ（個別カリキュラム）やAI学習アプリで各自のペースで進めます。</p>
       <div class="rule"></div>
     </div>
 
@@ -1528,7 +1531,7 @@
             <td><b>中学基礎</b><span>定期テスト 中1/2</span></td>
             <td><b>中学2年 英語</b></td>
             <td><b>英検準1級 対策</b><span>中高合同</span></td>
-            <td><b>高校2年生 英文法</b></td>
+            <td><b>高2 英文法</b></td>
           </tr></tbody>
         </table>
       </div>
@@ -1579,7 +1582,7 @@
 
     <ul class="sched-notes reveal">
       <li>2限と3限はセットでの受講を推奨しています（英文法＋長文読解）。</li>
-      <li>英語力に自信のある中学生や、中高一貫校で英語の進度が早い生徒は、高等部の授業を受講することも可能です。</li>
+      <li>英語力に自信のある中学生や、中高一貫校で英語の進度が早い生徒は、高校部の授業を受講することも可能です。</li>
     </ul>
   </div>
 </section>
@@ -1623,6 +1626,7 @@
           </div>
           <div class="meta"><i>対象：中1・中2</i><i>火曜 1限</i></div>
           <p class="sum">学校の定期テスト対策を軸に、英語の基礎をしっかり固める講座。文法の「なぜそうなるのか」を丁寧に解説し、暗記に頼らない理解を積み上げます。</p>
+          <p class="c-diff">中学2年 英語（水曜）との違い：中1・中2が一緒に受ける講座で、定期テスト対策が中心です。</p>
           <details><summary>詳細を見る</summary><div class="dbody">
             <div><div class="dt">授業の進め方</div><div>学校の進度に合わせて文法を解説し、演習で定着。テスト前は頻出問題対策も実施します。</div></div>
             <div><div class="dt">めざす目安</div><div>定期テストで安定して高得点を取れる基礎力をつけ、中3以降の応用学習へスムーズに移行。</div></div>
@@ -1638,8 +1642,9 @@
           </div>
           <div class="meta"><i>対象：中2</i><i>水曜 1限</i></div>
           <p class="sum">中2の学校進度に合わせた英語指導。つまずきやすい文法事項を丁寧にフォローし、中3以降の応用に備えます。</p>
+          <p class="c-diff">中学基礎（火曜）との違い：中2だけの講座で、教科書の進度に合わせて中2の文法を深めます。</p>
           <details><summary>詳細を見る</summary><div class="dbody">
-            <div><div class="dt">授業の進め方</div><div>教科書進度に沿いつつ、不定詞・動名詞・比較など中2の重要文法を理論的に解説。演習で確実に定着。</div></div>
+            <div><div class="dt">授業の進め方</div><div>教科書進度に沿いつつ、不定詞・動名詞・比較など中2の重要文法を理論的に解説。演習で定着させます。</div></div>
             <div><div class="dt">めざす目安</div><div>中2英語の文法事項を完全に理解し、中3の受験英語へ自信を持って進める土台づくり。</div></div>
             <div><div class="dt">使用教材</div><div>オリジナルPDF教材（文法解説＋学校準拠の演習問題）</div></div>
             <div><div class="dt">おすすめの生徒</div><div>中2の英語でつまずきを感じ始めた生徒。中1からの積み残しを解消したい生徒。</div></div>
@@ -1660,10 +1665,11 @@
             <div class="price"><b>7,500<small>円</small></b><span>／ 月（税込）</span></div>
           </div>
           <div class="meta"><i>対象：高1・高2</i><i>月曜 2限</i></div>
-          <p class="sum">英文法を基礎から体系的に学び、「なぜそうなるのか」を理論的に理解。初見の問題にも応用が効く文法力を身につけます。</p>
+          <p class="sum">英文法を基礎から体系的に学び、「なぜそうなるのか」を理論的に理解。初見の問題にも応用が利く文法力を身につけます。</p>
+          <p class="c-diff">高2 英文法（金曜）との違い：高1・高2が一緒に受け、毎回、入試問題の演習まで行います（3限の長文読解 Lv.1 とのセット受講がおすすめ）。</p>
           <details><summary>詳細を見る</summary><div class="dbody">
             <div><div class="dt">授業の進め方</div><div>前半で理論解説、後半で入試問題演習。毎回「理解→演習→確認」のサイクルで定着させます。</div></div>
-            <div><div class="dt">めざす目安</div><div>共通テストの文法・語法で安定得点。日東駒専〜GMARCH中位レベルの文法問題に対応。</div></div>
+            <div><div class="dt">めざす目安</div><div>共通テストの読解を支える文法力。日東駒専〜GMARCH中位レベルの文法問題に対応。</div></div>
             <div><div class="dt">使用教材</div><div>オリジナルPDF教材（理論解説＋入試過去問ベースの演習）</div></div>
             <div><div class="dt">おすすめの生徒</div><div>体系的に学び直したい高1・高2生。暗記で乗り切ってきたが模試で点が取れない生徒。</div></div>
           </div></details>
@@ -1675,7 +1681,7 @@
             <div class="price"><b>7,500<small>円</small></b><span>／ 月（税込）</span></div>
           </div>
           <div class="meta"><i>対象：高3</i><i>火曜 2限</i></div>
-          <p class="sum">基礎が入っている前提で、問題演習を中心に展開。応用まで効く理解力を養い、難関大入試で高得点を狙う実力を鍛えます。</p>
+          <p class="sum">基礎が入っている前提で、問題演習を中心に展開。応用まで利く理解力を養い、難関大入試で高得点を狙う実力を鍛えます。</p>
           <details><summary>詳細を見る</summary><div class="dbody">
             <div><div class="dt">授業の進め方</div><div>実際の入試問題を使い、解くプロセスを重視した演習型授業。「なぜ正解か・なぜ他が不正解か」を徹底解説。</div></div>
             <div><div class="dt">めざす目安</div><div>GMARCH上位〜早慶レベルの文法・語法で安定得点。正誤問題や整序問題にも対応できる応用力。</div></div>
@@ -1693,7 +1699,7 @@
           <p class="sum">高校の基礎から長文の読み方を学ぶ講座。論理的な読解法を一から指導し、地方国公立〜中堅私大レベルの長文に対応する力を養成します。</p>
           <details><summary>詳細を見る</summary><div class="dbody">
             <div><div class="dt">授業の進め方</div><div>パラグラフリーディングの基礎から、論理展開の把握→設問分析→根拠の特定という読解プロセスを段階的に習得。</div></div>
-            <div><div class="dt">めざす目安</div><div>共通テストのリーディングで7割以上を安定。300〜500語程度の長文を論理的に読み解く力。</div></div>
+            <div><div class="dt">めざす目安</div><div>共通テストのリーディングで7割以上を安定して取る力。300〜500語程度の長文を論理的に読み解く力。</div></div>
             <div><div class="dt">使用教材</div><div>オリジナルPDF教材（読解法解説＋入試過去問ベースの長文演習）</div></div>
             <div><div class="dt">おすすめの生徒</div><div>長文を読むと内容がわからなくなる生徒。単語は覚えているのに長文の点数が伸びない生徒。</div></div>
           </div></details>
@@ -1721,6 +1727,7 @@
           </div>
           <div class="meta"><i>対象：高2</i><i>金曜 1限</i></div>
           <p class="sum">高2を対象に、入試に向けた英文法の基盤づくり。高3での演習に備え、文法事項を理論的に整理します。</p>
+          <p class="c-diff">英文法 Lv.1（月曜）との違い：高2だけの講座で、高3の受験勉強に向けて文法の全体像を整理します。</p>
           <details><summary>詳細を見る</summary><div class="dbody">
             <div><div class="dt">授業の進め方</div><div>高2で押さえるべき文法項目を体系的に解説し、演習で理解を定着。高3の受験学習に直結する土台を築きます。</div></div>
             <div><div class="dt">めざす目安</div><div>高2終了時点で英文法の全体像を把握し、高3からの実戦演習へスムーズに移行。</div></div>
@@ -1738,7 +1745,7 @@
           <p class="sum">現代文の論理的読解と古文の基礎文法を学習。国公立二次試験や私大入試に対応する読解力・記述力を養成します。</p>
           <details><summary>詳細を見る</summary><div class="dbody">
             <div><div class="dt">授業の進め方</div><div>現代文は論理構造の分析と記述対策、古文は文法・単語の基礎から読解演習まで、バランスよく指導。</div></div>
-            <div><div class="dt">めざす目安</div><div>共通テストの国語で安定得点し、国公立二次の記述問題にも対応できる力。</div></div>
+            <div><div class="dt">めざす目安</div><div>共通テストの現代文・古文で安定得点し、国公立二次の記述問題にも対応できる力。</div></div>
             <div><div class="dt">使用教材</div><div>オリジナルPDF教材（現代文読解法＋古文文法解説＋入試演習）</div></div>
             <div><div class="dt">おすすめの生徒</div><div>国語の勉強法がわからない生徒。英語は得意だが国語で総合点が伸び悩む生徒。</div></div>
           </div></details>
@@ -1790,7 +1797,7 @@
           <div class="meta"><i>対象：中高合同</i><i>木曜 1限</i></div>
           <p class="sum">英検準1級合格に必要なリーディング・リスニング・ライティング・スピーキングの4技能をバランスよく対策します。</p>
           <details><summary>詳細を見る</summary><div class="dbody">
-            <div><div class="dt">授業の進め方</div><div>4技能を毎回バランスよく扱います。特にライティングは添削指導で着実にスコアアップ。</div></div>
+            <div><div class="dt">授業の進め方</div><div>4技能を毎回バランスよく扱います。特にライティングは添削指導で弱点を直します。</div></div>
             <div><div class="dt">めざす目安</div><div>英検準1級合格。大学入試での英検利用（加点・優遇）を活かせるレベルの英語力。</div></div>
             <div><div class="dt">使用教材</div><div>オリジナルPDF教材（技能別対策＋過去問演習＋ライティング添削）</div></div>
             <div><div class="dt">おすすめの生徒</div><div>準1級取得を目指す中高生。2級は取得済みで次のレベルに挑戦したい生徒。</div></div>
@@ -1852,7 +1859,7 @@
     <div class="sec-head reveal">
       <div class="sec-kicker">Tuition</div>
       <h2>コース・料金のご案内</h2>
-      <p>各コースの月額受講料は以下のとおりです。すべてのクラスに設備費（月額1,350円）が別途かかります。</p>
+      <p>各コースの月額受講料は以下のとおりです。このほか設備費（1人 月額1,350円・受講するクラスの数にかかわらず同額）がかかります。</p>
       <div class="rule"></div>
     </div>
 
@@ -1870,7 +1877,7 @@
           <tr><td>英文法 Lv.2</td><td>高3（難関）</td><td>火曜 2限</td><td class="yen">7,500円</td></tr>
           <tr><td>長文読解 Lv.1</td><td>高1・高2（標準）</td><td>月曜 3限</td><td class="yen">7,500円</td></tr>
           <tr><td>長文読解 Lv.2</td><td>高3（難関）</td><td>火曜 3限</td><td class="yen">7,500円</td></tr>
-          <tr><td>高校国語</td><td>高校生</td><td>日曜</td><td class="yen">7,500円</td></tr>
+          <tr><td>高校国語</td><td>高校生</td><td>日曜 21:15〜</td><td class="yen">7,500円</td></tr>
         </tbody>
       </table>
     </div>
@@ -1893,8 +1900,8 @@
 
     <div class="fee-cards reveal">
       <div class="fee"><div class="k">入塾金</div><div class="v">10,000<small>円</small></div><div class="note">入塾時のみ（初回）</div></div>
-      <div class="fee"><div class="k">設備費</div><div class="v">1,350<small>円 / 月</small></div><div class="note">全クラス共通</div></div>
-      <div class="fee hot"><div class="k">AI学習アプリ（任意）</div><div class="v">+5,000<small>円 / 月</small></div><div class="note">通塾生オプション・入塾金なし／国公立難関大学コースは受講料に含む</div></div>
+      <div class="fee"><div class="k">設備費</div><div class="v">1,350<small>円 / 月</small></div><div class="note">1人あたり・クラス数にかかわらず同額</div></div>
+      <div class="fee hot"><div class="k">AI学習アプリ（任意）</div><div class="v">+5,000<small>円 / 月</small></div><div class="note">通塾生オプション（アプリ分の入塾金なし）／国公立難関大学コースは受講料に含む</div></div>
       <div class="fee"><div class="k">数学・理科・社会の動画（任意）</div><div class="v">+3,000<small>円 / 月</small></div><div class="note">スタディサプリ（利用料込み）＋塾の個別カリキュラム／国公立難関大学コースは受講料に含む</div></div>
     </div>
 
@@ -1937,9 +1944,9 @@
       <div class="pol reveal">
         <h3>お支払い方法</h3>
         <ul>
-          <li>お支払いは原則<b>クレジットカード決済</b>です。入塾申込書の送信後、そのままオンラインで初回分（入塾金 10,000円＋設備費 1,350円＋初月受講料。AI学習アプリをご利用の場合はその初月分も）をお支払いいただき、そのカードを翌月分以降の引き落とし用に登録します。月途中のご入塾でも初月分は満額です（日割りなし）。</li>
+          <li>お支払いは原則<b>クレジットカード決済</b>です。入塾申込書の送信後、そのままオンラインで初回分（入塾金 10,000円＋設備費 1,350円＋初月受講料。オプション〈AI学習アプリ／数学・理科・社会の動画〉をご利用の場合はその初月分も）をお支払いいただき、そのカードを翌月分以降の引き落とし用に登録します。月途中のご入塾でも初月分は満額です（日割りなし）。</li>
           <li>2か月目以降の月謝（受講料＋設備費 1,350円／月）は、<b>毎月 26 日前後</b>に翌月分を登録カードから自動でお引き落としします（前払い）。</li>
-          <li>オプション（AI学習アプリ 月額 +5,000円・数学・理科・社会の動画 月額 +3,000円）をご利用の場合も、同じカードから合わせてお引き落としします（国公立難関大学コースはどちらも受講料に含まれます）。</li>
+          <li>オプション（AI学習アプリ 月額 +5,000円／数学・理科・社会の動画 月額 +3,000円）をご利用の場合も、同じカードから合わせてお引き落としします（国公立難関大学コースはどちらも受講料に含まれます）。</li>
           <li>コースやオプションの変更・退塾は、<b>変更・停止したい月の前月 15 日まで</b>に公式 LINE またはメールにてご連絡ください（翌月分から反映します。日割りの返金はありません）。カードの変更は、同じ窓口でいつでも承ります。</li>
           <li>カード以外のお支払いをご希望の方はご相談ください。</li>
           <li>ご連絡先：公式 LINE（<a href="https://lin.ee/ZHlrRjh" target="_blank" rel="noopener">友だち追加</a>）またはメール（info@trillion-ai-juku.com）</li>
@@ -1948,8 +1955,8 @@
       <div class="pol reveal">
         <h3>退塾について</h3>
         <ul>
-          <li>退塾をご希望の場合は、<b>退塾希望月の前月 15 日まで</b>に公式 LINE またはメールにてご連絡ください。</li>
-          <li>期日を過ぎてのお申し出は、翌月分の月謝が発生いたします。</li>
+          <li>退塾をご希望の場合は、<b>受講を止めたい月の前月 15 日まで</b>に公式 LINE またはメールにてご連絡ください（例：12月末で退塾し、1月分から止める場合は 12月15日まで）。</li>
+          <li>期日を過ぎてのお申し出の場合は、止めたい月の分の月謝も発生し、その翌月分から止まります。</li>
           <li>前月 15 日までにご連絡いただいたのに決済された分は返金いたします。</li>
           <li>月途中での退塾による日割り返金は行っておりません。</li>
           <li>入塾金の返金はいたしかねます。</li>
@@ -1993,10 +2000,10 @@
       <details><summary>住んでいる地域に関係なく受講できますか？</summary><p>はい。授業は Zoom の生ライブ授業なので、全国どこからでも受講できます。</p></details>
       <details><summary>部活や体調不良で授業を休んだらどうなりますか？</summary><p>授業はすべて録画しています。欠席した回は、塾生アプリの動画アーカイブで見返せます（入塾後の授業の録画は受講料に含まれます）。</p></details>
       <details><summary>入塾する前に行われた授業の録画も見られますか？</summary><p>はい。入塾前の授業アーカイブの視聴をご希望の場合は、別途 20,000円（税込）でご覧いただけます。入塾後の授業の録画は、追加費用なしで見返せます。</p></details>
-      <details><summary>英語以外の科目も見てもらえますか？</summary><p>英語・国語はプロ講師の生ライブ授業です。数学・理科・社会は、オプション「数学・理科・社会の動画」（スタディサプリ＋個別カリキュラム・月額3,000円）でご受講いただけます（国公立難関大学コースは受講料 25,000円に含まれ、このオプションの料金はかかりません）。AI学習アプリのオプションでは、全科目の質問と演習に24時間対応しています。</p></details>
+      <details><summary>英語以外の科目も見てもらえますか？</summary><p>英語はプロ講師の生ライブ授業です（高校生は国語〈現代文・古文〉のライブ授業もあります）。数学・理科・社会は、オプション「数学・理科・社会の動画」（スタディサプリ＋個別カリキュラム・月額3,000円）でご受講いただけます（国公立難関大学コースは受講料 25,000円に含まれ、このオプションの料金はかかりません）。AI学習アプリのオプションでは、全科目の質問と演習に24時間対応しています。</p></details>
       <details><summary>授業についていけるか不安です。</summary><p>高校生クラスでは、基礎から学び直せる基礎講座の動画と、3段階のレベルに合わせた演習・解説動画を用意しています（順次公開）。今の実力に合った問題から始められます。</p></details>
       <details><summary>受講料のほかに教材費はかかりますか？</summary><p>授業で使う教材はすべてPDFで配布し、教材費は受講料に含まれています。料金の詳細は「コース・料金のご案内」をご覧ください。</p></details>
-      <details><summary>入塾の前に授業を体験できますか？</summary><p>はい。体験授業（¥1,500）をご用意しています。ページ下のボタンからお申し込みいただけます。</p></details>
+      <details><summary>入塾の前に授業を体験できますか？</summary><p>はい。英語のライブ授業で体験授業（1回 ¥1,500）を受けられます。体験後にご入塾された場合、¥1,500 は入塾後（初回のお支払いの後）に全額返金します。ページ下のボタンからお申し込みいただけます。</p></details>
     </div>
   </div>
 </section>
@@ -2010,7 +2017,7 @@
       <a href="taiken.html" class="btn btn-gold">体験授業を申し込む（¥1,500）</a>
       <a href="https://lin.ee/ZHlrRjh" target="_blank" rel="noopener" class="btn btn-line">LINEで相談する</a>
       <a href="https://ig.me/m/trillion_eng" target="_blank" rel="noopener" class="btn btn-outline">Instagram でDM相談</a>
-      <a href="https://www.threads.com/@trillion_eng" target="_blank" rel="noopener" class="btn btn-outline">Threads でDM相談</a>
+      <a href="https://www.threads.com/@trillion_eng" target="_blank" rel="noopener" class="btn btn-outline">Threads で相談</a>
     </div>
     <p class="sns">Instagram：<a href="https://www.instagram.com/trillion_eng/" target="_blank" rel="noopener">@trillion_eng</a> ／ Threads：<a href="https://www.threads.com/@trillion_eng" target="_blank" rel="noopener">@trillion_eng</a></p>
   </div>

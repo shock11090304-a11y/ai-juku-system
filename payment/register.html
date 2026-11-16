@@ -227,7 +227,7 @@
   <div class="reg-wrap">
     <div class="reg-hero">
       <h1>📝 お支払い情報の登録</h1>
-      <p>クレジットカードを登録します。<br><strong style="color:var(--success);">登録時の課金は一切ありません</strong>。月謝は<strong>毎月末</strong>に塾長が確認した上で一斉に引き落とされます。</p>
+      <p>クレジットカードを登録します。<br><strong style="color:var(--success);">登録時の課金は一切ありません</strong>。月謝は<strong>毎月 26 日前後</strong>に、塾長が確認した上で翌月分を一斉に引き落とします（前払い）。</p>
       <div class="subnote">⚠️ ご記入いただいた内容で月額が確定します。コースの選択漏れにご注意ください。</div>
     </div>
 
@@ -308,9 +308,9 @@
   <div id="confirmModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" aria-hidden="true">
     <div class="modal-card" tabindex="-1">
       <h2 id="confirmTitle">📋 登録内容のご確認</h2>
-      <div class="modal-sub">下記の月額で カード情報を登録します (本日の課金はありません・初回引き落としは今月末)</div>
+      <div class="modal-sub">下記の月額で カード情報を登録します (本日の課金はありません・初回の引き落としは次の 26 日前後に翌月分)</div>
       <div id="confirmBody"></div>
-      <div class="summary-note">⚠️ 確定後の金額変更や、カード情報の変更・解約は、塾長 LINE までご連絡ください。引き落としは毎月末に塾長が確認の上で一斉に実行されます。</div>
+      <div class="summary-note">⚠️ 確定後の金額変更や、カード情報の変更・解約は、塾長 LINE までご連絡ください。引き落としは毎月 26 日前後に、塾長が確認の上で翌月分を一斉に行います（前払い）。</div>
       <div class="modal-actions">
         <button type="button" class="btn-back" id="modalBack">← 戻って修正</button>
         <button type="button" class="btn-confirm" id="modalConfirm">確定してカード登録へ →</button>
@@ -421,6 +421,10 @@ function bindModal() {
   });
 }
 
+// HP で募集していない講座は、保護者が選ぶこの画面には出さない（塾長決定 2026-11-17）。
+// 月謝アプリの計算と、受講中の生徒のデータには courses.json のまま残る。
+const REGISTER_HIDDEN_COURSES = new Set(['kobetsu', 'ronin', 'kanri-monitor', 'kaishaku', 'eiken-jun2']);
+
 function renderCourses() {
   const grid = document.getElementById('courseGrid');
   // Group by tier
@@ -433,7 +437,7 @@ function renderCourses() {
   ];
   let html = '';
   for (const t of tiers) {
-    const tcourses = STATE.courses.filter(c => c.tier === t.key);
+    const tcourses = STATE.courses.filter(c => c.tier === t.key && !REGISTER_HIDDEN_COURSES.has(c.id));
     if (!tcourses.length) continue;
     html += `<div class="course-tier"><div class="tier-label">${t.label}</div><div class="course-grid">`;
     for (const c of tcourses) {
