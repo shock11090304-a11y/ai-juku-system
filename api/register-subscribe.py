@@ -154,7 +154,7 @@ OPTIONS = {
     "ai-app-5000":   {"name": "AI学習アプリ", "price": 5000},
     # 数学・理科・社会の動画 = スタディサプリ＋塾の個別カリキュラム (月額 3,000 円・2026-11-16 塾長決定)。academy.html の料金表と一致させる。
     # 国公立難関大学コース (kokuritsu) は受講料 25,000 円にスタディサプリ利用料を含む → _validate が落とす
-    "sapuri-3000":   {"name": "スタディサプリ（数学・理科・社会）", "price": 3000},
+    "sapuri-3000":   {"name": "数学・理科・社会の動画（スタディサプリ）", "price": 3000},
 }
 AI_APP_OPTION = "ai-app-5000"
 AI_APP_INCLUDED_COURSES = {"kokuritsu"}

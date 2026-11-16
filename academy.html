@@ -982,7 +982,8 @@
   /* 第6版：料金カードが4枚になったので 2×2（スマホは1列） */
   .fee-cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   @media(max-width:620px){ .fee-cards{grid-template-columns:1fr!important} }
-  .course .c-diff{font-size:.8rem;line-height:1.7;color:var(--ink-soft);margin:-.4rem 0 1rem;padding-left:.8em;border-left:2px solid #c8a24a}
+  .flow-note{text-align:center;font-size:.85rem;line-height:1.8;color:var(--ink-soft);margin:1.6rem auto 0;max-width:40em}
+.course .c-diff{font-size:.8rem;line-height:1.7;color:var(--ink-soft);margin:-.4rem 0 1rem;padding-left:.8em;border-left:2px solid #c8a24a}
 /* 2026-11-16 スマホ点検：見出しは文節で折り返し、行の長さをそろえる */
   h1,h2,h3,h4,.st-line,.winter-card h2{word-break:auto-phrase;text-wrap:balance}
   .op{grid-template-columns:minmax(0,1fr)}   /* TRILLION のアニメ中に列が広がって右端が切れるのを防ぐ */
@@ -1100,7 +1101,7 @@
     <div class="g-marquee" aria-hidden="true"><span>TRILLION ENGLISH ACADEMY　TRILLION ENGLISH ACADEMY　TRILLION ENGLISH ACADEMY　</span></div>
     <div class="g-prog" aria-hidden="true"><span class="g-now">01</span><i><b></b></i><span>08</span></div>
     <div class="g-track">
-      <a class="g-item" href="#system"><span class="ph p1"></span><span class="g-name">LIVE LESSONS</span><span class="g-sub">01　英語・国語はプロ講師の生ライブ授業</span></a>
+      <a class="g-item" href="#system"><span class="ph p1"></span><span class="g-name">LIVE LESSONS</span><span class="g-sub">01　英語・高校国語はプロ講師の生ライブ授業</span></a>
       <a class="g-item" href="#cycle"><span class="ph p2"></span><span class="g-name">ORIGINAL VIDEOS</span><span class="g-sub">02　基礎講座とレベル別の演習・解説動画</span></a>
       <a class="g-item" href="#ai"><span class="ph p3"></span><span class="g-name">AI TUTOR</span><span class="g-sub">03　全科目対応のAI学習アプリ</span></a>
       <a class="g-item" href="#app"><span class="ph p4"></span><span class="g-name">STUDENT APP</span><span class="g-sub">04　塾生アプリで学習管理</span></a>
@@ -1408,7 +1409,7 @@
     </details>
     <p class="misc-strip">さらに ── <b>英単語SRS（忘却曲線ドリル）</b>／<b>英作文・現代文の記述添削</b>／<b>本番想定の模試と偏差値の推移</b>も。</p>
     <div class="addon-note reveal">
-      <div class="an-l"><b>AI学習アプリのご利用</b>　通塾生は月謝に追加するだけで、利用回数の上限なしでお使いいただけます（1日に使える量には上限があります。入塾申込書でお選びいただけます。アプリ分の入塾金はかかりません）。<br>国公立難関大学コースの方は、受講料 25,000円に含まれています（このオプションの料金はかかりません）。</div>
+      <div class="an-l"><b>AI学習アプリのご利用</b>　通塾生は月謝に追加するだけで、回数を気にせずお使いいただけます（1日に使える量には上限があります。入塾申込書でお選びいただけます。アプリ分の入塾金はかかりません）。<br>国公立難関大学コースの方は、受講料 25,000円に含まれています（このオプションの料金はかかりません）。</div>
       <div class="an-r">月額 <span>+5,000円</span></div>
     </div>
   </div>
@@ -1548,7 +1549,7 @@
             <td><b>英文法 Lv.1</b><span>標準・高1/2</span></td>
             <td><b>英文法 Lv.2</b><span>難関・高3</span></td>
             <td><b>GMARCH</b><span>大学別演習</span></td>
-            <td><b>早慶クラス</b><span>大学別演習</span></td>
+            <td><b>早慶クラス</b><span>大学別演習・アーカイブ配信</span></td>
             <td><b>英検2級 対策</b><span>中高合同</span></td>
           </tr></tbody>
         </table>
@@ -1582,6 +1583,7 @@
 
     <ul class="sched-notes reveal">
       <li>2限と3限はセットでの受講を推奨しています（英文法＋長文読解）。</li>
+      <li>早慶クラスはアーカイブ配信です。毎週木曜に新しい回を配信し、好きな時間に受講できます。</li>
       <li>英語力に自信のある中学生や、中高一貫校で英語の進度が早い生徒は、高校部の授業を受講することも可能です。</li>
     </ul>
   </div>
@@ -1776,13 +1778,14 @@
 
         <div class="course special">
           <div class="ctop">
-            <div><h4>早慶クラス</h4><div class="lvl">大学別演習・少人数制</div></div>
+            <div><h4>早慶クラス</h4><div class="lvl">大学別演習・アーカイブ配信</div></div>
             <div class="price"><b>12,500<small>円</small></b><span>／ 月（税込）</span></div>
           </div>
-          <div class="meta"><i>対象：早慶志望</i><i>木曜 2限</i></div>
-          <p class="sum">早稲田・慶應の入試に特化した大学別演習クラス。少人数制で、高度な語彙力・読解力・記述力を要求する早慶レベルの問題に対応する力を鍛えます。</p>
+          <div class="meta"><i>対象：早慶志望</i><i>毎週木曜に配信（アーカイブ）</i></div>
+          <p class="sum">早稲田・慶應の入試に特化した大学別演習クラス。授業はアーカイブ配信で、毎週木曜に新しい回が届き、好きな時間に何度でも受講できます。学部別の過去問対策動画と、レベルアップ演習問題の解説動画まで配信し、早慶レベルの語彙力・読解力・記述力を鍛えます。</p>
           <details><summary>詳細を見る</summary><div class="dbody">
-            <div><div class="dt">授業の進め方</div><div>早慶各学部の出題形式に特化した演習。難度の高い語彙・文法、長文読解、英作文まで学部別に最適化。</div></div>
+            <div><div class="dt">授業の進め方</div><div>早慶各学部の出題形式に特化した演習を、アーカイブ配信で受講。毎週木曜の授業に加えて、学部別の過去問対策動画・レベルアップ演習問題の動画で、難度の高い語彙・文法、長文読解、英作文まで学部別に対策します。他塾との併用もしやすい形です。</div></div>
+            <div><div class="dt">体験</div><div>授業1回分のアーカイブ（録画）で体験できます（¥1,500・入塾された場合は全額返金）。</div></div>
             <div><div class="dt">めざす目安</div><div>早慶合格に必要な高度な英語力の完成。学部ごとの傾向を熟知し、合格点を安定して超える実力。</div></div>
             <div><div class="dt">使用教材</div><div>志望大学・学部別の過去問＋オリジナル演習教材（PDF）</div></div>
             <div><div class="dt">おすすめの生徒</div><div>早慶を第一志望とする生徒。GMARCHは解けるが早慶になると歯が立たない生徒。</div></div>
@@ -1889,7 +1892,7 @@
         <thead><tr><th>コース名</th><th>対象</th><th>曜日・時限</th><th style="text-align:right">月額（税込）</th></tr></thead>
         <tbody>
           <tr><td>GMARCHコース</td><td>GMARCH志望</td><td>水曜 2限</td><td class="yen">12,500円</td></tr>
-          <tr><td>早慶クラス</td><td>早慶志望</td><td>木曜 2限</td><td class="yen">12,500円</td></tr>
+          <tr><td>早慶クラス</td><td>早慶志望</td><td>毎週木曜に配信（アーカイブ）</td><td class="yen">12,500円</td></tr>
           <tr><td>英検準1級対策</td><td>中高合同</td><td>木曜 1限</td><td class="yen">8,500円</td></tr>
           <tr><td>英検2級対策</td><td>中高合同</td><td>金曜 2限</td><td class="yen">7,500円</td></tr>
           <tr><td>学習管理コース</td><td>高校生（通常授業2科目＋学習管理）</td><td>—</td><td class="yen">22,500円</td></tr>
@@ -1926,6 +1929,7 @@
       <div class="step reveal"><h3>入塾手続き</h3><p>入塾申込書のご記入と、初回分（入塾金・設備費・初月分の受講料とオプション）のカード決済で手続き完了。確認メールの案内に沿って塾生アプリの登録と公式 LINE の友だち追加をお願いします。</p></div>
       <div class="step reveal"><h3>授業開始</h3><p>いよいよ授業スタート！目標に向かって一緒に頑張りましょう。</p></div>
     </div>
+    <p class="flow-note reveal">体験授業（英語のライブ授業・1回 ¥1,500）を先に受けることも、ご相談なしですぐに入塾申込書をお送りいただくこともできます。</p>
     <div style="text-align:center;margin-top:2.4rem" class="reveal">
       <a href="https://graceful-eclair-56bdac.netlify.app/" class="btn btn-ink">入塾申込書を記入する</a>
     </div>
@@ -2003,7 +2007,7 @@
       <details><summary>英語以外の科目も見てもらえますか？</summary><p>英語はプロ講師の生ライブ授業です（高校生は国語〈現代文・古文〉のライブ授業もあります）。数学・理科・社会は、オプション「数学・理科・社会の動画」（スタディサプリ＋個別カリキュラム・月額3,000円）でご受講いただけます（国公立難関大学コースは受講料 25,000円に含まれ、このオプションの料金はかかりません）。AI学習アプリのオプションでは、全科目の質問と演習に24時間対応しています。</p></details>
       <details><summary>授業についていけるか不安です。</summary><p>高校生クラスでは、基礎から学び直せる基礎講座の動画と、3段階のレベルに合わせた演習・解説動画を用意しています（順次公開）。今の実力に合った問題から始められます。</p></details>
       <details><summary>受講料のほかに教材費はかかりますか？</summary><p>授業で使う教材はすべてPDFで配布し、教材費は受講料に含まれています。料金の詳細は「コース・料金のご案内」をご覧ください。</p></details>
-      <details><summary>入塾の前に授業を体験できますか？</summary><p>はい。英語のライブ授業で体験授業（1回 ¥1,500）を受けられます。体験後にご入塾された場合、¥1,500 は入塾後（初回のお支払いの後）に全額返金します。ページ下のボタンからお申し込みいただけます。</p></details>
+      <details><summary>入塾の前に授業を体験できますか？</summary><p>はい。英語のライブ授業で体験授業（1回 ¥1,500）を受けられます（早慶クラスは授業1回分のアーカイブで体験）。体験後にご入塾された場合、¥1,500 は入塾後（初回のお支払いの後）に全額返金します。ページ下のボタンからお申し込みいただけます。</p></details>
     </div>
   </div>
 </section>
