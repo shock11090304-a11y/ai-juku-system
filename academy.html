@@ -491,7 +491,7 @@
   body h1,body h2,body h3,body h4{font-weight:300!important;letter-spacing:.07em}
   body *{border-radius:0!important;box-shadow:none!important;text-shadow:none!important}
   .wrap{padding:0 32px}
-  section{scroll-margin-top:72px}
+  section{scroll-margin-top:84px}
 
   /* ボタン：細い線の楕円＋▸ */
   .btn{border-radius:999px!important;font-size:.86rem;letter-spacing:.14em;padding:1.15em 2.4em;
@@ -624,7 +624,7 @@
   .final p{color:rgba(255,255,255,.65)}
   .final .sns a{color:#fff;border-bottom:1px solid var(--gold)}
   footer.ft{background:#000;border-top:1px solid rgba(255,255,255,.14);padding:56px 0 40px}
-  footer.ft .ft-links a{letter-spacing:.1em;font-size:.8rem}
+  footer.ft .ft-links a{letter-spacing:.1em;font-size:.8rem;display:inline-block;padding:.55rem 0}
   footer.ft .ft-links a:hover{color:#fff;opacity:.6}
   footer.ft .cc{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;letter-spacing:.08em}
   footer.ft .ft-top{padding:.85em 2.4em;font-size:.78rem;color:#fff;border-color:rgba(255,255,255,.7)}
@@ -659,7 +659,7 @@
     .brand .jp{font-size:.54rem;letter-spacing:.26em}
     nav.links > a.btn{display:none}
     .brand b{font-size:.68rem;letter-spacing:.2em}
-    .m-menu>summary{height:38px;padding:0 1em;gap:.7em;font-size:.72rem;letter-spacing:.14em}
+    .m-menu>summary{height:44px;padding:0 1.1em;gap:.7em;font-size:.72rem;letter-spacing:.14em}
     .hero-kicker{letter-spacing:.14em;font-size:.72rem}
   }
 
@@ -769,7 +769,8 @@
   }
   @media(max-width:860px){
     .intro{padding:84px 0 20px}
-    .sec-tabs{top:56px;gap:1.4rem;justify-content:flex-start;overflow-x:auto}
+    .sec-tabs{top:66px;gap:1.4rem;justify-content:flex-start;overflow-x:auto}
+    .sec-tabs a{padding:.6rem 0 .5rem}
   }
   @media(max-width:620px){
     .s-visual{min-height:260px}
@@ -980,6 +981,18 @@
   /* 第6版：料金カードが4枚になったので 2×2（スマホは1列） */
   .fee-cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   @media(max-width:620px){ .fee-cards{grid-template-columns:1fr!important} }
+  /* 2026-11-16 スマホ点検：見出しは文節で折り返し、行の長さをそろえる */
+  h1,h2,h3,.st-line,.winter-card h2{word-break:auto-phrase;text-wrap:balance}
+  .op{grid-template-columns:minmax(0,1fr)}   /* TRILLION のアニメ中に列が広がって右端が切れるのを防ぐ */
+  @media(max-width:620px){
+    .brand .jp{white-space:nowrap;font-size:.5rem;letter-spacing:.16em}
+    /* 最初の画面：上下の 1fr をやめて中身を詰め、体験授業のボタンを1画面目に入れる */
+    .op{grid-template-rows:auto auto auto;align-content:center;padding:84px 0 28px}
+    .op-word{margin-bottom:2.4vh;font-size:3rem}
+    .op-bottom{margin-top:2.4vh}
+  }
+  .op-kicker,.op-lead{word-break:auto-phrase;text-wrap:balance}
+  @media(max-width:360px){ .brand .jp{letter-spacing:.1em} .op-word{font-size:2.6rem} .op-kicker{letter-spacing:.04em} .op-lead{font-size:.8rem;line-height:1.85} }
 </style>
 </head>
 <body>
@@ -1017,6 +1030,7 @@
         <a href="materials.html">PDF教材（オンライン販売）</a>
         <a href="taiken.html">体験授業（¥1,500）</a>
         <a href="https://graceful-eclair-56bdac.netlify.app/">入塾申込</a>
+        <a href="https://lin.ee/ZHlrRjh" target="_blank" rel="noopener">公式LINEで相談</a>
       </div>
     </details>
   </nav>
@@ -1216,7 +1230,7 @@
       <div class="layer reveal">
         <span class="lno">LAYER 03</span>
         <h3>数学・理科・社会</h3>
-        <div class="how">スタディサプリ個別カリキュラム（オプション 月額3,000円）</div>
+        <div class="how">数学・理科・社会の動画：スタディサプリ＋個別カリキュラム（オプション 月額3,000円）</div>
         <p>志望校と現状学力から逆算し、スタディサプリの講義・単元・進度を個別に設計。ライブ授業のない教科も、迷わず進められます。国公立難関大学コースは受講料に含まれます。</p>
       </div>
       <div class="layer reveal">
@@ -1372,7 +1386,7 @@
     </details>
     <p class="misc-strip">さらに ── <b>英単語SRS（忘却曲線ドリル）</b>／<b>英作文・現代文の記述添削</b>／<b>本番想定の模試と偏差値の推移</b> も。</p>
     <div class="addon-note reveal">
-      <div class="an-l"><b>AI学習アプリのご利用</b>　通塾生は月謝に追加するだけで使い放題（入塾申込書でお選びいただけます。アプリ分の入塾金はかかりません）。<br>国公立難関大学コースの方は、無料で同梱されています。</div>
+      <div class="an-l"><b>AI学習アプリのご利用</b>　通塾生は月謝に追加するだけで使い放題（入塾申込書でお選びいただけます。アプリ分の入塾金はかかりません）。<br>国公立難関大学コースの方は、受講料 25,000円に含まれています（追加費用なし）。</div>
       <div class="an-r">月額 <span>+5,000円</span></div>
     </div>
   </div>
@@ -1861,7 +1875,7 @@
     <div class="fee-cards reveal">
       <div class="fee"><div class="k">入塾金</div><div class="v">10,000<small>円</small></div><div class="note">入塾時のみ（初回）</div></div>
       <div class="fee"><div class="k">設備費</div><div class="v">1,350<small>円 / 月</small></div><div class="note">全クラス共通</div></div>
-      <div class="fee hot"><div class="k">AI学習アプリ（任意）</div><div class="v">+5,000<small>円 / 月</small></div><div class="note">通塾生オプション・入塾金なし／国公立難関大学コースは無料同梱</div></div>
+      <div class="fee hot"><div class="k">AI学習アプリ（任意）</div><div class="v">+5,000<small>円 / 月</small></div><div class="note">通塾生オプション・入塾金なし／国公立難関大学コースは受講料に含む</div></div>
       <div class="fee"><div class="k">数学・理科・社会の動画（任意）</div><div class="v">+3,000<small>円 / 月</small></div><div class="note">スタディサプリ＋塾の個別カリキュラム／国公立難関大学コースは受講料に含む</div></div>
     </div>
 
@@ -1906,7 +1920,7 @@
         <ul>
           <li>お支払いは原則<b>クレジットカード決済</b>です。入塾申込書の送信後、そのままオンラインで初回分（入塾金 10,000円＋設備費 1,350円＋初月受講料。AI学習アプリをご利用の場合はその初月分も）をお支払いいただき、そのカードを翌月分以降の引き落とし用に登録します。月途中のご入塾でも初月分は満額です（日割りなし）。</li>
           <li>2か月目以降の月謝（受講料＋設備費 1,350円／月）は、<b>毎月 26 日前後</b>に翌月分を登録カードから自動でお引き落としします（前払い）。</li>
-          <li>AI学習アプリ（月額 +5,000円）をご利用の場合も同じカードから合わせてお引き落としします（国公立難関大学コースは無料で同梱）。</li>
+          <li>オプション（AI学習アプリ 月額 +5,000円・数学・理科・社会の動画 月額 +3,000円）をご利用の場合も、同じカードから合わせてお引き落としします（国公立難関大学コースはどちらも受講料に含まれます）。</li>
           <li>コースやオプションの変更・退塾は、<b>変更・停止したい月の前月 15 日まで</b>に公式 LINE またはメールにてご連絡ください（翌月分から反映します。日割りの返金はありません）。カードの変更は、同じ窓口でいつでも承ります。</li>
           <li>カード以外のお支払いをご希望の方はご相談ください。</li>
           <li>ご連絡先：公式 LINE（<a href="https://lin.ee/ZHlrRjh" target="_blank" rel="noopener">友だち追加</a>）またはメール（info@trillion-ai-juku.com）</li>
@@ -1959,7 +1973,7 @@
     <div class="faq-list reveal">
       <details><summary>住んでいる地域に関係なく受講できますか？</summary><p>はい。授業は Zoom の生ライブ授業なので、全国どこからでも受講できます。</p></details>
       <details><summary>部活や体調不良で授業を休んだらどうなりますか？</summary><p>授業はすべて録画しています。欠席した回は、塾生アプリの動画アーカイブで見返せます。</p></details>
-      <details><summary>英語以外の科目も見てもらえますか？</summary><p>英語・国語はプロ講師の生ライブ授業です。数学・理科・社会は、スタディサプリの動画で個別カリキュラムを組むオプション（月額3,000円）でご受講いただけます（国公立難関大学コースは受講料に含まれます）。AI学習アプリのオプションでは、全科目の質問と演習に24時間対応しています。</p></details>
+      <details><summary>英語以外の科目も見てもらえますか？</summary><p>英語・国語はプロ講師の生ライブ授業です。数学・理科・社会は、オプション「数学・理科・社会の動画」（スタディサプリ＋個別カリキュラム・月額3,000円）でご受講いただけます（国公立難関大学コースは受講料 25,000円に含まれ、追加費用はありません）。AI学習アプリのオプションでは、全科目の質問と演習に24時間対応しています。</p></details>
       <details><summary>授業についていけるか不安です。</summary><p>高校生クラスでは、基礎から学び直せる基礎講座の動画と、3段階のレベルに合わせた演習・解説動画を用意しています（順次公開）。今の実力に合った問題から始められます。</p></details>
       <details><summary>受講料のほかに教材費はかかりますか？</summary><p>授業で使う教材はすべてPDFで配布し、教材費は受講料に含まれています。料金の詳細は「コース・料金のご案内」をご覧ください。</p></details>
       <details><summary>入塾の前に授業を体験できますか？</summary><p>はい。体験授業（¥1,500）をご用意しています。ページ下のボタンからお申し込みいただけます。</p></details>
