@@ -982,7 +982,7 @@
   .fee-cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   @media(max-width:620px){ .fee-cards{grid-template-columns:1fr!important} }
   /* 2026-11-16 スマホ点検：見出しは文節で折り返し、行の長さをそろえる */
-  h1,h2,h3,.st-line,.winter-card h2{word-break:auto-phrase;text-wrap:balance}
+  h1,h2,h3,h4,.st-line,.winter-card h2{word-break:auto-phrase;text-wrap:balance}
   .op{grid-template-columns:minmax(0,1fr)}   /* TRILLION のアニメ中に列が広がって右端が切れるのを防ぐ */
   @media(max-width:620px){
     .brand .jp{white-space:nowrap;font-size:.5rem;letter-spacing:.16em}
@@ -1000,6 +1000,10 @@
     .breakdown{grid-template-columns:repeat(4,minmax(0,1fr))}
     .cy-note p,.sched-notes li,.winter-card .w-lede,.rules-note li{max-width:52em}
   }
+  /* コース紹介のカード：写真の入らない暗い模様の枠をやめ、金の細い線で始まる文字のカードに（写真待ちに見えるため） */
+  .course::before,.course:nth-child(3n+2)::before,.course:nth-child(3n)::before,.course.special::before{content:none;display:none}
+  .course{border-top:1px solid rgba(17,17,17,.85)!important;padding-top:1.5rem}
+  .course.special{border-top:2px solid #c8a24a!important}
   @media(min-width:861px) and (max-height:900px){
     /* 低い画面でも最初の画面に体験授業のボタンを入れる */
     .op{grid-template-rows:auto auto auto;align-content:center;padding:84px 0 32px}
@@ -1401,7 +1405,7 @@
     </details>
     <p class="misc-strip">さらに ── <b>英単語SRS（忘却曲線ドリル）</b>／<b>英作文・現代文の記述添削</b>／<b>本番想定の模試と偏差値の推移</b> も。</p>
     <div class="addon-note reveal">
-      <div class="an-l"><b>AI学習アプリのご利用</b>　通塾生は月謝に追加するだけで使い放題（入塾申込書でお選びいただけます。アプリ分の入塾金はかかりません）。<br>国公立難関大学コースの方は、受講料 25,000円に含まれています（追加費用なし）。</div>
+      <div class="an-l"><b>AI学習アプリのご利用</b>　通塾生は月謝に追加するだけで使い放題（入塾申込書でお選びいただけます。アプリ分の入塾金はかかりません）。<br>国公立難関大学コースの方は、受講料 25,000円に含まれています（このオプションの料金はかかりません）。</div>
       <div class="an-r">月額 <span>+5,000円</span></div>
     </div>
   </div>
@@ -1477,7 +1481,7 @@
         <span class="no" aria-hidden="true">02</span>
         <h3>欠席時もアーカイブで安心</h3>
         <p>授業はすべて録画。欠席時や復習にアーカイブ映像を視聴できます。学習の遅れを取り戻せます。</p>
-        <span class="fine">※ 入塾前のアーカイブ視聴が必要な場合は、別途 20,000円（税込）が発生します。</span>
+        <span class="fine">※ 入塾前のアーカイブ視聴が必要な場合は、別途 20,000円（税込）がかかります。</span>
       </div>
       <div class="feat reveal">
         <span class="no" aria-hidden="true">03</span>
@@ -1508,16 +1512,16 @@
     <div class="sec-head reveal">
       <div class="sec-kicker">Time Table</div>
       <h2>授業スケジュール</h2>
-      <p>英語・国語のライブ授業スケジュールです（中学部＝1限／高校部＝2限・3限）。数学・理科・社会は、オプションのスタディサプリ（個別カリキュラム）やAI学習アプリで各自のペースで進めます。</p>
+      <p>英語・国語のライブ授業スケジュールです（1限＝中学部が中心・高2英文法と英検準1級対策も／2限・3限＝高校部）。数学・理科・社会は、オプションのスタディサプリ（個別カリキュラム）やAI学習アプリで各自のペースで進めます。</p>
       <div class="rule"></div>
     </div>
 
     <div class="period reveal">
-      <div class="period-hd"><span class="pn">1限</span><span class="pt">19:15 – 20:15</span><span class="ps">中学部 Early Session</span></div>
+      <div class="period-hd"><span class="pn">1限</span><span class="pt">19:15 – 20:15</span><span class="ps">中学部ほか Early Session</span></div>
       <p class="scroll-hint">横にスクロールできます</p>
       <div class="table-scroll">
         <table class="tt">
-          <caption class="sr-only">1限 19:15–20:15 中学部の時間割</caption>
+          <caption class="sr-only">1限 19:15–20:15 中学部ほかの時間割</caption>
           <thead><tr><th>月 (MON)</th><th>火 (TUE)</th><th>水 (WED)</th><th>木 (THU)</th><th>金 (FRI)</th></tr></thead>
           <tbody><tr>
             <td><b>中学応用</b><span>受験・中3</span></td>
@@ -1828,7 +1832,7 @@
             <div class="price"><b>25,000<small>円</small></b><span>／ 月（税込）</span></div>
           </div>
           <div class="meta"><i>対象：国公立志望</i><i>水・金・日＋スタディサプリ</i></div>
-          <p class="sum">水曜の英文法、金曜の長文読解、日曜の国語をライブ授業で実施。さらにスタディサプリで数学・理科・社会をカバーし、国公立合格に必要な総合力を養成します。AI学習アプリも無料で同梱。</p>
+          <p class="sum">水曜の英文法、金曜の長文読解、日曜の国語をライブ授業で実施。さらにスタディサプリで数学・理科・社会をカバーし、国公立合格に必要な総合力を養成します。AI学習アプリも受講料に含まれます。</p>
           <details><summary>詳細を見る</summary><div class="dbody">
             <div><div class="dt">授業の進め方</div><div>英語は英文法（水）＋長文読解（金）の2本柱。国語（日）と合わせ、他教科はスタディサプリで個別カリキュラムを作成。</div></div>
             <div><div class="dt">到達目標</div><div>国公立合格に必要な5教科の総合力。共通テスト・二次試験の両方に対応できる実力。</div></div>
@@ -1891,7 +1895,7 @@
       <div class="fee"><div class="k">入塾金</div><div class="v">10,000<small>円</small></div><div class="note">入塾時のみ（初回）</div></div>
       <div class="fee"><div class="k">設備費</div><div class="v">1,350<small>円 / 月</small></div><div class="note">全クラス共通</div></div>
       <div class="fee hot"><div class="k">AI学習アプリ（任意）</div><div class="v">+5,000<small>円 / 月</small></div><div class="note">通塾生オプション・入塾金なし／国公立難関大学コースは受講料に含む</div></div>
-      <div class="fee"><div class="k">数学・理科・社会の動画（任意）</div><div class="v">+3,000<small>円 / 月</small></div><div class="note">スタディサプリ＋塾の個別カリキュラム／国公立難関大学コースは受講料に含む</div></div>
+      <div class="fee"><div class="k">数学・理科・社会の動画（任意）</div><div class="v">+3,000<small>円 / 月</small></div><div class="note">スタディサプリ（利用料込み）＋塾の個別カリキュラム／国公立難関大学コースは受講料に含む</div></div>
     </div>
 
     <div class="example reveal">
@@ -1989,7 +1993,7 @@
       <details><summary>住んでいる地域に関係なく受講できますか？</summary><p>はい。授業は Zoom の生ライブ授業なので、全国どこからでも受講できます。</p></details>
       <details><summary>部活や体調不良で授業を休んだらどうなりますか？</summary><p>授業はすべて録画しています。欠席した回は、塾生アプリの動画アーカイブで見返せます（入塾後の授業の録画は受講料に含まれます）。</p></details>
       <details><summary>入塾する前に行われた授業の録画も見られますか？</summary><p>はい。入塾前の授業アーカイブの視聴をご希望の場合は、別途 20,000円（税込）でご覧いただけます。入塾後の授業の録画は、追加費用なしで見返せます。</p></details>
-      <details><summary>英語以外の科目も見てもらえますか？</summary><p>英語・国語はプロ講師の生ライブ授業です。数学・理科・社会は、オプション「数学・理科・社会の動画」（スタディサプリ＋個別カリキュラム・月額3,000円）でご受講いただけます（国公立難関大学コースは受講料 25,000円に含まれ、追加費用はありません）。AI学習アプリのオプションでは、全科目の質問と演習に24時間対応しています。</p></details>
+      <details><summary>英語以外の科目も見てもらえますか？</summary><p>英語・国語はプロ講師の生ライブ授業です。数学・理科・社会は、オプション「数学・理科・社会の動画」（スタディサプリ＋個別カリキュラム・月額3,000円）でご受講いただけます（国公立難関大学コースは受講料 25,000円に含まれ、このオプションの料金はかかりません）。AI学習アプリのオプションでは、全科目の質問と演習に24時間対応しています。</p></details>
       <details><summary>授業についていけるか不安です。</summary><p>高校生クラスでは、基礎から学び直せる基礎講座の動画と、3段階のレベルに合わせた演習・解説動画を用意しています（順次公開）。今の実力に合った問題から始められます。</p></details>
       <details><summary>受講料のほかに教材費はかかりますか？</summary><p>授業で使う教材はすべてPDFで配布し、教材費は受講料に含まれています。料金の詳細は「コース・料金のご案内」をご覧ください。</p></details>
       <details><summary>入塾の前に授業を体験できますか？</summary><p>はい。体験授業（¥1,500）をご用意しています。ページ下のボタンからお申し込みいただけます。</p></details>
