@@ -16,7 +16,7 @@
 <meta property="og:site_name" content="Trillion English Academy">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="Trillion English Academy｜全科目対応・本気で第一志望を目指すオンライン塾">
-<meta property="og:description" content="プロ講師の生ライブ授業 × 全科目対応のAI学習アプリ × スタディサプリ。弱点と志望校から逆算し、全科目で第一志望合格を目指す。2025年度 東大・阪大・早慶・医学部 合格。">
+<meta property="og:description" content="プロ講師の生ライブ授業に、AI学習アプリ（オプション）とスタディサプリの数学・理科・社会（オプション）。弱点と志望校から逆算し、全科目で第一志望合格を目指す。2025年度 東大・阪大・早慶・医学部 合格。">
 <meta property="og:url" content="https://trillion-ai-juku.com/academy">
 <meta property="og:image" content="https://trillion-ai-juku.com/academy-assets/ogp.jpg">
 <meta property="og:image:width" content="1200">
@@ -812,7 +812,7 @@
   .m-menu[open] .mm-i::after{content:"×";font-size:1rem}
   /* 全面メニュー */
   .m-panel{position:fixed;inset:0;top:0;right:0;min-width:0;z-index:2;background:#050505;border:0;padding:120px 8vw 60px;
-    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(8,auto);grid-auto-flow:column;align-content:center;column-gap:6vw;row-gap:0;overflow-y:auto}
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(8,auto);grid-auto-flow:column;align-content:safe center;column-gap:6vw;row-gap:0;overflow-y:auto}
   nav.links .m-panel a{display:block;font-family:var(--latin);font-size:clamp(1.15rem,2.3vw,1.9rem);letter-spacing:.1em;padding:.7em 0;color:#fff;border-bottom:1px solid rgba(255,255,255,.12)}
   nav.links .m-panel a:hover{opacity:.55;background:transparent;color:#fff}
   .m-menu[open] .m-panel{animation:mmFade .45s ease both}
@@ -991,7 +991,10 @@
     .op-word{margin-bottom:2.4vh;font-size:3rem}
     .op-bottom{margin-top:2.4vh}
   }
-  .op-kicker,.op-lead{word-break:auto-phrase;text-wrap:balance}
+  .op-kicker,.op-lead,.cy-tag{word-break:auto-phrase;text-wrap:balance}
+  html{scrollbar-gutter:stable}
+  a:focus-visible,summary:focus-visible,.btn:focus-visible,button:focus-visible{outline:2px solid #c8a24a;outline-offset:3px}
+  @media(min-width:861px) and (max-height:820px){ nav.links .m-panel a{padding:.45em 0;font-size:clamp(1rem,2vw,1.5rem)} .m-panel{padding-top:96px;padding-bottom:32px} }
   @media(max-width:360px){ .brand .jp{letter-spacing:.1em} .op-word{font-size:2.6rem} .op-kicker{letter-spacing:.04em} .op-lead{font-size:.8rem;line-height:1.85} }
 </style>
 </head>
@@ -1051,7 +1054,7 @@
   <div class="op-bottom">
     <p class="op-kicker">元大手予備校講師 主宰 ／ 全国対応オンライン塾</p>
     <h1 class="op-h1">「丸暗記」を捨てて、全科目で第一志望へ。</h1>
-    <p class="op-lead">中学生・高校生・受験生のためのオンライン塾。<br>英語・国語はプロ講師の生ライブ授業。数学・理科・社会は動画のオプションでも学べます。</p>
+    <p class="op-lead">中学生・高校生・受験生のためのオンライン塾。<br>英語・国語はプロ講師の生ライブ授業。<br>数学・理科・社会は動画のオプションでも学べます。</p>
     <div class="op-cta">
       <a href="taiken.html" class="op-btn op-btn-gold">体験授業を申し込む（¥1,500）</a>
       <a href="https://lin.ee/ZHlrRjh" target="_blank" rel="noopener" class="op-btn">LINEで相談する</a>
@@ -1817,7 +1820,7 @@
           <details><summary>詳細を見る</summary><div class="dbody">
             <div><div class="dt">授業の進め方</div><div>英語は英文法（水）＋長文読解（金）の2本柱。国語（日）と合わせ、他教科はスタディサプリで個別カリキュラムを作成。</div></div>
             <div><div class="dt">到達目標</div><div>国公立合格に必要な5教科の総合力。共通テスト・二次試験の両方に対応できる実力。</div></div>
-            <div><div class="dt">使用教材</div><div>英語・国語：オリジナルPDF教材。その他教科：スタディサプリ＋個別カリキュラム（スタディサプリの利用料は月額 25,000円に含む）。全科目対応のAI学習アプリを無料同梱。</div></div>
+            <div><div class="dt">使用教材</div><div>英語・国語：オリジナルPDF教材。その他教科：スタディサプリ＋個別カリキュラム（スタディサプリの利用料は月額 25,000円に含む）。全科目対応のAI学習アプリも受講料に含まれます。</div></div>
             <div><div class="dt">課題方針</div><div>毎週の課題提出が必須。英文法演習・長文実践問題・国語の記述課題・志望校の過去問演習など。提出は個別LINEにて。</div></div>
           </div></details>
         </div>
@@ -2038,6 +2041,10 @@
     menu.querySelectorAll('.m-panel a').forEach(function(a){
       a.addEventListener('click', function(){ menu.removeAttribute('open'); });
     });
+    // Esc で閉じて MENU ボタンに戻る
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && menu.hasAttribute('open')) { menu.removeAttribute('open'); var sm = menu.querySelector('summary'); if (sm) sm.focus(); }
+    });
     document.addEventListener('click', function(e){
       if (menu.hasAttribute('open') && !menu.contains(e.target)) menu.removeAttribute('open');
     });
@@ -2127,6 +2134,11 @@
     window.addEventListener('resize', layout);
     if (mq.addEventListener) mq.addEventListener('change', layout);
     layout();
+    // 文字と写真の読み込みで幅が変わったら測り直す
+    window.addEventListener('load', layout);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+    // Tab で画面外の写真に移ったときに枠ごと横にずれるのを戻す
+    g.addEventListener('focusin', function(){ var st = g.querySelector('.g-stick'); if (st) st.scrollLeft = 0; });
   })();
 
   // 4. 締めの案内の前に、金の地平線の光が広がる
