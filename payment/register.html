@@ -310,7 +310,7 @@
       <h2 id="confirmTitle">📋 登録内容のご確認</h2>
       <div class="modal-sub">下記の月額で カード情報を登録します (本日の課金はありません・初回の引き落としは次の 26 日前後に翌月分)</div>
       <div id="confirmBody"></div>
-      <div class="summary-note">⚠️ 確定後の金額変更や、カード情報の変更・解約は、塾長 LINE までご連絡ください。引き落としは毎月 26 日前後に、塾長が確認の上で翌月分を一斉に行います（前払い）。</div>
+      <div class="summary-note">⚠️ 確定後の金額変更や、カード情報の変更は、公式 LINE またはメールでご連絡ください。解約・コースの変更は、変更・停止したい月の前月 15 日までにご連絡ください。引き落としは毎月 26 日前後に、塾長が確認の上で翌月分を一斉に行います（前払い）。</div>
       <div class="modal-actions">
         <button type="button" class="btn-back" id="modalBack">← 戻って修正</button>
         <button type="button" class="btn-confirm" id="modalConfirm">確定してカード登録へ →</button>
@@ -334,12 +334,12 @@ const GRADE_TIER_MAP = {
 };
 const GRADE_COURSE_MAP = {
   '中学1年': ['chu1', 'grammar-1', 'eiken-jun2', 'eiken-2', 'long-1'],
-  '中学2年': ['chu2', 'chu3-monday', 'grammar-1', 'eiken-jun2', 'eiken-2', 'long-1'],
+  '中学2年': ['chu1', 'chu2', 'chu3-monday', 'grammar-1', 'eiken-jun2', 'eiken-2', 'long-1'],
   '中学3年': ['chu3-monday', 'grammar-1', 'grammar-2', 'eiken-jun1', 'eiken-2', 'long-1'],
-  '高校1年': ['kou2-grammar', 'grammar-1', 'grammar-2', 'eiken-jun1', 'long-1', 'long-2', 'kaishaku', 'gmarch', 'soukei', 'kanri-monitor', 'kanri'],
-  '高校2年': ['kou2-grammar', 'grammar-1', 'grammar-2', 'eiken-jun1', 'long-1', 'long-2', 'kaishaku', 'gmarch', 'soukei', 'kanri-monitor', 'kanri', 'kokuritsu'],
-  '高校3年': ['kou2-grammar', 'grammar-1', 'grammar-2', 'eiken-jun1', 'long-1', 'long-2', 'kaishaku', 'gmarch', 'soukei', 'kanri-monitor', 'kanri', 'kokuritsu'],
-  '浪人':    ['ronin', 'kokuritsu', 'gmarch', 'soukei', 'kanri'],
+  '高校1年': ['kou2-grammar', 'grammar-1', 'grammar-2', 'eiken-jun1', 'eiken-2', 'long-1', 'long-2', 'kaishaku', 'gmarch', 'soukei', 'kanri-monitor', 'kanri', 'kokuritsu', 'kokugo'],
+  '高校2年': ['kou2-grammar', 'grammar-1', 'grammar-2', 'eiken-jun1', 'eiken-2', 'long-1', 'long-2', 'kaishaku', 'gmarch', 'soukei', 'kanri-monitor', 'kanri', 'kokuritsu', 'kokugo'],
+  '高校3年': ['kou2-grammar', 'grammar-1', 'grammar-2', 'eiken-jun1', 'eiken-2', 'long-1', 'long-2', 'kaishaku', 'gmarch', 'soukei', 'kanri-monitor', 'kanri', 'kokuritsu', 'kokugo'],
+  '浪人':    ['ronin', 'kokuritsu', 'gmarch', 'soukei', 'kanri', 'grammar-2', 'long-2', 'eiken-jun1', 'kokugo'],
   'その他':  null,
 };
 
@@ -354,7 +354,8 @@ async function init() {
     const res = await fetch('courses.json', { cache: 'no-store' });
     const data = await res.json();
     STATE.courses = data.courses;
-    STATE.options = data.options || [];
+    // 設備費 ¥1,500 は旧料金。今の設備費は ¥1,350（全コース共通）なので選択肢に出さない（2026-11-17 塾長決定・courses.json と月謝の計算には残す）
+    STATE.options = (data.options || []).filter(o => o.id !== 'facility-1500');
     renderCourses();
     renderOptions();
     bindForm();
