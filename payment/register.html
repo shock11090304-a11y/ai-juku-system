@@ -482,14 +482,18 @@ function renderOptions() {
 
 // AI学習アプリ (ai-app-5000) は国公立難関大学コース (kokuritsu) に無料で同梱 → 国公立を選んだら外して選べなくする。
 // サーバ (api/register-subscribe.py _validate) も同じ規則で 5,000 円を落とすので、ここは「表示額 = 請求額」を保つための鏡
+// スタディサプリ (sapuri-3000・数学・理科・社会・2026-11-16) も同じく国公立難関大学コースに含まれる (サーバ _validate も同じ規則)
 const AI_APP_OPTION = 'ai-app-5000', AI_APP_INCLUDED_COURSES = ['kokuritsu'];
+const SAPURI_OPTION = 'sapuri-3000', SAPURI_INCLUDED_COURSES = ['kokuritsu'];
 function syncIncludedOptions() {
-  const card = document.querySelector(`#optionsRow .opt-card[data-id="${AI_APP_OPTION}"]`);
-  if (!card) return;
-  const included = AI_APP_INCLUDED_COURSES.some(id => STATE.selected.has(id));
-  if (included && STATE.selectedOpts.has(AI_APP_OPTION)) { STATE.selectedOpts.delete(AI_APP_OPTION); card.classList.remove('sel'); }
-  card.classList.toggle('included', included);
-  card.title = included ? '国公立難関大学コースに無料で含まれています' : '';
+  for (const [opt, incl] of [[AI_APP_OPTION, AI_APP_INCLUDED_COURSES], [SAPURI_OPTION, SAPURI_INCLUDED_COURSES]]) {
+    const card = document.querySelector(`#optionsRow .opt-card[data-id="${opt}"]`);
+    if (!card) continue;
+    const included = incl.some(id => STATE.selected.has(id));
+    if (included && STATE.selectedOpts.has(opt)) { STATE.selectedOpts.delete(opt); card.classList.remove('sel'); }
+    card.classList.toggle('included', included);
+    card.title = included ? '国公立難関大学コースに含まれています' : '';
+  }
 }
 
 function updateTotal() {

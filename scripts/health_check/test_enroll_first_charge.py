@@ -204,6 +204,15 @@ def main():
           not errs and "ai-app-5000" not in clean_kk["options"] and "facility-1350" in clean_kk["options"] and fee_kk == 26350,
           (errs, clean_kk["options"], fee_kk))
     _, clean_kk2 = reg._validate(payload(courses=["kokuritsu"]))
+    # ---- スタディサプリ（数学・理科・社会）(sapuri-3000・2026-11-16) ----
+    errs_sp, clean_sp = reg._validate(payload(options=["facility-1350", "sapuri-3000"]))
+    fee_sp, breakdown_sp = reg._calculate_fee(clean_sp["courses"], clean_sp["options"])
+    check("A1sp1. スタディサプリを足すと月額 = 7,500 + 1,350 + 3,000 で内訳に載る",
+          not errs_sp and fee_sp == 11850 and any("スタディサプリ" in b for b in breakdown_sp), (errs_sp, fee_sp, breakdown_sp))
+    errs_spk, clean_spk = reg._validate(payload(courses=["kokuritsu"], options=["facility-1350", "sapuri-3000", "ai-app-5000"]))
+    fee_spk, _ = reg._calculate_fee(clean_spk["courses"], clean_spk["options"])
+    check("A1sp2. 国公立はスタディサプリも含む → 3,000 円も落とす (月額 25,000 + 1,350)",
+          not errs_spk and "sapuri-3000" not in clean_spk["options"] and fee_spk == 26350, (errs_spk, clean_spk["options"], fee_spk))
     errs_sm, clean_sm = reg._validate(payload(startMonth="next"))
     check("A1m. 受講開始月: next を受理・既定は current・不正値は拒否",
           not errs_sm and clean_sm["startMonth"] == "next" and clean.get("startMonth") == "current"
@@ -437,6 +446,28 @@ def main():
           "受講料（2026年9月分・日割りなし）：25,000円" in bk and "AI学習アプリ：0円（国公立難関大学コースに含まれています）" in bk and "合計：36,350円" in bk
           and "月額 26,350円（設備費＋受講料・税込）" in bk and "オプション: AI学習アプリ（国公立難関大学コースに同梱・0円）" in ok_
           and "国公立難関大学コースに含まれる AI学習アプリも" in bk, (bk, ok_))
+    # ---- B1sp スタディサプリ付き (2026-11-16): 受講料とは別の行・月額に含まれる・塾長通知と note に★ ----
+    rids = "reg_tsp"
+    kvs, nets = FakeKV(), FakeNet(amount=21850)
+    wh._redis_safe, urllib.request.urlopen = kvs, nets
+    ps = pending(rids, fee=11850)
+    ps["breakdown"] = ["高2 英文法 ¥7,500", "設備費 (¥1,350) ¥1,350", "スタディサプリ（数学・理科・社会） ¥3,000"]
+    ps["fee_breakdown"] = " / ".join(ps["breakdown"]); ps["options"] = ["facility-1350", "sapuri-3000"]; ps["first_total"] = 21850
+    kvs.store[f"reg:pending:{rids}"] = json.dumps(ps, ensure_ascii=False)
+    ss = session(rids, sid="cs_enroll_sp")
+    ss["metadata"].update({"options": "facility-1350,sapuri-3000", "fee_breakdown": ps["fee_breakdown"], "monthly_fee": "11850", "first_total": "21850"})
+    ss["amount_total"] = 21850
+    wh._handle_checkout_completed(event(ss))
+    recs = json.loads(kvs.store.get(f"reg:completed:{rids}") or "{}")
+    bs = nets.sent[0].get("text", "") if nets.sent else ""
+    os_ = nets.sent[1].get("text", "") if len(nets.sent) > 1 else ""
+    check("B1sp1. 名簿の monthly_fee=11,850 (スタディサプリ込み)", recs.get("monthly_fee") == 11850 and recs.get("amount") == 21850, recs)
+    check("B1sp2. 保護者メール: 受講料 7,500 とは別にスタディサプリ 3,000 の行・月額 11,850（設備費＋受講料＋スタディサプリ）",
+          "受講料（2026年9月分・日割りなし）：7,500円" in bs and "スタディサプリ（数学・理科・社会／月額オプション・2026年9月分）：3,000円" in bs
+          and "合計：21,850円" in bs and "月額 11,850円（設備費＋受講料＋スタディサプリ・税込）" in bs and "AI学習アプリ" not in bs, bs)
+    check("B1sp3. 塾長通知: オプション行と内訳にスタディサプリ・申込待ちの note に★スタディサプリ",
+          "スタディサプリ 3,000円/月" in os_ and "+ スタディサプリ 3,000" in os_
+          and "★スタディサプリ" in (nets.courseapps[0].get("note", "") if nets.courseapps else ""), (os_, nets.courseapps))
     wh._redis_safe, urllib.request.urlopen = kv, net
 
     # ---- B1y 申込待ちへの行作成が失敗しても名簿・台帳・メールは止めず、塾長通知が ★要対応 になる ----

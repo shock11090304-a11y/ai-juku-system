@@ -582,6 +582,8 @@ def _enroll_post_course_application(record, month):
             f"受講開始月: {_enroll_month_label(month)}（申込書の選択: {'翌月から' if record.get('start_choice') == 'next' else '今月から'}）\n"
             f"内訳: {' / '.join(parts) if parts else '-'}\n"
             + ("★AI学習アプリ（月額オプション +5,000 円）申込済み → 承認は［OK］(AIあり) で\n" if ai_paid else "")
+            + ("★スタディサプリ（数学・理科・社会・月額オプション +3,000 円）申込済み → スタディサプリの用意と個別カリキュラムを\n"
+               if any("スタディサプリ" in p and _yen(p) > 0 for p in parts) else "")
             + "※ 塾生アプリ登録の行が届いたら 2 行まとめて承認 → この行のメールが保護者メール（週次レポート宛先）として保存されます")
     payload = {"name": student, "email": parent_email, "grade": (record.get("grade") or "")[:30], "phone": (record.get("phone") or "")[:30],
                "referrer": ENROLL_COURSEAPP_REFERRER, "note": note[:2400]}
@@ -730,6 +732,7 @@ def _enroll_send_mails(obj, record, month, ledger_state, warnings=None):
     facility = 0
     ai_app = 0                # AI学習アプリ (月額オプション ai-app-5000・2026-09-23)。受講料とは分けてメールに載せる
     ai_app_included = False   # 国公立難関大学コースに同梱 (register-subscribe が "AI学習アプリ（国公立難関大学コースに同梱） ¥0" を内訳に足す)
+    sapuri = 0                # スタディサプリ（数学・理科・社会）(月額オプション sapuri-3000・2026-11-16)。AI学習アプリと同じく受講料とは分ける
     parts = record.get("breakdown") or [x.strip() for x in str(record.get("fee_breakdown") or "").split(" / ") if x.strip()]
 
     def _yen(part):
@@ -746,6 +749,8 @@ def _enroll_send_mails(obj, record, month, ledger_state, warnings=None):
             ai_app += amt
             if amt == 0:
                 ai_app_included = True
+        elif "スタディサプリ" in part:
+            sapuri += _yen(part)
         else:
             names.append(part)
             course_fee += _yen(part)
@@ -755,9 +760,9 @@ def _enroll_send_mails(obj, record, month, ledger_state, warnings=None):
     entry_fee = int(record.get("entry_fee") or 0)
     first_total = int(record.get("first_charge_amount") or 0)
     if not facility and monthly_fee and course_fee:
-        facility = max(monthly_fee - course_fee - ai_app, 0)
+        facility = max(monthly_fee - course_fee - ai_app - sapuri, 0)
     if not course_fee and monthly_fee:
-        course_fee = max(monthly_fee - facility - ai_app, 0)
+        course_fee = max(monthly_fee - facility - ai_app - sapuri, 0)
     if ai_app:
         option_lines = f"　AI学習アプリ（月額オプション・{_enroll_month_label(month)}分）：{ai_app:,}円\n"
         options_label = f"AI学習アプリ {ai_app:,}円/月"
@@ -766,8 +771,12 @@ def _enroll_send_mails(obj, record, month, ledger_state, warnings=None):
         options_label = "AI学習アプリ（国公立難関大学コースに同梱・0円）"
     else:
         option_lines, options_label = "", "なし"
-    monthly_comp = "＋AI学習アプリ" if ai_app else ""
-    included_comp = "・AI学習アプリ" if ai_app else ""
+    if sapuri:
+        option_lines += f"　スタディサプリ（数学・理科・社会／月額オプション・{_enroll_month_label(month)}分）：{sapuri:,}円\n"
+        options_label = (f"スタディサプリ {sapuri:,}円/月" if options_label == "なし"
+                         else f"{options_label}・スタディサプリ {sapuri:,}円/月")
+    monthly_comp = ("＋AI学習アプリ" if ai_app else "") + ("＋スタディサプリ" if sapuri else "")
+    included_comp = ("・AI学習アプリ" if ai_app else "") + ("・スタディサプリ" if sapuri else "")
     # 翌月開始 (2026-09-23): 決済した月の分は払わない、と保護者に明示する
     paid_month = _course_jst(record.get("paid_at") or None).strftime("%Y-%m")
     start_note = (f"　受講開始月：{_enroll_month_label(month)}（{_enroll_month_label(paid_month)}分のお支払いはありません）\n"
@@ -779,7 +788,7 @@ def _enroll_send_mails(obj, record, month, ledger_state, warnings=None):
         ai_app_note = "　　　国公立難関大学コースに含まれる AI学習アプリも、塾生アプリのご登録を塾長が承認したあと、同じログインでご利用いただけます。\n"
     else:
         ai_app_note = ""
-    notify_ai = f" + AI学習アプリ {ai_app:,}" if ai_app else ""
+    notify_ai = (f" + AI学習アプリ {ai_app:,}" if ai_app else "") + (f" + スタディサプリ {sapuri:,}" if sapuri else "")
     contact = os.environ.get("COURSE_REPLY_TO", "").strip() or COURSE_CONTACT_DEFAULT
     if not COURSE_EMAIL_RE.match(contact):
         contact = COURSE_CONTACT_DEFAULT

@@ -152,9 +152,14 @@ OPTIONS = {
     "facility-1350": {"name": "設備費 (¥1,350)", "price": 1350},
     # AI学習アプリ (月額・academy.html の料金表 +5,000 円と一致させる)。国公立難関大学コース (kokuritsu) には無料で同梱 → _validate が落とす
     "ai-app-5000":   {"name": "AI学習アプリ", "price": 5000},
+    # 数学・理科・社会の動画 = スタディサプリ＋塾の個別カリキュラム (月額 3,000 円・2026-11-16 塾長決定)。academy.html の料金表と一致させる。
+    # 国公立難関大学コース (kokuritsu) は受講料 25,000 円にスタディサプリ利用料を含む → _validate が落とす
+    "sapuri-3000":   {"name": "スタディサプリ（数学・理科・社会）", "price": 3000},
 }
 AI_APP_OPTION = "ai-app-5000"
 AI_APP_INCLUDED_COURSES = {"kokuritsu"}
+SAPURI_OPTION = "sapuri-3000"
+SAPURI_INCLUDED_COURSES = {"kokuritsu"}
 
 
 # ─────────────── Upstash Redis (オプション、未設定なら skip) ───────────────
@@ -256,6 +261,9 @@ def _validate(payload):
     ai_app_included = bool(isinstance(courses, list) and AI_APP_INCLUDED_COURSES.intersection(courses))
     if ai_app_included and AI_APP_OPTION in options:
         options = [o for o in options if o != AI_APP_OPTION]
+    # スタディサプリ (数学・理科・社会) も国公立難関大学コースの受講料に含まれる → 一緒に送られても 3,000 円を二重に取らない
+    if isinstance(courses, list) and SAPURI_INCLUDED_COURSES.intersection(courses) and SAPURI_OPTION in options:
+        options = [o for o in options if o != SAPURI_OPTION]
     facility_opts = [o for o in options if o.startswith("facility-")]
     if len(facility_opts) > 1:
         errs.append("設備費は1つだけ選択可能です")
@@ -536,6 +544,10 @@ def _create_first_charge_session(secret_key, payload, fee, breakdown, registrati
     # AI学習アプリ (月額オプション) を選んだときは決済画面の内訳文言にも出す (金額 first_total / fee には既に含まれている)
     ai_comp = "＋AI学習アプリ" if AI_APP_OPTION in payload["options"] else ""
     ai_desc = "+AI学習アプリ" if ai_comp else ""
+    # スタディサプリ (数学・理科・社会・月額オプション 2026-11-16) も同じく文言に出す
+    if SAPURI_OPTION in payload["options"]:
+        ai_comp += "＋スタディサプリ"
+        ai_desc += "+スタディサプリ"
     form = [
         ("mode", "payment"),
         ("payment_method_types[]", "card"),

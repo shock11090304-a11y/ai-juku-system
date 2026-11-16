@@ -97,6 +97,9 @@
   (academy.html の料金表) なので `_validate` が一緒に来た `ai-app-5000` を落とす (申込書側も `payment/register.html` も国公立を選ぶと欄が外れる)。
   同梱のときは内訳に「AI学習アプリ（国公立難関大学コースに同梱） ¥0」を残し、webhook のメールは AI学習アプリを受講料とは別の行 (`option_lines` / `options_label`) に出す。
   テスト A1h/A1i/A1j (aiAppIncluded)・A2x・A4g (do_POST→webhook の往復)・B1x。
+- **スタディサプリ（数学・理科・社会）(月額 +3,000 円・2026-11-16 塾長決定)** はオプション `sapuri-3000`。スタサプ＋塾の個別カリキュラム。
+  国公立難関大学コースには含まれる (`SAPURI_INCLUDED_COURSES`) ので AI と同じく `_validate` が落とし、申込書・register.html も欄を外す。
+  webhook は内訳の「スタディサプリ」を受講料と分けてメールのオプション行に出す。テスト A1sp/B1sp。
 - **コース名の 2 本立て (2026-09-23)**: `COURSES[id]["name"]` / `courses.json` の `name` は月謝アプリの名簿の正規名 (`payment/app.js` が名前で正規化・単価照合) なので**変えない**。
   保護者に見せる Stripe 明細・内訳 (`_calculate_fee` の breakdown)・確認メール・`payment/register.html` の表示は `label` (= 入塾申込書と同じ表示名)。`check_course_price_sync.py` が label も照合。
 - **受講開始月 (2026-09-23 塾長決定「翌月のみ」)**: 申込書の必須ラジオ「今月から / 翌月から」→ `startMonth: current|next` → `register-subscribe.py` が JST の
