@@ -993,6 +993,18 @@
   }
   .op-kicker,.op-lead,.cy-tag{word-break:auto-phrase;text-wrap:balance}
   html{scrollbar-gutter:stable}
+  /* 2026-11-16 PC点検 */
+  @media(min-width:861px){
+    .g-name{font-size:clamp(2rem,4.1vw,4.6rem)}          /* 英字の題が次の写真に食い込まないように */
+    .features{grid-template-columns:repeat(2,minmax(0,1fr))}   /* 4枚を 2×2 に（3＋1 にしない） */
+    .breakdown{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .cy-note p,.sched-notes li,.winter-card .w-lede,.rules-note li{max-width:52em}
+  }
+  @media(min-width:861px) and (max-height:900px){
+    /* 低い画面でも最初の画面に体験授業のボタンを入れる */
+    .op{grid-template-rows:auto auto auto;align-content:center;padding:84px 0 32px}
+    .op-word{margin-bottom:3vh} .op-bottom{margin-top:3vh}
+  }
   a:focus-visible,summary:focus-visible,.btn:focus-visible,button:focus-visible{outline:2px solid #c8a24a;outline-offset:3px}
   @media(min-width:861px) and (max-height:820px){ nav.links .m-panel a{padding:.45em 0;font-size:clamp(1rem,2vw,1.5rem)} .m-panel{padding-top:96px;padding-bottom:32px} }
   @media(max-width:360px){ .brand .jp{letter-spacing:.1em} .op-word{font-size:2.6rem} .op-kicker{letter-spacing:.04em} .op-lead{font-size:.8rem;line-height:1.85} }
