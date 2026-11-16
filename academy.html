@@ -1016,6 +1016,49 @@
   @media(min-width:861px) and (max-height:820px){ nav.links .m-panel a{padding:.45em 0;font-size:clamp(1rem,2vw,1.5rem)} .m-panel{padding-top:96px;padding-bottom:32px} }
   @media(max-width:360px) and (max-height:640px){ .op{padding-top:72px} .op-word{margin-bottom:8px} .op-kicker{margin-bottom:12px} .op-h1{margin-bottom:14px} .op-lead{margin-top:14px;line-height:1.7} .op-cta{margin-top:16px} }
 @media(max-width:360px){ .flow{grid-template-columns:repeat(2,minmax(0,1fr))} .flow .step{padding:22px 14px} .flow .step h3{word-break:normal;overflow-wrap:anywhere;font-size:1rem} .course .ctop>div:first-child{min-width:0} .course .ctop h4{word-break:normal;overflow-wrap:anywhere} .brand .jp{letter-spacing:.1em} .op-word{font-size:2.6rem} .op-kicker{letter-spacing:.04em} .op-lead{font-size:.8rem;line-height:1.85} }
+  /* 国公立難関大学コースの特集（黒の帯・2026-11-17） */
+  .natl{background:#000;color:#fff;padding:120px 0}
+  .natl .sec-head{margin-bottom:2.4rem}
+  .natl .sec-head h2{color:#fff}
+  .natl .sec-head p{color:rgba(255,255,255,.8)}
+  .natl .sec-kicker{color:rgba(255,255,255,.55)}
+  .natl-lede{max-width:46em;color:rgba(255,255,255,.82);font-size:.97rem;line-height:1.9;margin-bottom:3rem}
+  .natl-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:3.4rem}
+  .natl-stats>div{border-left:1px solid rgba(255,255,255,.18);padding:.2rem 0 .2rem 1.6rem}
+  .natl-stats b{display:block;font-family:var(--latin);font-weight:200;color:#fff;font-size:clamp(2.2rem,5vw,4rem);line-height:1}
+  .natl-stats span{display:block;margin-top:.8rem;color:rgba(255,255,255,.6);font-size:.78rem;letter-spacing:.12em}
+  .natl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:1.6rem;margin-bottom:3rem}
+  .natl-grid>div{border-top:1px solid var(--gold);padding-top:1.3rem}
+  .natl-grid h3{color:#fff;font-size:1.05rem;letter-spacing:.08em;margin-bottom:.9rem}
+  .natl-grid ul{list-style:none;display:grid;gap:.55rem}
+  .natl-grid li{position:relative;padding-left:1.3em;color:rgba(255,255,255,.82);font-size:.9rem;line-height:1.75}
+  .natl-grid li::before{content:"";position:absolute;left:0;top:.85em;width:.55em;height:1px;background:var(--gold)}
+  .natl-cost{border:1px solid rgba(255,255,255,.18);padding:1.8rem 1.8rem 1.4rem;margin-bottom:2.4rem}
+  .natl-cost h3{font-family:var(--latin);color:var(--gold);font-size:.8rem;letter-spacing:.2em;margin-bottom:1.1rem}
+  .natl-cost-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.6rem}
+  .natl-cost-row>div{display:flex;flex-direction:column;gap:.4rem}
+  .natl-cost-row span{color:rgba(255,255,255,.65);font-size:.82rem;letter-spacing:.06em}
+  .natl-cost-row b{font-size:clamp(1.4rem,3vw,2rem);font-weight:300;color:#fff;letter-spacing:.04em}
+  .natl-cost-row .us b{color:var(--gold)}
+  .natl-cost-row small{color:rgba(255,255,255,.6);font-size:.78rem;line-height:1.7}
+  .natl-note{margin-top:1.2rem;color:rgba(255,255,255,.5);font-size:.74rem;line-height:1.8}
+  .natl-cta{display:flex;flex-wrap:wrap;gap:1rem}
+  .natl .btn{color:#fff;border-color:rgba(255,255,255,.8)}
+  .natl .btn-gold{border-color:var(--gold)}
+  .natl .btn:hover{background:#fff!important;color:#111;border-color:#fff}
+  .wk-tbl td,.wk-tbl th{text-align:left!important;vertical-align:top}
+  .wk-tbl td:first-child{white-space:nowrap;color:#555}
+  @media(max-width:860px){
+    .natl{padding:84px 0}
+    .natl-stats{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:2rem}
+    .natl-cost-row{grid-template-columns:1fr}
+    .natl-cost{padding:1.4rem 1.2rem 1.1rem}
+  }
+  @media(max-width:360px){
+    .natl-stats>div{padding-left:1rem}
+    .natl-stats span{letter-spacing:.04em}
+    .natl .sec-head h2 br{display:none}
+  }
 </style>
 </head>
 <body>
@@ -1264,6 +1307,59 @@
       </div>
     </div>
     <p class="layers-note"><b>だから、英語を武器にしながら、5教科すべてで合格ラインを狙える。</b> 一人ひとりの学習を、講師とAIの両輪で本気で設計します。</p>
+  </div>
+</section>
+
+<!-- ===== 国公立難関大学コース（特集・2026-11-17 塾長「お得感が出るように」）。大手予備校の金額の根拠は Desktop/🏫 運営・集客/塾HP_料金比較の調査記録_2026-11-17.md ===== -->
+<section class="sec natl" id="kokuritsu">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-kicker">National University Course</div>
+      <h2>ライブ授業と、動画と、AIを、<br>ひとつのコースに。</h2>
+      <p>国公立難関大学コース　月額 25,000円（税込）</p>
+      <div class="rule"></div>
+    </div>
+    <p class="natl-lede reveal">国公立大学の入試では、共通テストの幅広い教科と、二次試験の記述の力が問われます。このコースは、元大手予備校講師のライブ授業（英語2コマ・国語1コマ）を軸に、ライブ授業のない教科を動画とAI学習アプリで支える、国公立志望のためのセットです。</p>
+    <div class="natl-stats reveal">
+      <div><b>3</b><span>コマのライブ授業 ／ 週</span></div>
+      <div><b>1,688</b><span>問の英文法ドリル</span></div>
+      <div><b>772</b><span>問の高校数学ドリル</span></div>
+      <div><b>476</b><span>語のAI古文単語</span></div>
+    </div>
+    <div class="natl-grid reveal">
+      <div>
+        <h3>ライブ授業　週3コマ</h3>
+        <ul>
+          <li>水曜 21:35–22:35　英文法（国公立コース専用）</li>
+          <li>金曜 21:35–22:35　長文読解（国公立コース専用）</li>
+          <li>日曜 21:15–22:15　高校国語（現代文・古文）</li>
+          <li>授業はすべて録画。欠席した回も、復習でも見返せます</li>
+          <li>毎週の課題は個別LINEで提出</li>
+        </ul>
+      </div>
+      <div>
+        <h3>授業のない日も、動画・AI・教材で</h3>
+        <ul>
+          <li>数学・理科・社会は、スタディサプリの講義動画を、志望校と今の学力から組んだ個別カリキュラムで</li>
+          <li>AI学習アプリで全教科の質問と自動採点ドリル。英文法・数学は弱点の単元から3日ごとにドリルが届きます（1日に使える量には上限があります）</li>
+          <li>国語は、二次試験型の記述演習（90分・120分）と国公立向けのテキスト25講</li>
+          <li>共通テストの全教科（情報Ⅰを含む）のオリジナル模試</li>
+          <li>保護者の方へ、毎週日曜に学習状況のレポート（演習した週）</li>
+        </ul>
+      </div>
+    </div>
+    <div class="natl-cost reveal">
+      <h3>1年間でくらべると</h3>
+      <div class="natl-cost-row">
+        <div class="us"><span>このコース</span><b>年 約32.6万円</b><small>月額25,000円×12か月＋設備費 月1,350円×12か月＋入塾金10,000円。英語・国語のライブ授業に、数学・理科・社会の動画とAI学習アプリを含みます</small></div>
+        <div><span>一般的な大手予備校で英語2講座＋国語1講座</span><b>年 約38万〜85万円</b><small>各週1回・1年間。入学金などを含み、季節講習費は別</small></div>
+      </div>
+      <p class="natl-note">※ 大手予備校の金額は、2026年11月 当塾調べ（各社の公式サイトに公表されている料金から計算）。大手予備校の授業は1コマ90分が中心で、模試・テキスト・自習室などが含まれる場合があります。当塾の授業は1コマ60分です。条件が同じではないため、目安としてご覧ください。</p>
+    </div>
+    <div class="natl-cta reveal">
+      <a href="taiken.html" class="btn btn-gold">体験授業を申し込む（¥1,500）</a>
+      <a href="#course-kokuritsu" class="btn btn-outline">コースの詳細を見る</a>
+    </div>
   </div>
 </section>
 
@@ -1836,16 +1932,26 @@
           </div></details>
         </div>
 
-        <div class="course special">
+        <div class="course special" id="course-kokuritsu">
           <div class="ctop">
-            <div><h4>国公立難関大学コース</h4><div class="lvl">ライブ＋スタディサプリ</div></div>
+            <div><h4>国公立難関大学コース</h4><div class="lvl">ライブ3コマ＋動画＋AI学習</div></div>
             <div class="price"><b>25,000<small>円</small></b><span>／ 月（税込）</span></div>
           </div>
-          <div class="meta"><i>対象：国公立志望</i><i>水・金・日＋スタディサプリ</i></div>
-          <p class="sum">水曜の英文法、金曜の長文読解、日曜の国語をライブ授業で実施。さらにスタディサプリで数学・理科・社会をカバーし、国公立合格に必要な総合力を養成します。AI学習アプリも受講料に含まれます。</p>
+          <div class="meta"><i>対象：国公立志望</i><i>水・金・日 ライブ授業</i><i>動画・AI学習アプリ込み</i></div>
+          <p class="sum">英語は国公立コース専用の英文法（水）と長文読解（金）、国語は日曜の高校国語を、元大手予備校講師のライブ授業で。数学・理科・社会はスタディサプリの講義動画を個別カリキュラムで進め、全教科の質問と演習はAI学習アプリで行います。授業はすべて録画され、欠席した回も見返せます。</p>
           <details><summary>詳細を見る</summary><div class="dbody">
+            <div><div class="dt">1週間の流れ（例）</div><div><table class="mini-tbl wk-tbl">
+              <tr><th>いつ</th><th>内容</th></tr>
+              <tr><td>水 21:35–22:35</td><td>英文法（国公立コース専用・ライブ）</td></tr>
+              <tr><td>金 21:35–22:35</td><td>長文読解（国公立コース専用・ライブ）</td></tr>
+              <tr><td>日 21:15–22:15</td><td>高校国語（現代文・古文・ライブ）</td></tr>
+              <tr><td>空いた時間</td><td>数学・理科・社会の動画（スタディサプリ）、授業の録画で復習</td></tr>
+              <tr><td>空いた時間</td><td>AI学習アプリで質問・ドリル（弱点の単元から3日ごとにドリル）</td></tr>
+              <tr><td>毎週</td><td>課題を個別LINEで提出</td></tr>
+              <tr><td>日曜</td><td>保護者の方へ学習状況のレポート（演習した週）</td></tr>
+            </table></div></div>
             <div><div class="dt">授業の進め方</div><div>英語は英文法（水）＋長文読解（金）の2本柱。国語（日）と合わせ、他教科はスタディサプリで個別カリキュラムを作成。</div></div>
-            <div><div class="dt">めざす目安</div><div>国公立合格に必要な5教科の総合力。共通テスト・二次試験の両方に対応できる実力。</div></div>
+            <div><div class="dt">めざす目安</div><div>共通テストの全教科（情報Ⅰを含む）と、二次試験の記述の両方に対応できる総合力。</div></div>
             <div><div class="dt">使用教材</div><div>英語・国語：オリジナルPDF教材。その他教科：スタディサプリ＋個別カリキュラム（スタディサプリの利用料は月額 25,000円に含む）。全科目対応のAI学習アプリも受講料に含まれます。</div></div>
             <div><div class="dt">課題方針</div><div>毎週の課題提出が必須。英文法演習・長文実践問題・国語の記述課題・志望校の過去問演習など。提出は個別LINEにて。</div></div>
           </div></details>
@@ -1896,7 +2002,7 @@
           <tr><td>英検準1級対策</td><td>中高合同</td><td>木曜 1限</td><td class="yen">8,500円</td></tr>
           <tr><td>英検2級対策</td><td>中高合同</td><td>金曜 2限</td><td class="yen">7,500円</td></tr>
           <tr><td>学習管理コース</td><td>高校生（通常授業2科目＋学習管理）</td><td>—</td><td class="yen">22,500円</td></tr>
-          <tr><td>国公立難関大学コース</td><td>国公立志望（ライブ＋スタディサプリ）</td><td>水・金・日</td><td class="yen">25,000円</td></tr>
+          <tr><td>国公立難関大学コース</td><td>国公立志望（ライブ3コマ＋数学・理科・社会の動画＋AI学習アプリ）</td><td>水・金・日</td><td class="yen">25,000円</td></tr>
         </tbody>
       </table>
     </div>
