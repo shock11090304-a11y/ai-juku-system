@@ -675,7 +675,7 @@
     }
 
     function sessionHtml(s) {
-      var date = s.session_date ? esc(s.session_date) : '日付未定';
+      var date = s.session_date ? esc(s.session_date) : (s.archive ? '🎬 アーカイブ' : '日付未定');
       var time = [s.start_time, s.end_time].filter(Boolean).join('〜');
       var meta = [];
       if (time) meta.push('🕐 ' + esc(time));
@@ -692,6 +692,11 @@
       if (s.recordings && s.recordings.length) {
         h += '<div class="block"><div class="block-label">🎬 録画</div>'
           + '<div class="muted">「動画」タブでまとめて視聴できます（このコマ: ' + s.recordings.length + '本）</div></div>';
+      }
+      // 🎬 アーカイブ専用クラス (ライブ授業なし・動画で受講) には出欠が無い (サーバも 400)。
+      if (s.archive) {
+        h += '<div class="att-status muted">🎬 アーカイブ授業です（出欠の連絡はありません）。講義動画は「🎬 動画」タブで見られます。</div></div>';
+        return h;
       }
       // 📅 受講開始月より前の授業には出欠ボタンを出さない (サーバも 400 で断る)。日付未定・開始月以降の授業は従来どおり。
       var _pre = beforeStart() && s.session_date && String(s.session_date).slice(0, 7) < feedData.start_month;
@@ -909,7 +914,7 @@
       //   授業に紐づく録画を出さない運用にしたので、黙って空にすると「動画が消えた」になる。
       //   ここで「まだ録画はありません」と書くのは嘘 (録画は存在し、昨日まで見えていた)。
       var filterNote = myCls.length
-        ? '<div class="card-meta" style="margin-bottom:0.6rem;">👤 ' + esc(myCls.join('・'))
+        ? '<div class="card-meta" style="margin-bottom:0.6rem;">👤 ' + esc(myCls.join('、'))
             + (hasCommon ? ' と 全体向け ' : ' ') + 'の録画を表示しています</div>'
         : '<div class="card-meta" style="margin-bottom:0.6rem;">👤 録画は受講クラスごとに配信しています</div>';
       // 🎬 [2026-09-24] 入塾月 (受講開始月) より前の録画は出していない。黙って減らすと「動画が消えた」になるので必ず書く。
@@ -925,8 +930,8 @@
           + '<div class="empty">🎬 '
           + (myCls.length
               ? (feedData && feedData.archive_from
-                  ? esc(myCls.join('・')) + ' の ' + esc(monthLabel(String(feedData.archive_from).slice(0, 7))) + '以降の録画はまだありません。<br>' + esc(monthLabel(String(feedData.archive_from).slice(0, 7))) + 'の授業の録画が登録されるとここに並びます。'
-                  : esc(myCls.join('・')) + ' の録画はまだありません。<br>授業の録画が登録されるとここに並びます。')
+                  ? esc(myCls.join('、')) + ' の ' + esc(monthLabel(String(feedData.archive_from).slice(0, 7))) + '以降の録画はまだありません。<br>' + esc(monthLabel(String(feedData.archive_from).slice(0, 7))) + 'の授業の録画が登録されるとここに並びます。'
+                  : esc(myCls.join('、')) + ' の録画はまだありません。<br>授業の録画が登録されるとここに並びます。')
               : '授業の録画は、受けているクラスごとにお届けしています。<br>いまは<b>あなたのクラスがアプリに設定されていない</b>ため、表示できる録画がありません。<br><span style="color:#a1a1aa;">（録画がなくなったわけではありません。設定されると、そのクラスの録画がここに並びます。）</span>'
               + '<div style="margin-top:0.8rem;"><button class="btn btn-primary" id="vidAskBtn">💬 塾長に知らせる</button></div>')
           + '</div>';

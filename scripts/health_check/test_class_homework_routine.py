@@ -478,7 +478,9 @@ def main():
     # ------------------------------------------------------------------
     print("\n[1] クラスの表・ON/OFF・監視")
     mp = mod._CLASS_HW_ROUTINE_MAP
-    check("表のキー = 時間割のクラス名 (15)", set(mp) == mod._TIMETABLE_LABELS and len(mp) == 15, sorted(set(mp) ^ mod._TIMETABLE_LABELS))
+    check("表のキー = 時間割のクラス名 (15 コマ + アーカイブ専用 3)", set(mp) == mod._TIMETABLE_LABELS and len(mp) == 18, sorted(set(mp) ^ mod._TIMETABLE_LABELS))
+    check("アーカイブ専用クラスは hold (毎朝の自動宿題は出さない)", all(mp[lb]["kind"] == "hold" for lb in mod._ARCHIVE_CLASS_LABELS)
+          and len(mod._ARCHIVE_CLASS_LABELS) == 3)
     check("kind は grammar / eiken / reading / hold / none だけ", {v["kind"] for v in mp.values()} <= {"grammar", "eiken", "reading", "hold", "none"})
     check("日曜 高校国語 = none・GMARCH と早慶 = hold", mp["日曜 高校国語"]["kind"] == "none"
           and mp["水曜2限 GMARCH"]["kind"] == "hold" and mp["木曜2限 早慶クラス"]["kind"] == "hold")
@@ -1017,8 +1019,8 @@ def main():
     with Env(CLASS_HW_AUTO_ONLY_CLASSES="火曜2限 英文法Lv.2"):   # 空白の抜け
         r = run(dry=True)
         check("空白の抜けも同じクラス名", r["selected_classes"] == [LV2] and r["settings"]["only_classes"] == [LV2], (r["selected_classes"], r["settings"]))
-    check("時間割の 15 クラスは照合の形 (_class_hw_label_key) でも重ならない",
-          len({mod._class_hw_label_key(x) for x in mod._TIMETABLE_LABELS}) == len(mod._TIMETABLE_LABELS) == 15)
+    check("時間割の 15 クラス + アーカイブ専用 3 は照合の形 (_class_hw_label_key) でも重ならない",
+          len({mod._class_hw_label_key(x) for x in mod._TIMETABLE_LABELS}) == len(mod._TIMETABLE_LABELS) == 18)
     mod._RATE_LIMIT_STORE.clear()
     r_ = client.post("/api/admin/class-homework-routine/run", json={"dry_run": False, "class_label": "火曜1限 中学基礎"}, headers=adm)
     j = r_.json() if r_.status_code == 200 else {}

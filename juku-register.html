@@ -117,6 +117,14 @@
       ['金', [['金曜1限 高2 英文法', '1限 高2英文法'], ['金曜2限 英検2級対策', '2限 英検2級'], ['金曜3限 国公立コース 長文読解', '3限 国公立 長文読解']]],
       ['日', [['日曜 高校国語', '高校国語']]]
     ];
+    // 🎬 アーカイブ専用クラス (ライブ授業なし・毎週の講義動画で受講)。曜日・時限が無いので CLASSES とは別に持つ。
+    //   label は server/main.py の _ARCHIVE_CLASSES と一致させること (check_timetable_sync.py が照合)。
+    //   ★「日東駒専・産近甲龍」は label 自体に「・」を含む。subjects は「・」連結だが、サーバ (_split_class_subjects) がつなぎ直す。
+    var ARCHIVE_CLASSES = [
+      ['アーカイブ 関関同立', '関関同立'],
+      ['アーカイブ 国公立', '国公立'],
+      ['アーカイブ 日東駒専・産近甲龍', '日東駒専・産近甲龍']
+    ];
     // 🎓 コース = 時間割クラスの束 (server/main.py の _COURSE_CLASSES と一致させること)。
     //   ★[2026-09-01 塾長指示] 登録フォームに国公立難関大コースの欄が無かったので追加。
     //     サーバは subjects を時間割クラスの label でしか受け取らない (main.py の _TIMETABLE_LABELS で
@@ -141,6 +149,17 @@
         });
         grid.appendChild(row);
       });
+      if (ARCHIVE_CLASSES.length) {
+        var arow = document.createElement('div'); arow.className = 'cls-day';
+        var ah = document.createElement('span'); ah.className = 'cls-day-h'; ah.textContent = 'アーカイブ'; arow.appendChild(ah);
+        ARCHIVE_CLASSES.forEach(function (it) {
+          var lab = document.createElement('label'); lab.className = 'subj-chip';
+          var cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = it[0];
+          lab.appendChild(cb); lab.appendChild(document.createTextNode(it[1]));
+          arow.appendChild(lab);
+        });
+        grid.appendChild(arow);
+      }
     })();
 
     // コース チェックを描画 (受講クラスの描画後に置くこと: 下の同期がクラス側の checkbox を引くため)

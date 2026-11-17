@@ -3376,7 +3376,7 @@
   <!-- ★ceo.js を変えたら必ず ?v= を更新する。vercel.json の no-cache は *.html と
        auth-guard.js / cache-purge.js だけで、ceo.js はこのクエリだけが頼り。
        据え置くと「新しい ceo.html + キャッシュされた古い ceo.js」で動く端末が出る。 -->
-  <script src="ceo.js?v=20261014a-reload-roster"></script>
+  <script src="ceo.js?v=20261117a-archive-classes"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {
@@ -13914,13 +13914,18 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       { label: '金曜2限 英検2級対策', subject: '中高合同', start: '20:25', end: '21:25' },
       // 🔧 [2026-09-01 塾長指摘] 旧「木曜3限 国公立コース 長文読解」。実授業は金曜3限が正。
       { label: '金曜3限 国公立コース 長文読解', subject: '', start: '21:35', end: '22:35' },
-      { label: '日曜 高校国語', subject: '現代文・古文', start: '21:15', end: '22:15' }
+      { label: '日曜 高校国語', subject: '現代文・古文', start: '21:15', end: '22:15' },
+      // 🎬 アーカイブ専用クラス (server の _ARCHIVE_CLASSES・時間帯なし)。この授業を 1 クラス 1 つ作り (日付は空でよい)、
+      //   上の「🎬 授業の録画を登録」でこの授業を選び、授業日に動画の公開日を入れて毎週の動画を登録する。
+      { label: 'アーカイブ 関関同立', subject: 'アーカイブ', start: '', end: '', archive: true },
+      { label: 'アーカイブ 国公立', subject: 'アーカイブ', start: '', end: '', archive: true },
+      { label: 'アーカイブ 日東駒専・産近甲龍', subject: 'アーカイブ', start: '', end: '', archive: true }
     ];
     (function initTtPick() {
       var sel = document.getElementById('clsTtPick');
       if (!sel) return;
       sel.innerHTML = '<option value="">時間割のクラスを選ぶ…</option>'
-        + CLS_TIMETABLE.map(function (t, i) { return '<option value="' + i + '">' + esc(t.label) + ' (' + esc(t.start) + '〜' + esc(t.end) + ')</option>'; }).join('');
+        + CLS_TIMETABLE.map(function (t, i) { return '<option value="' + i + '">' + esc(t.label) + (t.archive ? ' (時間帯なし・動画のみ)' : (' (' + esc(t.start) + '〜' + esc(t.end) + ')')) + '</option>'; }).join('');
       sel.addEventListener('change', function () {
         var t = CLS_TIMETABLE[Number(sel.value)];
         if (!t) return;
@@ -13929,7 +13934,9 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         document.getElementById('clsStart').value = t.start;
         document.getElementById('clsEnd').value = t.end;
         var msg = document.getElementById('clsCreateMsg');
-        msg.style.color = '#a1a1aa'; msg.textContent = 'フォームに反映しました。日付を入れて「授業を作成」を押してください。';
+        msg.style.color = '#a1a1aa'; msg.textContent = t.archive
+          ? 'フォームに反映しました。アーカイブ専用クラスは日付を空のまま「授業を作成」を押してください (1 クラス 1 つ。動画は上の「🎬 授業の録画を登録」で毎週追加)。'
+          : 'フォームに反映しました。日付を入れて「授業を作成」を押してください。';
       });
     })();
 
@@ -14208,7 +14215,10 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         var d = await adminJson('/api/admin/class/timetable-classes');
         sels.forEach(function (sel) {
           if (sel.options.length > 1) return;
-          (d.classes || []).forEach(function (c) { var o = document.createElement('option'); o.value = c.label; o.textContent = c.label; sel.appendChild(o); });
+          (d.classes || []).forEach(function (c) {
+            if (c.archive && sel.id === 'atClass') return;   // 🎬 アーカイブ専用クラスには出欠が無い (サーバも 400)
+            var o = document.createElement('option'); o.value = c.label; o.textContent = c.label; sel.appendChild(o);
+          });
         });
       } catch (e) { /* 未ログイン等は無視 */ }
     }

@@ -56469,7 +56469,50 @@ _TIMETABLE_CLASSES = [
     {"label": "金曜3限 国公立コース 長文読解", "dow": 5, "time": "21:35–22:35"},
     {"label": "日曜 高校国語", "dow": 0, "time": "21:15–22:15"},
 ]
-_TIMETABLE_LABELS = set(c["label"] for c in _TIMETABLE_CLASSES)
+# 🎬 アーカイブ専用クラス (2026-11-17 塾長指示)。ライブ授業が無く、曜日・時限 (コマ) を持たない。
+#   毎週 2 本ずつ新しい講義動画 (YouTube 限定公開) + 配布ファイル・宿題・課題提出をクラス単位で配る。
+#   ★_TIMETABLE_CLASSES (曜日+時限のあるコマ) には**入れない**。あの表を回す処理 (出欠・週間時間割・毎朝のクラス自動宿題・
+#     クラス別ブリーフ・録画の再生リスト名 (曜日+限) による自動割り当て) は dow/time を前提にしていて、
+#     ここに混ぜると「None限」や int(None) で壊れる。どれもアーカイブ専用クラスには用が無いので自然に飛ばす。
+#   ★一方 label の照合 (_TIMETABLE_LABELS) には入れる = 受講クラスの登録・クラス別配布ファイル・クラス宿題の一括作成・
+#     一斉送信のクラス指定・登録フォームの承認 がこの 3 クラスをそのまま受け付ける。
+#   ★動画の届け方: CEO「🏫 授業」で label と同じタイトルの授業 (class_sessions) を 1 クラス 1 つ作り、
+#     「🎬 授業の録画を登録」でその授業を選んで URL・授業日 (= 公開日) を入れて登録する。生徒の 🎬 動画タブには
+#     students.class_labels にこの label がある生徒だけ・受講開始月以降の回だけ (_archive_cutoff) が出る。
+#     再生リスト名からの自動割り当て (class_recording_assign.slot_of) は曜日+限で読むので、この 3 クラスは対象外 (手で登録)。
+#   label の写しは ceo.html (CLS_TIMETABLE の archive 行) と juku-register.html (ARCHIVE_CLASSES)。check_timetable_sync.py が照合する。
+_ARCHIVE_CLASSES = [
+    {"label": "アーカイブ 関関同立", "archive": True},
+    {"label": "アーカイブ 国公立", "archive": True},
+    {"label": "アーカイブ 日東駒専・産近甲龍", "archive": True},
+]
+_ARCHIVE_CLASS_LABELS = set(c["label"] for c in _ARCHIVE_CLASSES)
+_TIMETABLE_LABELS = set(c["label"] for c in _TIMETABLE_CLASSES) | _ARCHIVE_CLASS_LABELS
+
+
+def _split_class_subjects(raw) -> list:
+    """登録フォームの subjects (クラス label / コース名の「・」連結) → 項目のリスト。
+    ★「アーカイブ 日東駒専・産近甲龍」のように label 自体が「・」を含むので、素の split("・") だと
+      「アーカイブ 日東駒専」「産近甲龍」に割れて**黙って捨てられる**。隣り合う断片をつないで既知の label /
+      コース名になるならつなぐ (長い方を優先)。"""
+    parts = [x.strip() for x in str(raw or "").split("・")]
+    known = _TIMETABLE_LABELS | set(_COURSE_CLASSES)
+    out, i = [], 0
+    while i < len(parts):
+        hit = None
+        for j in range(len(parts), i + 1, -1):
+            cand = "・".join(parts[i:j])
+            if cand in known:
+                hit = (cand, j)
+                break
+        if hit:
+            out.append(hit[0])
+            i = hit[1]
+        else:
+            if parts[i]:
+                out.append(parts[i])
+            i += 1
+    return out
 
 # 🎓 コース = 時間割クラスの束。塾生アプリ登録フォーム (juku-register.html) の「コース」欄は
 #   この定義どおりにクラス label へ展開して送られる (subjects は label しか受け付けないため)。
@@ -56809,6 +56852,11 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
         order = []
         for r in c.fetchall():
             sid = r["id"]
+            # 🎬 アーカイブ専用クラスの授業 (= 動画の入れ物) は受講生にだけ出す。出欠ボタンも無い (archive=true)。
+            #   受講していない生徒の feed から外すと、その授業の録画・配布ファイルも下の「親授業が非公開」扱いで出ない。
+            _is_arch = (r["title"] or "") in _ARCHIVE_CLASS_LABELS
+            if _is_arch and r["title"] not in my_classes:
+                continue
             order.append(sid)
             sessions[sid] = {
                 "id": sid, "title": r["title"], "subject": r["subject"],
@@ -56816,6 +56864,7 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
                 "start_time": r["start_time"], "end_time": r["end_time"],
                 "location": r["location"], "notes": r["notes"],
                 "files": [], "recordings": [], "my_attendance": None,
+                "archive": _is_arch,
             }
         # 📎 [file-open-link] リンク遷移で開くための短命トークン付き URL を各ファイルに付ける
         _dl = _make_download_token(student["id"])
@@ -57003,6 +57052,8 @@ def student_class_attendance(payload: AttendanceReportRequest, request: Request,
         srow = c.fetchone()
         if not srow or not srow["is_published"]:
             raise HTTPException(status_code=404, detail="授業が見つかりません")
+        if (srow["title"] or "") in _ARCHIVE_CLASS_LABELS:
+            raise HTTPException(status_code=400, detail="アーカイブ専用クラスには出欠がありません")
         # 📅 受講開始月より前の授業には出欠を付けない (授業日が入っている授業のみ判定)
         if srow["session_date"]:
             _sm = _student_start_month(student["id"])
@@ -61194,7 +61245,9 @@ def admin_class_timetable_classes(authorization: Optional[str] = Header(None)):
     """塾長: 時間割クラス一覧 (クラス別ファイル配布・出欠記録の選択肢) + コース定義。"""
     _verify_admin_required(authorization)
     return {"ok": True,
-            "classes": [{"label": c["label"], "dow": c["dow"], "time": c["time"]} for c in _TIMETABLE_CLASSES],
+            # 🎬 アーカイブ専用クラスは dow/time が None・archive=true (CEO は出欠の選択肢から外す)
+            "classes": [{"label": c["label"], "dow": c["dow"], "time": c["time"]} for c in _TIMETABLE_CLASSES]
+                       + [{"label": c["label"], "dow": None, "time": None, "archive": True} for c in _ARCHIVE_CLASSES],
             # 🎓 コース (= クラスの束)。塾生アプリ登録フォームの「コース」欄と同じ定義。
             # ★label が 1 つも残っていないコースは配らない (起動時の自己修復で全部落ちた状態)。
             #   出すと CEO で選べてしまい、送信時に 400 になるだけの選択肢になる。
@@ -61249,6 +61302,8 @@ def _validate_attend(class_label, att_date, status):
     cl = _sanitize_text(class_label, 100)
     if not cl or cl not in _TIMETABLE_LABELS:
         raise HTTPException(status_code=400, detail="class_label が時間割クラスと一致しません")
+    if cl in _ARCHIVE_CLASS_LABELS:
+        raise HTTPException(status_code=400, detail="アーカイブ専用クラスには出欠がありません")
     d = _class_valid_date_or_none(att_date)
     if not d:
         raise HTTPException(status_code=400, detail="日付 (YYYY-MM-DD) は必須です")
@@ -61422,6 +61477,8 @@ def admin_class_attend_roster(att_date: str, class_label: str, authorization: Op
     cl = _sanitize_text(class_label, 100)
     if not cl or cl not in _TIMETABLE_LABELS:
         raise HTTPException(status_code=400, detail="class_label が時間割クラスと一致しません")
+    if cl in _ARCHIVE_CLASS_LABELS:
+        raise HTTPException(status_code=400, detail="アーカイブ専用クラスには出欠がありません")
     conn = db()
     try:
         c = conn.cursor()
@@ -61628,6 +61685,11 @@ _CLASS_HW_ROUTINE_MAP = {
     "金曜2限 英検2級対策": _chw_eiken("2級"),
     "金曜3限 国公立コース 長文読解": _chw_reading("国公立 長文"),
     "日曜 高校国語": {"kind": "none"},
+    # 🎬 アーカイブ専用クラス: 毎朝の自動宿題は出さない (コマが無く、宿題は塾長が「クラスに宿題を出す」で手で出す)。
+    #   hold = 「まだ出さない」(早慶・GMARCH と同じ)。毎朝の実行は _TIMETABLE_CLASSES しか回さないのでどのみち対象外。
+    "アーカイブ 関関同立": {"kind": "hold"},
+    "アーカイブ 国公立": {"kind": "hold"},
+    "アーカイブ 日東駒専・産近甲龍": {"kind": "hold"},
 }
 _CLASS_HW_ORDER = {c_["label"]: i_ for i_, c_ in enumerate(_TIMETABLE_CLASSES)}
 if set(_CLASS_HW_ROUTINE_MAP) != _TIMETABLE_LABELS:
@@ -63718,7 +63780,7 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
         #   ★展開しないとコース名は _TIMETABLE_LABELS に無いので**黙って捨てられる**ので、必ずここで解く。
         _app_subjects = "・".join(x for x in ((_g(r, "subjects") or "") for r in _all_rows) if x)   # まとめ承認: 全行の受講クラスの和
         _app_classes = []
-        for _s in (x.strip() for x in _app_subjects.split("・")):
+        for _s in _split_class_subjects(_app_subjects):   # ★label 内の「・」(日東駒専・産近甲龍) で割らない
             if not _s:
                 continue
             for _l in (_COURSE_CLASSES.get(_s) or ([_s] if _s in _TIMETABLE_LABELS else [])):
@@ -64030,9 +64092,8 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
             "start_month_skipped_existing": bool(_app_start_month and _attached_existing),
             "class_labels": list(_final_classes),
             "class_labels_empty": not _final_classes,
-            "dropped_subjects": [x.strip() for x in _app_subjects.split("・")
-                                 if x.strip() and x.strip() not in _TIMETABLE_LABELS
-                                 and x.strip() not in _COURSE_CLASSES]}
+            "dropped_subjects": [x for x in _split_class_subjects(_app_subjects)
+                                 if x not in _TIMETABLE_LABELS and x not in _COURSE_CLASSES]}
 
 
 class CourseApplicationRejectRequest(BaseModel):

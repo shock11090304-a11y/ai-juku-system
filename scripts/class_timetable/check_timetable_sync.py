@@ -76,12 +76,12 @@ def canonical():
         if not isinstance(node, ast.Assign):
             continue
         for t in node.targets:
-            if isinstance(t, ast.Name) and t.id in ("_TIMETABLE_CLASSES", "_COURSE_CLASSES"):
+            if isinstance(t, ast.Name) and t.id in ("_TIMETABLE_CLASSES", "_COURSE_CLASSES", "_ARCHIVE_CLASSES"):
                 got[t.id] = ast.literal_eval(node.value)
-    for name in ("_TIMETABLE_CLASSES", "_COURSE_CLASSES"):
+    for name in ("_TIMETABLE_CLASSES", "_COURSE_CLASSES", "_ARCHIVE_CLASSES"):
         if name not in got:
             fail(f"server/main.py: {name} を module 直下の代入として読めない")
-    return got.get("_TIMETABLE_CLASSES"), got.get("_COURSE_CLASSES")
+    return got.get("_TIMETABLE_CLASSES"), got.get("_COURSE_CLASSES"), got.get("_ARCHIVE_CLASSES")
 
 
 # ---------------------------------------------------------------- class.html
@@ -110,13 +110,24 @@ def from_ceo_html():
     b = block(read("ceo.html"), "var CLS_TIMETABLE = [", "\n    ];", "ceo.html")
     if b is None:
         return None
-    out = []
+    out, archive = [], []
     for label, _subject, start, end in re.findall(
             r"\{ label: '([^']*)', subject: '([^']*)', start: '([^']*)', end: '([^']*)' \}", b):
         out.append((label, DOW_OF.get(label[:1]), start + "–" + end))
+    # 🎬 アーカイブ専用クラスの行 (時間帯なし・archive: true)。上の正規表現は末尾が「 }」の行しか拾わないので別に読む。
+    for label, _subject, start, end in re.findall(
+            r"\{ label: '([^']*)', subject: '([^']*)', start: '([^']*)', end: '([^']*)', archive: true \}", b):
+        if start or end:
+            fail(f"ceo.html: アーカイブ専用クラス {label!r} に時刻 ({start}–{end}) が入っている")
+        archive.append(label)
+    # ★どちらの形にも当たらない行 (書き方を変えた行) を黙って捨てない
+    n_rows = len(re.findall(r"\{ label: '", b))
+    if n_rows != len(out) + len(archive):
+        fail(f"ceo.html: CLS_TIMETABLE の {n_rows} 行のうち {n_rows - len(out) - len(archive)} 行を読めない — "
+             f"書き方を変えたならこのゲートも直すこと")
     if not out:
         fail("ceo.html: CLS_TIMETABLE から 1 コマも読めない — 書き方を変えたならこのゲートも直すこと")
-    return out
+    return out, archive
 
 
 # ---------------------------------------------------------------- juku-register.html
@@ -135,6 +146,11 @@ def from_juku_register():
                 labels.append((full, DOW_OF.get(day)))
         if not labels:
             fail("juku-register.html: CLASSES から 1 コマも読めない — 書き方を変えたならこのゲートも直すこと")
+    # 🎬 アーカイブ専用クラス (曜日なし)。label は ['label', '表示名'] の 1 行ずつ。
+    ab = block(src, "var ARCHIVE_CLASSES = [", "\n    ];", "juku-register.html ARCHIVE_CLASSES")
+    archive = []
+    if ab is not None:
+        archive = [full for full, _short in re.findall(r"\['([^']*)',\s*'([^']*)'\]", ab)]
     cb = block(src, "var COURSES = [", "\n    ];", "juku-register.html COURSES")
     courses = {}
     if cb is not None:
@@ -143,7 +159,7 @@ def from_juku_register():
             courses[name] = re.findall(r"'([^']*)'", ls)
         if not courses:
             fail("juku-register.html: COURSES から 1 コースも読めない — 書き方を変えたならこのゲートも直すこと")
-    return labels, courses
+    return labels, courses, archive
 
 
 # ---------------------------------------------------------------- 公開サイトの時間割表
@@ -226,15 +242,23 @@ def report():
 
 def main():
     print("🗓 時間割クラスの写し 突き合わせ")
-    canon, courses = canonical()
-    if canon is None or courses is None:
+    canon, courses, archive_canon = canonical()
+    if canon is None or courses is None or archive_canon is None:
         # ★ここで素の return 1 をすると、canonical() が積んだ理由を誰も印字しないまま終わる
         #   (CI のログに「ゲートが壊れた」のか「時間割がズレた」のか残らない)。必ず report() を通す。
         fail("正典を読めないので照合を打ち切った")
         return report()
     canon_pairs = [(c["label"], c["dow"], c["time"]) for c in canon]
-    canon_labels = [c["label"] for c in canon]
-    print(f"  正典 server/main.py: {len(canon_pairs)} コマ")
+    archive_labels = [c["label"] for c in archive_canon]
+    # ★承認・受講クラスの照合 (_TIMETABLE_LABELS) はコマ + アーカイブ専用クラス。コース定義はコマだけで組む。
+    canon_labels = [c["label"] for c in canon] + archive_labels
+    print(f"  正典 server/main.py: {len(canon_pairs)} コマ + アーカイブ専用 {len(archive_labels)} クラス")
+    # ①' アーカイブ専用クラスは曜日・時刻を持たず、コマの label と重ならない
+    for c in archive_canon:
+        if c.get("dow") is not None or c.get("time") is not None or c.get("archive") is not True:
+            fail(f"server/main.py: アーカイブ専用クラス {c!r} は dow/time を持たず archive=True のこと")
+        if c["label"] in [x["label"] for x in canon]:
+            fail(f"server/main.py: {c['label']!r} が _TIMETABLE_CLASSES と _ARCHIVE_CLASSES の両方にある")
 
     # ① 正典そのものの整合 (label の曜日と dow が食い違っていないか)
     for label, dow, _t in canon_pairs:
@@ -242,7 +266,15 @@ def main():
             fail(f"server/main.py: {label!r} の dow={dow} が label の曜日と食い違う")
 
     # ② class.html / ceo.html は label + dow + 時刻まで一致すること
-    for rel, got in (("class.html", from_class_html()), ("ceo.html", from_ceo_html())):
+    #   (class.html の週間時間割と出欠はコマだけ。アーカイブ専用クラスは載せない。ceo.html は archive 行を別に照合)
+    _ceo = from_ceo_html()
+    _ceo_slots = _ceo[0] if _ceo is not None else None
+    if _ceo is not None:
+        if _ceo[1] != archive_labels:
+            fail(f"ceo.html: アーカイブ専用クラスが食い違う: server={archive_labels} / ceo={_ceo[1]}")
+        else:
+            print(f"  ✅ ceo.html: アーカイブ専用 {len(archive_labels)} クラス 一致")
+    for rel, got in (("class.html", from_class_html()), ("ceo.html", _ceo_slots)):
         if got is None:
             continue
         if got != canon_pairs:
@@ -259,7 +291,12 @@ def main():
             print(f"  ✅ {rel}: {len(got)} コマ 一致")
 
     # ③ juku-register.html は label + dow (時刻は持たない)
-    reg_labels, reg_courses = from_juku_register()
+    reg_labels, reg_courses, reg_archive = from_juku_register()
+    if reg_archive != archive_labels:
+        fail(f"juku-register.html: アーカイブ専用クラスが食い違う: server={archive_labels} / 登録フォーム={reg_archive} "
+             f"(サーバに無い label は黙って捨てられる)")
+    else:
+        print(f"  ✅ juku-register.html: アーカイブ専用 {len(reg_archive)} クラス 一致")
     if reg_labels:
         want = [(l, d) for l, d, _t in canon_pairs]
         for x in want:

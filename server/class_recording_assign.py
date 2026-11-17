@@ -42,6 +42,18 @@ SLOT_OVERRIDE = {"日曜1限": "日曜"}  # 日曜は1コマだけで title が�
 #     **15クラス全部の投入が1件も走らずに止まる**。移送が済んだら必ず空に戻す。
 LEGACY_SLOT = {}
 
+# 🎬 アーカイブ専用クラス (server/main.py の _ARCHIVE_CLASSES・2026-11-17)。曜日+限が無いので再生リスト名から
+#   割り当てられない = 録画は CEO の「🎬 授業の録画を登録」で手で入れる。build_plan はこの授業を**見ない**。
+#   ★渡したままだと「対応する再生リストが無い授業」で blocking が立ち、**全クラスの自動割り当てが止まる**。
+#   判定は main.py の feed・出欠と同じ「label と完全一致」(前方一致にすると、表記の揺れた授業が
+#   ここでは外れるのに feed では全員向けに出る、という食い違いになる)。
+ARCHIVE_SESSION_TITLES = {unicodedata.normalize("NFKC", t) for t in (
+    "アーカイブ 関関同立", "アーカイブ 国公立", "アーカイブ 日東駒専・産近甲龍")}
+
+
+def is_archive_session(title):
+    return unicodedata.normalize("NFKC", (title or "").strip()) in ARCHIVE_SESSION_TITLES
+
 DAY = {"月": 0, "火": 1, "水": 2, "木": 3, "金": 4, "土": 5, "日": 6}
 DAY_LABEL = {v: k for k, v in DAY.items()}
 PAGE_LIMIT = 100          # 1ページに載る上限。継続トークンは追わない。
@@ -470,9 +482,11 @@ def build_plan(today, playlists, sessions, recordings, last_rec, get=None, progr
       (限定公開動画のIDはアクセス権そのもの)。API はこの planned をブラウザに返さない。
     """
     say = progress or (lambda _line: None)
+    # 🎬 アーカイブ専用クラスの授業は対象外 (再生リストを持たない手登録のクラス。上の ARCHIVE_SESSION_TITLES)
+    session_title = dict(sessions)   # 除外の前に取る (アーカイブ授業の録画の警告も題名で出す)
+    sessions = [(i, t) for i, t in sessions if not is_archive_session(t)]
     named = [(p, n) for p, n in playlists if (n or "").strip()]
     recs = [Recording(*r) for r in recordings]
-    session_title = dict(sessions)
     urls = [r.video_url for r in recs]
     # ★(授業, 動画) の組で持つ。動画IDだけで「登録済」と判定すると、**別のクラスに
     #   登録された動画**までこのクラスの登録済みに化け、そのクラスの生徒には1本も
