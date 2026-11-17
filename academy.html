@@ -813,7 +813,7 @@
   .m-menu[open] .mm-i::after{content:"×";font-size:1rem}
   /* 全面メニュー */
   .m-panel{position:fixed;inset:0;top:0;right:0;min-width:0;z-index:2;background:#050505;border:0;padding:120px 8vw 60px;
-    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(8,auto);grid-auto-flow:column;align-content:safe center;column-gap:6vw;row-gap:0;overflow-y:auto}
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(9,auto);grid-auto-flow:column;align-content:safe center;column-gap:6vw;row-gap:0;overflow-y:auto}
   nav.links .m-panel a{display:block;font-family:var(--latin);font-size:clamp(1.15rem,2.3vw,1.9rem);letter-spacing:.1em;padding:.7em 0;color:#fff;border-bottom:1px solid rgba(255,255,255,.12)}
   nav.links .m-panel a:hover{opacity:.55;background:transparent;color:#fff}
   .m-menu[open] .m-panel{animation:mmFade .45s ease both}
@@ -1047,6 +1047,12 @@
   .natl .btn-gold{border-color:var(--gold)}
   .natl .btn:hover{background:#fff!important;color:#111;border-color:#fff}
   .wk-tbl td,.wk-tbl th{text-align:left!important;vertical-align:top}
+  .natl .nb{display:inline-block;font-style:normal}
+  .wk-sub{display:block;font-size:.76rem;color:#777;letter-spacing:.04em}
+  .natl-sp{display:none}
+  #course-kokuritsu{scroll-margin-top:170px}
+  .natl,.course .sum,.wk-tbl{line-break:strict}
+  @media(max-width:860px){.course-group{scroll-margin-top:156px}}
   .wk-tbl td:first-child{white-space:nowrap;color:#555}
   @media(max-width:860px){
     .natl{padding:84px 0}
@@ -1054,10 +1060,13 @@
     .natl-cost-row{grid-template-columns:1fr}
     .natl-cost{padding:1.4rem 1.2rem 1.1rem}
   }
+  @media(max-width:520px){
+    .natl-sp{display:inline}
+    .natl-cta .btn{width:100%}
+  }
   @media(max-width:360px){
     .natl-stats>div{padding-left:1rem}
     .natl-stats span{letter-spacing:.04em}
-    .natl .sec-head h2 br{display:none}
   }
 </style>
 </head>
@@ -1085,6 +1094,7 @@
         <a href="#results">合格実績</a>
         <a href="#cycle">学びの5ステップ</a>
         <a href="#system">全科目で第一志望へ</a>
+        <a href="#kokuritsu">国公立難関大学コース</a>
         <a href="#ai">AI学習アプリ</a>
         <a href="#app">塾生アプリ</a>
         <a href="#schedule">時間割</a>
@@ -1310,18 +1320,18 @@
   </div>
 </section>
 
-<!-- ===== 国公立難関大学コース（特集・2026-11-17 塾長「お得感が出るように」）。大手予備校の金額の根拠は Desktop/🏫 運営・集客/塾HP_料金比較の調査記録_2026-11-17.md ===== -->
+<!-- ===== 国公立難関大学コース（特集）。大手予備校の金額は当塾の調査記録（2026-11）による ===== -->
 <section class="sec natl" id="kokuritsu">
   <div class="wrap">
     <div class="sec-head reveal">
       <div class="sec-kicker">National University Course</div>
-      <h2>ライブ授業と、動画と、AIを、<br>ひとつのコースに。</h2>
+      <h2>ライブ授業と、<br class="natl-sp">動画と、AIを、<br>ひとつのコースに。</h2>
       <p>国公立難関大学コース　月額 25,000円（税込）</p>
       <div class="rule"></div>
     </div>
     <p class="natl-lede reveal">国公立大学の入試では、共通テストの幅広い教科と、二次試験の記述の力が問われます。このコースは、元大手予備校講師のライブ授業（英語2コマ・国語1コマ）を軸に、ライブ授業のない教科を動画とAI学習アプリで支える、国公立志望のためのセットです。</p>
     <div class="natl-stats reveal">
-      <div><b>3</b><span>コマのライブ授業 ／ 週</span></div>
+      <div><b>3</b><span>コマのライブ授業<i class="nb">（毎週）</i></span></div>
       <div><b>1,688</b><span>問の英文法ドリル</span></div>
       <div><b>772</b><span>問の高校数学ドリル</span></div>
       <div><b>476</b><span>語のAI古文単語</span></div>
@@ -1330,8 +1340,8 @@
       <div>
         <h3>ライブ授業　週3コマ</h3>
         <ul>
-          <li>水曜 21:35–22:35　英文法（国公立コース専用）</li>
-          <li>金曜 21:35–22:35　長文読解（国公立コース専用）</li>
+          <li>水曜 21:35–22:35　英文法<i class="nb">（国公立コース専用）</i></li>
+          <li>金曜 21:35–22:35　長文読解<i class="nb">（国公立コース専用）</i></li>
           <li>日曜 21:15–22:15　高校国語（現代文・古文）</li>
           <li>授業はすべて録画。欠席した回も、復習でも見返せます</li>
           <li>毎週の課題は個別LINEで提出</li>
@@ -1341,8 +1351,8 @@
         <h3>授業のない日も、動画・AI・教材で</h3>
         <ul>
           <li>数学・理科・社会は、スタディサプリの講義動画を、志望校と今の学力から組んだ個別カリキュラムで</li>
-          <li>AI学習アプリで全教科の質問と自動採点ドリル。英文法・数学は弱点の単元から3日ごとにドリルが届きます（1日に使える量には上限があります）</li>
-          <li>国語は、二次試験型の記述演習（90分・120分）と国公立向けのテキスト25講</li>
+          <li>AI学習アプリで全教科の質問と自動採点ドリル。英文法・数学（数学Ⅲを除く）は弱点の単元から3日ごとにドリルが届きます（1日に使える量には上限があります）</li>
+          <li>国語は、二次試験型の記述演習<i class="nb">（90分・120分）</i>と国公立向けのテキスト25講</li>
           <li>共通テストの全教科（情報Ⅰを含む）のオリジナル模試</li>
           <li>保護者の方へ、毎週日曜に学習状況のレポート（演習した週）</li>
         </ul>
@@ -1351,7 +1361,7 @@
     <div class="natl-cost reveal">
       <h3>1年間でくらべると</h3>
       <div class="natl-cost-row">
-        <div class="us"><span>このコース</span><b>年 約32.6万円</b><small>月額25,000円×12か月＋設備費 月1,350円×12か月＋入塾金10,000円。英語・国語のライブ授業に、数学・理科・社会の動画とAI学習アプリを含みます</small></div>
+        <div class="us"><span>このコース</span><b>年 約32.6万円</b><small>月額25,000円×<i class="nb">12か月</i>＋設備費 月1,350円×<i class="nb">12か月</i>＋入塾金10,000円。英語・国語のライブ授業に、数学・理科・社会の動画とAI学習アプリを含みます。季節講習費は別</small></div>
         <div><span>一般的な大手予備校で英語2講座＋国語1講座</span><b>年 約38万〜85万円</b><small>各週1回・1年間。入学金などを含み、季節講習費は別</small></div>
       </div>
       <p class="natl-note">※ 大手予備校の金額は、2026年11月 当塾調べ（各社の公式サイトに公表されている料金から計算）。大手予備校の授業は1コマ90分が中心で、模試・テキスト・自習室などが含まれる場合があります。当塾の授業は1コマ60分です。条件が同じではないため、目安としてご覧ください。</p>
@@ -1942,9 +1952,9 @@
           <details><summary>詳細を見る</summary><div class="dbody">
             <div><div class="dt">1週間の流れ（例）</div><div><table class="mini-tbl wk-tbl">
               <tr><th>いつ</th><th>内容</th></tr>
-              <tr><td>水 21:35–22:35</td><td>英文法（国公立コース専用・ライブ）</td></tr>
-              <tr><td>金 21:35–22:35</td><td>長文読解（国公立コース専用・ライブ）</td></tr>
-              <tr><td>日 21:15–22:15</td><td>高校国語（現代文・古文・ライブ）</td></tr>
+              <tr><td>水 21:35–22:35</td><td>英文法<span class="wk-sub">国公立コース専用・ライブ</span></td></tr>
+              <tr><td>金 21:35–22:35</td><td>長文読解<span class="wk-sub">国公立コース専用・ライブ</span></td></tr>
+              <tr><td>日 21:15–22:15</td><td>高校国語<span class="wk-sub">現代文・古文・ライブ</span></td></tr>
               <tr><td>空いた時間</td><td>数学・理科・社会の動画（スタディサプリ）、授業の録画で復習</td></tr>
               <tr><td>空いた時間</td><td>AI学習アプリで質問・ドリル（弱点の単元から3日ごとにドリル）</td></tr>
               <tr><td>毎週</td><td>課題を個別LINEで提出</td></tr>
