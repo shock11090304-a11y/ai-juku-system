@@ -50441,10 +50441,46 @@ def admin_grammar_drill_create(
     # タイトル上書き (任意): 対策ドリルに「🎯弱点対策」等を付けて一覧/宿題で識別できるようにする。
     # str() で囲うのは title が非文字列 (数値/配列等) で来ても 500 を出さず無害化するため (count/student_ids と同方針)。
     title_override = str(payload.get("title") or "").strip()[:200] or None
+    # 🧑‍🏫 2026-11-17 AI 担任 (塾長「その子のレベルをデータから分析して、その子のための問題を出してあげて」):
+    #   ai_tannin: true は ① レビュー済みの出典だけ (_auto_pick_reviewed_*・3日ドリルと同じ許可リスト) ② AIなし枠 (体験中でない) と
+    #   学年の区分に合わない生徒は配らずに refused に出す ③ お知らせのメールは送らない (アプリ内の 🆕 だけ) ④ created_by='ai_tannin'。
+    #   習熟度テストは出さない。CEO の画面はこの指定を送らない (今までどおり)。
+    if "ai_tannin" in payload and not isinstance(payload.get("ai_tannin"), bool):
+        # "true" や 1 を黙って普通の配信 (未レビューも出す・メールも送る) に落とさない
+        raise HTTPException(status_code=422, detail="ai_tannin は true / false で指定してください")
+    ai_tannin = payload.get("ai_tannin") is True
+    if ai_tannin and is_ptest:
+        raise HTTPException(status_code=422, detail="AI 担任の配信に習熟度テストは使えません")
 
     conn = db()
     try:
         c = conn.cursor()
+        tannin_refused = []
+        tannin_seen = {}
+        if ai_tannin:
+            _ph_a = ",".join(["?"] * len(student_ids))
+            _trial_col = "ai_trial_until" if _students_has_ai_trial_until() else "NULL AS ai_trial_until"
+            c.execute(f"SELECT id, grade, ai_disabled, {_trial_col} FROM students WHERE id IN ({_ph_a})", tuple(student_ids))
+            _ok_ids = []
+            for _r in c.fetchall():
+                _sid = int(_r["id"])
+                if _auto_delivery_ai_path(_r["ai_disabled"], _r["ai_trial_until"]) != "ai":
+                    tannin_refused.append({"student_id": _sid, "reason": "ai_nashi"})
+                elif not _drill_subject_band_ok(subject, _student_grade_band(_r["grade"])):
+                    tannin_refused.append({"student_id": _sid, "reason": "band"})
+                else:
+                    _ok_ids.append(_sid)
+            _seen_rows = {x["student_id"] for x in tannin_refused} | set(_ok_ids)
+            tannin_refused.extend({"student_id": _s, "reason": "not_found"} for _s in student_ids if _s not in _seen_rows)
+            student_ids = sorted(_ok_ids)
+            if not student_ids:
+                raise HTTPException(status_code=409, detail={"message": "配れる生徒がいません (AIなし枠・学年の区分が合わない・見つからない)",
+                                                              "refused": tannin_refused})
+            for _sid in student_ids:
+                for _q, _ts in _student_seen_grammar_qids(c, _sid).items():
+                    if _q not in tannin_seen or _ts > tannin_seen[_q]:
+                        tannin_seen[_q] = _ts
+        tannin_reviewed_available = None
         # 🎯 除外問題 ID を解決 (exclude_drill_id のドリルで出題済みの question_ids)
         exclude_ids = []
         if exclude_drill_id:
@@ -50477,8 +50513,18 @@ def admin_grammar_drill_create(
             except (TypeError, ValueError):
                 passage_count = 2
             passage_count = max(1, min(passage_count, _GRAMMAR_PASSAGE_MAX_PER_DRILL))
-            qids, passage_ids = _grammar_pick_drill_passages(c, subject, unit, levels, passage_count, exclude_ids)
+            if ai_tannin:
+                _seen_p = dict(tannin_seen)
+                for _q in exclude_ids:
+                    _seen_p[_q] = "9999"   # 前回のドリルの本文は最後の手段 (新しい順の最後)
+                _rp = _auto_pick_reviewed_passages(c, subject, unit, levels, passage_count, _seen_p)
+                qids, passage_ids = _rp["qids"], _rp["passage_ids"]
+                tannin_reviewed_available = _rp["reviewed_available"]
+            else:
+                qids, passage_ids = _grammar_pick_drill_passages(c, subject, unit, levels, passage_count, exclude_ids)
             if len(passage_ids) < passage_count or not qids:
+                if ai_tannin:
+                    raise HTTPException(status_code=400, detail=f"レビュー済みの本文が足りません (要求 {passage_count}本 / 在庫 {tannin_reviewed_available or 0}本)")
                 raise HTTPException(
                     status_code=400,
                     detail=f"単元「{unit}」の本文の在庫が不足しています (要求 {passage_count}本 / "
@@ -50490,8 +50536,19 @@ def admin_grammar_drill_create(
             # 1) 在庫から count 問をランダム固定 (exclude_ids があれば除外 = 前回と被らない新問のみ)
             #    CEO の手で配る抽出 (_grammar_pick_drill_question_ids・出典は見ない)。3日ドリルは 2026-10-15 から
             #    レビュー済みだけの _auto_pick_reviewed_question_ids (別関数)。
-            qids = _grammar_pick_drill_question_ids(c, subject, unit, subject_level, levels, count, exclude_ids)
+            if ai_tannin:
+                _seen_q = dict(tannin_seen)
+                for _q in exclude_ids:
+                    _seen_q[_q] = "9999"   # 前回のドリルの問題は最後の手段
+                _excl = _ROUTINE_SUBJECT_LEVEL_EXCLUDE_UNIT_PREFIXES.get(subject, ()) if subject_level else ()
+                _rq = _auto_pick_reviewed_question_ids(c, subject, "" if subject_level else unit, levels, count, _seen_q, _excl)
+                qids = _rq["ids"]
+                tannin_reviewed_available = _rq["reviewed_available"]
+            else:
+                qids = _grammar_pick_drill_question_ids(c, subject, unit, subject_level, levels, count, exclude_ids)
             if len(qids) < count:
+                if ai_tannin:
+                    raise HTTPException(status_code=400, detail=f"レビュー済みの問題が足りません (要求 {count}問 / 在庫 {tannin_reviewed_available or 0}問)")
                 _scope = f"科目「{unit}」" if subject_level else f"単元「{unit}」"
                 raise HTTPException(
                     status_code=400,
@@ -50522,8 +50579,8 @@ def admin_grammar_drill_create(
         # 2) ドリル作成 (question_ids 固定)
         c.execute(
             "INSERT INTO grammar_drills (subject, title, unit, level, question_ids, created_by) "
-            "VALUES (?, ?, ?, ?, ?, 'admin') RETURNING id",
-            (subject, title, unit, ",".join(levels), json.dumps(qids)),
+            "VALUES (?, ?, ?, ?, ?, ?) RETURNING id",
+            (subject, title, unit, ",".join(levels), json.dumps(qids), "ai_tannin" if ai_tannin else "admin"),
         )
         dr = c.fetchone()
         drill_id = (dr["id"] if hasattr(dr, "keys") else dr[0]) if dr else None
@@ -50579,6 +50636,8 @@ def admin_grammar_drill_create(
         #    送る経路があるときだけ BackgroundTasks で非同期送信 (DB 書込(配信)と通知を分離し HTTP は即返却)。
         #    新規割当に成功した生徒のみが対象なので、同じドリルの既配信 (uq 重複 skip 分) への再通知は起きない。
         ch = _homework_notify_channels("manual")
+        if ai_tannin:
+            ch = {"line": False, "email": False}   # 🧑‍🏫 AI 担任はアプリ内の 🆕 だけ (登録メールは保護者宛が多い)
         scheduled = False
         if notify_list and (ch["line"] or ch["email"]):
             try:
@@ -50607,6 +50666,8 @@ def admin_grammar_drill_create(
             "notified": len(notify_list) if scheduled else 0,
             "notify_channels": {"line": ch["line"], "email": ch["email"]},
             "skipped": [s for s in student_ids if s not in found],
+            "refused": tannin_refused,                       # 🧑‍🏫 ai_tannin で配らなかった生徒 {student_id, reason: ai_nashi|band}
+            "reviewed_available": tannin_reviewed_available,  # 🧑‍🏫 ai_tannin のときのレビュー済みの在庫 (それ以外は None)
             "message": _drill_create_message(len(assigned), title, sent_ch, already_taken=len(already_taken)),
         }
     except HTTPException:

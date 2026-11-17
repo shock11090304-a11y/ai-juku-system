@@ -567,6 +567,13 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_homework_notify_in_app.py
 
+      # 🧑‍🏫 AI 担任の配信 (grammar-drill/create の ai_tannin: true・2026-11-17): レビュー済みだけ・AIなし枠と学年違いは配らない・メールなし
+      - name: AI 担任の配信 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_ai_tannin_drill.py
+
       # 🧒 宿題・プリントのお知らせメールを確認済みの子メール (student_email) にも送る (2026-10-24)。
       #   子メールが無い・未確認・保護者と同じ・他家庭の保護者メールと同じ家庭は今までどおり保護者 1 通だけ。
       #   自動配信 (既定) は 0 通のまま・子メールを読めないときは保護者宛だけ・週次弱点プリントも同じ照会。
