@@ -1,14 +1,19 @@
 {
  "_meta": {
   "source": "manual-drill-v3",
-  "note": "英文法ドリル補充 第3弾 基礎(basic)だけ・5単元 (時制・名詞・代名詞・仮定法・語法・イディオム・分詞構文)。AI 担任 (2026-11-17 塾長「その子のための問題を出して・無ければ作って本番に」) のため。生成→機械検査→既存 v1/v2/弱点特訓との重複照合→正解を伏せた独立ソルバー3名の盲検で全員一致かつ別解の指摘なしの問題だけ採用→別担当が解説を校閲 (19件修正)。180問から13問を落とした (別解の指摘9・選択肢の多数決で当たる2・校閲の留保2)。解説の末尾に訳。",
-  "count": 167,
+  "note": "英文法ドリル補充 第3弾 基礎(basic)だけ・5単元 (時制・名詞・代名詞・仮定法・語法・イディオム・分詞構文)。AI 担任 (2026-11-17 塾長「その子のための問題を出して・無ければ作って本番に」) のため。生成→機械検査→既存 v1/v2/弱点特訓との重複照合→正解を伏せた独立ソルバー3名の盲検で全員一致かつ別解の指摘なしの問題だけ採用→別担当が解説を校閲 (19件修正)。180問から13問を落とした (別解の指摘9・選択肢の多数決で当たる2・校閲の留保2)。解説の末尾に訳。 【第2陣 2026-11-17】否定・倒置・比較・接続詞・強調・省略・動名詞の基礎176問を追加。180問から4問を落とした (既存と類似1・選択肢の多数決で当たる1・盲検で別解の指摘2 (try -ing/to))。解説は別担当2名が校閲 (14件修正)。 【訂正】選択肢の多数決の検査で番号を1つずらして読んでいたため、第1陣・第2陣で検出されていた仮定法1・分詞構文2・否定1の計4問を取込前に外した (計339問)。",
+  "count": 339,
   "by_unit": {
    "時制": 35,
    "名詞・代名詞": 35,
-   "仮定法": 26,
+   "仮定法": 25,
    "語法・イディオム": 36,
-   "分詞構文": 35
+   "分詞構文": 33,
+   "動名詞": 34,
+   "否定・倒置": 34,
+   "比較": 35,
+   "接続詞": 36,
+   "強調・省略": 36
   },
   "created": "2026-11-17"
  },
@@ -1097,21 +1102,6 @@
    "subject": "english",
    "unit": "仮定法",
    "level": "basic",
-   "stem": "Ken always gets up late. If he got up earlier, he (   ) late for school so often.",
-   "choices": [
-    "isn't",
-    "wouldn't be",
-    "won't be",
-    "wouldn't have been"
-   ],
-   "answer": 1,
-   "explanation": "「always gets up late」は今の習慣で、if節が過去形「got up」なので現在の事実の反対。主節は would＋原形の wouldn't be が正しい。wouldn't have been は過去の事実の反対の形で、今の習慣の話と合わない。isn't と won't be は直説法の形で、仮定法のif節と組み合わせられない。訳：ケンはいつも寝坊する。もっと早く起きれば、こんなによく学校に遅刻しないのに。",
-   "source": "manual-drill-v3"
-  },
-  {
-   "subject": "english",
-   "unit": "仮定法",
-   "level": "basic",
    "stem": "It's raining now. If it (   ) sunny, we could play tennis in the park.",
    "choices": [
     "is",
@@ -2177,36 +2167,6 @@
    "subject": "english",
    "unit": "分詞構文",
    "level": "basic",
-   "stem": "(   ) a long way, we were very tired.",
-   "choices": [
-    "Having been walked",
-    "Walked",
-    "Having walked",
-    "To walk"
-   ],
-   "answer": 2,
-   "explanation": "主語の we は歩く側で、長い道のりを歩いたのは疲れていた時点より前なので、完了分詞 Having walked を使う。Having been walked は受け身で、私たちが散歩させられたような意味になる。Walked を文頭に置くと過去分詞で受け身の意味になる。To walk は「歩くために」の意味で、疲れていた理由を表せない。訳：長い道のりを歩いたので、私たちはとても疲れていた。",
-   "source": "manual-drill-v3"
-  },
-  {
-   "subject": "english",
-   "unit": "分詞構文",
-   "level": "basic",
-   "stem": "(   ) well, Yuki didn't go to the party.",
-   "choices": [
-    "Not felt",
-    "Not feeling",
-    "Feeling not",
-    "No feeling"
-   ],
-   "answer": 1,
-   "explanation": "分詞構文を否定するときは、not を分詞の前に置く。主語の Yuki は体調を感じる側なので現在分詞 feeling を使い、Not feeling とする。Feeling not は not の位置が誤り。Not felt は過去分詞で、ユキが感じられる側になる。No feeling は名詞のまとまりで、後ろの well とつながらず理由を表せない。訳：体調がよくなかったので、ユキはパーティーに行かなかった。",
-   "source": "manual-drill-v3"
-  },
-  {
-   "subject": "english",
-   "unit": "分詞構文",
-   "level": "basic",
    "stem": "(   ) his name, I couldn't call out to him.",
    "choices": [
     "Remembering not",
@@ -2516,6 +2476,2631 @@
    ],
    "answer": 1,
    "explanation": "主節の主語 the cat と違う The door を前に置いた独立分詞構文。The door was open の was を分詞にして、The door being open とする。was だとカンマだけで二つの文をつなぐことになり誤り。to be は「～であるために」の意味になり理由を表せない。been は過去分詞で、それだけでは分詞構文にならない。訳：ドアが開いていたので、猫が家から走り出た。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "The children enjoyed (   ) sandcastles on the beach all afternoon.",
+   "choices": [
+    "to build",
+    "build",
+    "building",
+    "built"
+   ],
+   "answer": 2,
+   "explanation": "「enjoy（楽しむ）」は動名詞を目的語にとる動詞なので building が正しい。to build は不定詞で、enjoy の後にはふつう置かない。build は原形で、enjoyed の直後に動詞の原形は続かない。built は過去形・過去分詞で、enjoyed の目的語にならない。訳：子どもたちは午後ずっと浜辺で砂の城を作るのを楽しんだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "Have you finished (   ) the dishes? We need to leave in ten minutes.",
+   "choices": [
+    "washing",
+    "to wash",
+    "wash",
+    "washed"
+   ],
+   "answer": 0,
+   "explanation": "「finish（終える）」は動名詞を目的語にとるので washing が正しい。to wash は不定詞で、finish の目的語にはならない。wash は原形で、finished の直後に置けない。washed は過去形・過去分詞で、「〜すること」という目的語の働きをしない。訳：お皿を洗い終わった？あと10分で出かけないといけないよ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "Do you mind (   ) here for a few minutes? I'll be right back.",
+   "choices": [
+    "to wait",
+    "wait",
+    "waited",
+    "waiting"
+   ],
+   "answer": 3,
+   "explanation": "「mind（気にする・いやがる）」は動名詞を目的語にとるので waiting が正しい。Do you mind -ing? で「〜していただけますか」という依頼になる。to wait は不定詞で mind の目的語にはならない。wait は原形、waited は過去形で、どちらも mind の直後に置けない。訳：ここで数分待っていてもらえますか。すぐ戻ります。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "To stay safe, you should avoid (   ) your phone while you are walking.",
+   "choices": [
+    "use",
+    "using",
+    "to use",
+    "used"
+   ],
+   "answer": 1,
+   "explanation": "「avoid（避ける）」は動名詞を目的語にとるので using が正しい。to use は不定詞で、avoid の後には置かない。use は原形で、avoid の直後に動詞の原形は続かない。used は過去形・過去分詞で、「〜すること」という目的語にならない。訳：安全のために、歩いている間はスマートフォンを使うのを避けるべきだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "My father gave up (   ) coffee because it kept him awake at night.",
+   "choices": [
+    "to drink",
+    "drink",
+    "drinking",
+    "drank"
+   ],
+   "answer": 2,
+   "explanation": "「give up（やめる・あきらめる）」は動名詞を目的語にとるので drinking が正しい。to drink は不定詞で、give up の後には置けない。give up の後ろには名詞か動名詞が来るので、原形の drink も誤り。drank は過去形で目的語にならない。訳：父は夜眠れなくなるので、コーヒーを飲むのをやめた。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "Our soccer team practices (   ) the ball for an hour every day.",
+   "choices": [
+    "kicking",
+    "kick",
+    "to kick",
+    "kicked"
+   ],
+   "answer": 0,
+   "explanation": "「practice（練習する）」は動名詞を目的語にとるので kicking が正しい。to kick は不定詞で、practice の目的語にはふつうならない。kick は原形で、practices の直後に置けない。kicked は過去形・過去分詞で、「〜すること」という目的語の働きをしない。訳：私たちのサッカーチームは毎日1時間ボールをける練習をする。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "Please stop (   ) so loudly. I'm trying to study.",
+   "choices": [
+    "talk",
+    "to talk",
+    "talked",
+    "talking"
+   ],
+   "answer": 3,
+   "explanation": "「I'm trying to study（勉強しようとしている）」から、今している「大声で話すこと」をやめてほしいので stop talking が正しい。to talk だと stop to talk で「話すために立ち止まる」の意味になり、文脈に合わない。talk は原形、talked は過去形で、stop の直後に置けない。訳：そんなに大きな声で話すのをやめてください。勉強しようとしているんです。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "I want (   ) a doctor in the future.",
+   "choices": [
+    "becoming",
+    "to become",
+    "become",
+    "became"
+   ],
+   "answer": 1,
+   "explanation": "「want（望む）」は不定詞を目的語にとる動詞なので to become が正しい。「in the future（将来）」というこれからのことを望む内容にも合う。becoming は動名詞で、want の目的語にはふつうならない。become は原形、became は過去形で、want の直後には置けない。訳：私は将来医者になりたい。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "Because of the heavy traffic, we decided (   ) the train instead of the bus.",
+   "choices": [
+    "taking",
+    "take",
+    "took",
+    "to take"
+   ],
+   "answer": 3,
+   "explanation": "「decide（決める）」は不定詞を目的語にとる動詞なので to take が正しい。これから先の行動を決める意味に不定詞が合う。taking は動名詞で、decide の目的語にはならない。take は原形、took は過去形で、decided の直後に置けない。訳：道がひどく混んでいたので、私たちはバスではなく電車に乗ることにした。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "She hopes (   ) abroad after she graduates from high school.",
+   "choices": [
+    "to study",
+    "studying",
+    "study",
+    "studied"
+   ],
+   "answer": 0,
+   "explanation": "「hope（望む）」は不定詞を目的語にとる動詞なので to study が正しい。「after she graduates（卒業したら）」というこれからのことを望む内容に合う。studying は動名詞で、hope の目的語にはならない。study は原形、studied は過去形で、hopes の直後には置けない。訳：彼女は高校を卒業したら留学したいと思っている。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "Last summer, I (   ) swimming in the sea with my cousins.",
+   "choices": [
+    "wanted",
+    "hoped",
+    "enjoyed",
+    "decided"
+   ],
+   "answer": 2,
+   "explanation": "空所の後が動名詞 swimming なので、動名詞を目的語にとる enjoyed が正しい。wanted・hoped・decided はどれも不定詞を目的語にとる動詞で、後ろに swimming は置けない（wanted to swim などの形になる）。「Last summer（去年の夏）」の出来事を楽しんだという意味にもなる。訳：去年の夏、私はいとこたちと海で泳ぐのを楽しんだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "I remember (   ) to this song in my grandmother's car when I was little.",
+   "choices": [
+    "listen",
+    "to listen",
+    "listening",
+    "listened"
+   ],
+   "answer": 2,
+   "explanation": "「when I was little（小さかったころ）」から、過去にしたことを覚えているので remember -ing の listening が正しい。to listen だと remember to listen で「（これから）忘れずに聴く」の意味になり、過去の場面と合わない。listen は原形、listened は過去形で、remember の直後に置けない。訳：小さいころ、祖母の車でこの歌を聴いたのを覚えている。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "Remember (   ) an umbrella with you. It's going to rain this afternoon.",
+   "choices": [
+    "taking",
+    "to take",
+    "take",
+    "took"
+   ],
+   "answer": 1,
+   "explanation": "「It's going to rain this afternoon（午後は雨が降る）」から、これからすることを忘れずにするよう言っているので remember to do の to take が正しい。taking だと「持っていったことを覚えている」と過去の意味になり、合わない。take は原形、took は過去形で、remember の直後には置けない。訳：傘を忘れずに持っていきなさい。午後は雨が降るよ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "I'll never forget (   ) on stage at the school festival last year.",
+   "choices": [
+    "sing",
+    "singing",
+    "to sing",
+    "sang"
+   ],
+   "answer": 1,
+   "explanation": "「last year（去年）」の出来事なので、過去にしたことを忘れないという forget -ing の singing が正しい。to sing だと forget to sing で「（これから）歌うのを忘れる」の意味になり、去年の出来事と合わない。sing は原形、sang は過去形で、forget の直後には置けない。訳：去年の文化祭で舞台で歌ったことを私は決して忘れないだろう。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "Oh no! I forgot (   ) my homework. It's still on my desk at home.",
+   "choices": [
+    "bringing",
+    "bring",
+    "to bring",
+    "brought"
+   ],
+   "answer": 2,
+   "explanation": "「It's still on my desk at home（まだ家の机の上にある）」から、するべきことをし忘れたので forget to do の to bring が正しい。bringing だと「持ってきたことを忘れた」の意味になり、宿題が家にあることと矛盾する。bring は原形、brought は過去形で、forgot の直後には置けない。訳：しまった！宿題を持ってくるのを忘れた。まだ家の机の上にある。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "Halfway through the race, the runner stopped (   ) some water, and then he started running again.",
+   "choices": [
+    "drinking",
+    "to drink",
+    "drink",
+    "drank"
+   ],
+   "answer": 1,
+   "explanation": "「then he started running again（また走り始めた）」から、走るのをやめたのは水を飲むためなので、目的を表す stop to do の to drink が正しい。drinking だと「水を飲むのをやめる」の意味になり合わない。drink は原形、drank は過去形で、stopped の直後に置けない。訳：レースの途中でその走者は立ち止まって水を飲み、それからまた走り始めた。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "My sister is good at (   ) delicious cakes.",
+   "choices": [
+    "make",
+    "to make",
+    "making",
+    "made"
+   ],
+   "answer": 2,
+   "explanation": "「be good at（〜が得意だ）」の at は前置詞なので、後ろには名詞か動名詞が来る。よって making が正しい。to make は不定詞で、前置詞の後には置けない。make は原形で、前置詞の目的語にならない。made は過去形・過去分詞で、「〜すること」の意味を表さない。訳：姉はおいしいケーキを作るのが得意だ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "Are you interested in (   ) a new language?",
+   "choices": [
+    "learning",
+    "to learn",
+    "learn",
+    "learned"
+   ],
+   "answer": 0,
+   "explanation": "「be interested in（〜に興味がある）」の in は前置詞なので、後ろには名詞か動名詞が来る。よって learning が正しい。to learn は不定詞で、前置詞の in の後には置けない。learn は原形で、前置詞の目的語にならない。learned は過去形・過去分詞で、「〜すること」の意味を表さない。訳：あなたは新しい言語を学ぶことに興味がありますか。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "She went to school without (   ) breakfast this morning.",
+   "choices": [
+    "eat",
+    "eating",
+    "to eat",
+    "ate"
+   ],
+   "answer": 1,
+   "explanation": "「without（〜せずに）」は前置詞なので、後ろには名詞か動名詞が来る。よって eating が正しい。to eat は不定詞で、前置詞の後には置けない。eat は原形で、without の目的語にならない。ate は過去形で、前置詞の後に置けない。without -ing で「〜しないで」の意味になる。訳：彼女は今朝、朝ご飯を食べずに学校へ行った。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "Please turn off the lights before (   ) the room.",
+   "choices": [
+    "leave",
+    "to leave",
+    "left",
+    "leaving"
+   ],
+   "answer": 3,
+   "explanation": "「before」の後に主語と動詞の形がないので、この before は前置詞として使われており、後ろには動名詞が来る。よって leaving が正しい。主語を入れて before you leave とすることもできるが、選択肢にはない。leave は原形、to leave は不定詞で、前置詞の後には置けない。left は過去形・過去分詞で合わない。訳：部屋を出る前に電気を消してください。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "You can stay healthy by (   ) to school every day.",
+   "choices": [
+    "walk",
+    "to walk",
+    "walking",
+    "walked"
+   ],
+   "answer": 2,
+   "explanation": "「by（〜することによって）」は前置詞なので、後ろには名詞か動名詞が来る。よって walking が正しい。by -ing で手段を表す。to walk は不定詞で、前置詞の後には置けない。walk は原形で、by の目的語にならない。walked は過去形・過去分詞で、「〜すること」の意味を表さない。訳：毎日学校へ歩いて行くことで健康でいられる。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "I'm looking forward to (   ) the movie with you on Saturday.",
+   "choices": [
+    "watch",
+    "watching",
+    "watched",
+    "have watched"
+   ],
+   "answer": 1,
+   "explanation": "「look forward to（〜を楽しみに待つ）」の to は不定詞の to ではなく前置詞なので、後ろには名詞か動名詞が来る。よって watching が正しい。watch は原形で、to の後に置くと不定詞と誤解した形になり誤り。watched は過去形・過去分詞で合わない。have watched も前置詞の後には置けない。訳：土曜日にあなたと映画を見るのを楽しみにしています。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "I'm used to (   ) up early, so six o'clock is not hard for me.",
+   "choices": [
+    "getting",
+    "get",
+    "got",
+    "have got"
+   ],
+   "answer": 0,
+   "explanation": "「be used to（〜に慣れている）」の to は前置詞なので、後ろには名詞か動名詞が来る。よって getting が正しい。get は原形で、be used to の後には置けない（used to get なら「以前はよく〜した」で、be 動詞がつかない）。got は過去形、have got は完了形で、前置詞の後に置けない。訳：私は早起きに慣れているので、6時は苦にならない。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "My brother objected to (   ) his room with me.",
+   "choices": [
+    "share",
+    "shared",
+    "have shared",
+    "sharing"
+   ],
+   "answer": 3,
+   "explanation": "「object to（〜に反対する）」の to は前置詞なので、後ろには名詞か動名詞が来る。よって sharing が正しい。share は原形で、to を不定詞と誤解した形になり誤り。shared は過去形・過去分詞で、「〜すること」の意味を表さない。have shared は完了形で、前置詞の後には置けない。訳：弟は私と部屋を共有することに反対した。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "(   ) books is a good way to learn new words.",
+   "choices": [
+    "Read",
+    "Reads",
+    "Reading",
+    "Has read"
+   ],
+   "answer": 2,
+   "explanation": "空所から books までが文の主語で、後に動詞「is」があるので、主語になる動名詞 Reading が正しい。Read は原形で、そのままでは主語にならず、文頭に置くと命令文になってしまう。Reads は3人称単数現在の動詞で、主語にならない。Has read も動詞の形で主語にならない。訳：本を読むことは新しい単語を覚えるよい方法だ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "My hobby is (   ) photos of the night sky.",
+   "choices": [
+    "take",
+    "took",
+    "taken",
+    "taking"
+   ],
+   "answer": 3,
+   "explanation": "「My hobby is（私の趣味は）」の後には補語として「〜すること」が来るので、動名詞 taking が正しい。take は原形で、is の後に補語として置けない。took は過去形で、is の後には置けない。taken は過去分詞で、is taken photos では受け身となり意味も形も成り立たない。訳：私の趣味は夜空の写真を撮ることだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "I'm sure of (   ) passing the exam. He studied very hard.",
+   "choices": [
+    "he",
+    "his",
+    "he's",
+    "himself"
+   ],
+   "answer": 1,
+   "explanation": "「He studied very hard（彼は一生懸命勉強した）」から、合格するのは「私」ではなく「彼」である。動名詞の意味上の主語は所有格などで動名詞の前に置くので his が正しい。he は主格で、動名詞の前に置けない。he's は he is の短縮形で、前置詞 of の後に置けない。himself は再帰代名詞で、意味上の主語を表さない。訳：彼が試験に合格すると私は確信している。彼は一生懸命勉強したから。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "My parents were very happy about (   ) winning the speech contest.",
+   "choices": [
+    "I",
+    "mine",
+    "myself",
+    "my"
+   ],
+   "answer": 3,
+   "explanation": "喜んでいるのは両親で、優勝したのは「私」なので、動名詞 winning の前に意味上の主語を置く。意味上の主語はふつう所有格で表すので my が正しい。I は主格で、前置詞 about の後に置けない。mine は「私のもの」という意味の所有代名詞で、動名詞の前に置かない。myself は再帰代名詞で、意味上の主語にならない。訳：両親は私がスピーチコンテストで優勝したことをとても喜んだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "I'm sorry for (   ) you back last night. I fell asleep early.",
+   "choices": [
+    "not calling",
+    "calling not",
+    "don't call",
+    "not to call"
+   ],
+   "answer": 0,
+   "explanation": "「I fell asleep early（早く寝てしまった）」から、電話をかけ直さなかったことを謝っている。動名詞を否定するときは not を動名詞の直前に置くので not calling が正しい。calling not は not の位置が誤り。don't call は動詞の否定形で、for の後に置けない。not to call は不定詞で、前置詞の後には置けない。訳：昨夜はかけ直さなくてごめんなさい。早く寝てしまったんです。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "It is no use (   ) about the test now. It's already over.",
+   "choices": [
+    "worry",
+    "to worry",
+    "worrying",
+    "worried"
+   ],
+   "answer": 2,
+   "explanation": "「It is no use -ing（〜しても無駄だ）」という慣用表現なので worrying が正しい。「It's already over（もう終わった）」とも意味が合う。to worry は不定詞で、この表現ではふつう使わない。worry は原形で、use の後に置けない。worried は過去形・過去分詞で、「〜すること」の意味を表さない。訳：今さらテストのことを心配しても無駄だ。もう終わったのだから。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "It's so hot today. I feel like (   ) some ice cream.",
+   "choices": [
+    "eating",
+    "eat",
+    "to eat",
+    "ate"
+   ],
+   "answer": 0,
+   "explanation": "「feel like -ing（〜したい気がする）」という慣用表現で、この like は前置詞なので後ろには動名詞が来る。よって eating が正しい。「It's so hot（とても暑い）」とも意味が合う。to eat は不定詞で、前置詞 like の後には置けない。eat は原形、ate は過去形で、どちらも like の後に置けない。訳：今日はとても暑い。アイスクリームが食べたい気分だ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "There is no (   ) him once he starts talking about soccer.",
+   "choices": [
+    "stop",
+    "to stop",
+    "stopped",
+    "stopping"
+   ],
+   "answer": 3,
+   "explanation": "「There is no -ing（〜することはできない）」という慣用表現なので stopping が正しい。「once he starts talking（いったん話し始めると）」から、止められないという意味にも合う。to stop は不定詞で、この表現では使わない。stop は名詞として読むと後ろの him とつながらない。stopped は過去形・過去分詞で合わない。訳：彼がいったんサッカーの話を始めると、止めることはできない。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "This camera is really worth (   ). It's cheap and takes great pictures.",
+   "choices": [
+    "buying",
+    "to buy",
+    "buy",
+    "bought"
+   ],
+   "answer": 0,
+   "explanation": "「be worth -ing（〜する価値がある）」という表現なので buying が正しい。「It's cheap（安い）」から、買う価値があるという意味にも合う。to buy は不定詞で、worth の後には置けない。buy は原形、bought は過去形・過去分詞で、どちらも worth の後に置けない。訳：このカメラは本当に買う価値がある。安いし、すばらしい写真が撮れる。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "動名詞",
+   "level": "basic",
+   "stem": "How about (   ) a walk in the park after lunch?",
+   "choices": [
+    "take",
+    "taking",
+    "to take",
+    "took"
+   ],
+   "answer": 1,
+   "explanation": "「How about -ing?（〜するのはどうですか）」は提案を表す表現で、about は前置詞なので後ろには動名詞が来る。よって taking が正しい。to take は不定詞で、前置詞の後には置けない。take は原形で、about の目的語にならない。took は過去形で、提案の文に合わず形も誤り。take a walk で「散歩する」。訳：昼食の後、公園を散歩するのはどうですか。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "Not every (   ) in this shop is expensive; some are quite cheap.",
+   "choices": [
+    "item",
+    "items",
+    "items are",
+    "of items"
+   ],
+   "answer": 0,
+   "explanation": "「every」の後にはふつう単数の名詞が来るので item が正しい。「Not every 〜」で「すべての〜が…というわけではない」という部分否定になり、後半の「some are quite cheap」とも合う。items は複数形で every と合わない。items are は後ろの is と動詞が重なる。of items は every of という形がなく誤り。訳：この店の品物がすべて高いわけではない。かなり安いものもある。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "I like most vegetables, but I don't like (   ) of them. I can't eat carrots.",
+   "choices": [
+    "any",
+    "none",
+    "all",
+    "either"
+   ],
+   "answer": 2,
+   "explanation": "「most vegetables」は好きで、にんじんは食べられないので、「すべてが〜というわけではない」の部分否定 not all にする all が正しい。any だと「どれも好きではない」という全体否定になり、most と矛盾する。none は don't と重なり二重否定になる。either は2つのものに使う語で、野菜全体には合わない。訳：私はたいていの野菜が好きだが、すべてが好きなわけではない。にんじんは食べられない。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "My sister is usually kind to me, but she is not (   ) kind. Sometimes she gets angry with me.",
+   "choices": [
+    "never",
+    "ever",
+    "sometimes",
+    "always"
+   ],
+   "answer": 3,
+   "explanation": "「usually kind」と「Sometimes she gets angry」から、「いつも〜とは限らない」の部分否定 not always が正しい。never は not と重なって二重否定になる。not ever は「一度も〜ない」の意味になり、usually kind と矛盾する。sometimes は not の直後にふつう置かず、意味も通らない。訳：姉はたいてい私に優しいが、いつも優しいとは限らない。時々私に腹を立てる。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "Not (   ) the students in my class have smartphones. About five of them don't.",
+   "choices": [
+    "any",
+    "all",
+    "no",
+    "each"
+   ],
+   "answer": 1,
+   "explanation": "「About five of them don't」から、「全員が〜というわけではない」の部分否定 Not all が正しい。any だと「誰も持っていない」の全体否定になる。no は not と重なる二重否定。each は each of the students の形が必要で、動詞も has になる。訳：クラスの生徒全員がスマートフォンを持っているわけではない。5人ほどは持っていない。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "(   ) every student likes PE. Some prefer reading in the library.",
+   "choices": [
+    "No",
+    "None",
+    "Never",
+    "Not"
+   ],
+   "answer": 3,
+   "explanation": "「Some prefer reading」から、「すべての生徒が〜というわけではない」の部分否定にするので Not が正しい。Not every で「全員が〜とは限らない」の意味。No は every と並べて使えない。None は代名詞で、none of the students の形で使う。Never every という形もない。訳：すべての生徒が体育を好きなわけではない。図書館で読書をする方が好きな生徒もいる。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "I asked three friends for help, but (   ) of them could come. I had to do it alone.",
+   "choices": [
+    "no",
+    "not",
+    "none",
+    "nothing"
+   ],
+   "answer": 2,
+   "explanation": "「I had to do it alone」から、3人の誰も来られなかったという全体否定なので none が正しい。none of 〜で「〜のうち誰も…ない」となる。no は名詞の前に置く語で、no of とは言わない。not of them も主語の形にならない。nothing は物に使う語で、人を指す of them と合わない。訳：3人の友達に手伝いを頼んだが、誰も来られなかった。私は1人でやるしかなかった。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "There is (   ) water in the bottle. It's completely empty.",
+   "choices": [
+    "not",
+    "none",
+    "never",
+    "no"
+   ],
+   "answer": 3,
+   "explanation": "「completely empty（完全に空っぽ）」から、水がまったくないという全体否定で、名詞 water の前に置ける no が正しい。no は名詞の前で「少しも〜ない」を表す。not は名詞の前に直接置かず、not any water の形が必要。none は代名詞で、名詞の前には置けない。never は「一度も〜ない」と時を表す副詞で、量の否定に合わない。訳：ボトルには水がまったく入っていない。完全に空っぽだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "My grandfather has (   ) been abroad. He has lived in Japan all his life.",
+   "choices": [
+    "ever",
+    "never",
+    "already",
+    "still"
+   ],
+   "answer": 1,
+   "explanation": "「has lived in Japan all his life」から、「一度も〜したことがない」の never が正しい。ever は肯定の平叙文ではふつう使わず、疑問文や否定文で使う。already は「すでに行った」となり、ずっと日本にいたことと矛盾する。still は has と been の間に置くと意味が通らない。訳：祖父は一度も外国へ行ったことがない。生まれてからずっと日本で暮らしている。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "Ken was very quiet at the meeting. He said (   ) at all.",
+   "choices": [
+    "anything",
+    "something",
+    "everything",
+    "nothing"
+   ],
+   "answer": 3,
+   "explanation": "「very quiet」と「at all」から、「何も言わなかった」という全体否定の nothing が正しい。nothing at all で「まったく何も〜ない」。anything は否定語と組むが、この文には否定語がない。something は何か言ったことになり quiet と合わず、at all も付かない。everything はすべて言ったことになる。訳：ケンは会議でとても静かだった。まったく何も言わなかった。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "There is (   ) sugar in this cake, so it doesn't taste sweet at all.",
+   "choices": [
+    "little",
+    "a little",
+    "few",
+    "a few"
+   ],
+   "answer": 0,
+   "explanation": "「doesn't taste sweet at all」から、「ほとんどない」という否定の意味の little が正しい。sugar は数えられない名詞なので little / a little を使う。a little は「少しある」という肯定的な意味で、まったく甘くないこととつながらない。few と a few は数えられる名詞に使う語で、sugar には合わない。訳：このケーキには砂糖がほとんど入っていないので、まったく甘くない。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "(   ) people came to the concert because of the heavy rain. The hall was almost empty.",
+   "choices": [
+    "Little",
+    "Few",
+    "Much",
+    "Every"
+   ],
+   "answer": 1,
+   "explanation": "「The hall was almost empty」から、「ほとんど〜ない」の Few が正しい。people は数えられる名詞の複数なので few を使う。Little は数えられない名詞に使う語で people に合わない。Much も数えられない名詞に使い、意味も「たくさん」で文脈と逆。Every は単数名詞と使い、people には付かない。訳：大雨のため、コンサートに来た人はほとんどいなかった。ホールはほぼ空っぽだった。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "I (   ) eat breakfast because I always get up late. I eat it maybe once a month.",
+   "choices": [
+    "seldom",
+    "often",
+    "usually",
+    "always"
+   ],
+   "answer": 0,
+   "explanation": "「always get up late」と「maybe once a month」から、「めったに〜ない」の seldom が正しい。seldom は not がなくても否定の意味を持つ。often は「よく」、usually は「たいてい」、always は「いつも」食べる意味になり、月に1回くらいという内容と矛盾する。訳：私はいつも寝坊するので、めったに朝食を食べない。食べるのはたぶん月に1回くらいだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "I was so tired last night that I could (   ) keep my eyes open.",
+   "choices": [
+    "hard",
+    "nearly",
+    "mostly",
+    "hardly"
+   ],
+   "answer": 3,
+   "explanation": "「so tired」から、「ほとんど〜できない」の hardly が正しい。hardly は not がなくても否定の意味を表す。hard は「熱心に・激しく」の意味の副詞で、could hard keep という形はなく、意味も合わない。nearly は「もう少しで」、mostly は「たいてい」の意味で、どちらも目を開けていられない様子を表さない。訳：昨夜はとても疲れていたので、ほとんど目を開けていられなかった。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "My uncle lives far away, so I (   ) see him. I see him only once a year at New Year.",
+   "choices": [
+    "often",
+    "almost",
+    "rarely",
+    "ever"
+   ],
+   "answer": 2,
+   "explanation": "「lives far away」と「only once a year」から、「めったに〜ない」の rarely が正しい。rarely は not なしで否定の意味を持つ。often は「よく会う」となり年に1回と矛盾する。almost see では会う回数の少なさを表せない。ever は肯定文の動詞の前にふつう単独で置かない。訳：おじは遠くに住んでいるので、めったに会わない。会うのは年に1回、お正月だけだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "The meeting is not on Monday (   ) on Tuesday. See you on Tuesday!",
+   "choices": [
+    "and",
+    "but",
+    "or",
+    "so"
+   ],
+   "answer": 1,
+   "explanation": "「See you on Tuesday!（火曜日に会おう）」から、会議は火曜日なので「AではなくB」の not A but B にする but が正しい。and では「月曜日ではない」と「火曜日に」がうまくつながらず、意味が通らない。or にすると「月曜日でも火曜日でもない」の意味になり、火曜日に会うことと矛盾する。so は「だから」の意味で、ここには理由と結果の関係がない。訳：会議は月曜日ではなく火曜日だ。火曜日に会おう。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "Ken is not my brother (   ) my cousin. His mother is my aunt.",
+   "choices": [
+    "and",
+    "but",
+    "nor",
+    "so"
+   ],
+   "answer": 1,
+   "explanation": "「His mother is my aunt（彼の母は私のおば）」から、ケンはいとこなので「AではなくB」の not A but B にする but が正しい。and では not とうまく組み合わず、「兄弟ではない」と「いとこだ」をつなげない。nor にすると「兄弟でもいとこでもない」の意味になり、おばの子であることと矛盾する。so は「だから」の意味で、つながりがない。訳：ケンは私の兄弟ではなく、いとこだ。彼の母は私のおばだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "I used to live in Osaka, but I don't live there (   ). Now I live in Nagoya.",
+   "choices": [
+    "any longer",
+    "no longer",
+    "longer",
+    "any long"
+   ],
+   "answer": 0,
+   "explanation": "「used to live」と「Now I live in Nagoya」から「もう〜ない」の意味にする。否定文 don't ... の文末には any longer を置くのが正しい。no longer は don't と重なって二重否定になる。longer だけでは「もっと長く」の意味になる。any long は比較級になっておらず誤り。訳：私は以前大阪に住んでいたが、もうそこには住んでいない。今は名古屋に住んでいる。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "Mika (   ) plays the piano. She stopped playing and sold it two years ago.",
+   "choices": [
+    "still",
+    "yet",
+    "no longer",
+    "already"
+   ],
+   "answer": 2,
+   "explanation": "「stopped playing and sold it」から、「もう〜ない」の no longer が正しい。no longer は以前はしていたが今はしていないことを表す。still は「今も弾いている」となり、やめて売ったことと矛盾する。yet はふつう否定文や疑問文で使い、肯定文の動詞の前には置かない。already は「もう弾いている」で意味が通らない。訳：ミカはもうピアノを弾かない。2年前に弾くのをやめて、ピアノを売った。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "(   ) have I heard such a strange story. Is it really true?",
+   "choices": [
+    "Never",
+    "Ever",
+    "Always",
+    "Already"
+   ],
+   "answer": 0,
+   "explanation": "空所の後が「have I heard」と疑問文の語順（倒置）になっているので、否定語の Never が正しい。Never などの否定語を文頭に置くと、ふつう後ろが倒置になる。Ever は単独で文頭に置いて倒置を作る使い方をしない。Always や Already も否定語ではないので、後ろがこの語順にならない。訳：こんな不思議な話は一度も聞いたことがない。本当なの？",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "Never (   ) late for school. He always arrives ten minutes early.",
+   "choices": [
+    "is he",
+    "he is",
+    "does he",
+    "he does"
+   ],
+   "answer": 0,
+   "explanation": "文頭に否定語「Never」があるので、後ろは疑問文と同じ語順（倒置）にする。late は形容詞で be 動詞が必要なので is he が正しい。he is はふつうの語順で倒置になっていない。does he は一般動詞の倒置の形で、late の前に動詞がなく文が成り立たない。he does も語順が誤りで、述語になる動詞もない。訳：彼は決して学校に遅刻しない。いつも10分早く着く。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "Not until I was twenty (   ) how to drive.",
+   "choices": [
+    "I learned",
+    "learned I",
+    "did I learned",
+    "did I learn"
+   ],
+   "answer": 3,
+   "explanation": "「Not until 〜」が文頭にあるので、後ろの主節は疑問文と同じ語順（倒置）にする。一般動詞の過去なので did I learn が正しい。Not until A did B で「AになってはじめてBした」。I learned はふつうの語順で倒置になっていない。learned I は一般動詞を主語の前に出しており誤り。did I learned は did の後が過去形で誤り。訳：20歳になってはじめて、私は車の運転を習った。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "Rarely (   ) to bed before midnight. He always works late.",
+   "choices": [
+    "my father goes",
+    "goes my father",
+    "my father does go",
+    "does my father go"
+   ],
+   "answer": 3,
+   "explanation": "文頭に否定の意味の「Rarely」があるので、後ろは疑問文と同じ語順（倒置）にする。主語は3人称単数の my father で、現在の一般動詞なので does my father go が正しい。my father goes と my father does go はふつうの語順で倒置になっていない。goes my father は一般動詞を主語の前に出しており誤り。訳：父はめったに夜中の12時前に寝ない。いつも遅くまで働いている。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "Little (   ) Mom know that we were planning a party for her.",
+   "choices": [
+    "does",
+    "was",
+    "did",
+    "had"
+   ],
+   "answer": 2,
+   "explanation": "文頭の「Little」と原形の「know」から、一般動詞の倒置を作る did が正しい。Little did A know で「Aは少しも知らなかった」。後ろの were planning が過去なので、現在の does は時制が合わない。was は be 動詞で、原形 know を続けられない。had の後は過去分詞で know と合わない。訳：私たちがお母さんのためにパーティーを計画しているとは、お母さんは少しも知らなかった。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "Never (   ) a word about it to anyone. She kept the secret for years.",
+   "choices": [
+    "she said",
+    "said she",
+    "did she say",
+    "she did say"
+   ],
+   "answer": 2,
+   "explanation": "文頭に否定語「Never」があるので、後ろは疑問文と同じ語順（倒置）にする。後ろの「kept」から過去のことなので、did she say が正しい。she said と she did say はふつうの語順のままで倒置になっていない。said she は一般動詞を主語の前に出しており、この形はふつう使わない。訳：彼女はそのことを誰にも一言も言わなかった。何年も秘密を守った。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "\"I was really tired after the long walk.\" \"So (   ) I.\"",
+   "choices": [
+    "did",
+    "am",
+    "was",
+    "were"
+   ],
+   "answer": 2,
+   "explanation": "相手の「I was really tired」に「私もそうだ」と同意するときは So + 動詞 + 主語 の形にし、動詞は相手の文に合わせる。be 動詞の過去 was を使った文なので So was I が正しい。did は一般動詞の文に使う形で、be 動詞の文には合わない。am は現在形で時制が合わない。were は主語 I と合わない。訳：「長い散歩のあと、本当に疲れたよ。」「私も疲れた。」",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "\"I didn't go to the party last night.\" \"(   ) did I.\"",
+   "choices": [
+    "So",
+    "Neither",
+    "Either",
+    "Not"
+   ],
+   "answer": 1,
+   "explanation": "相手の「I didn't go」という否定文に「私もしなかった」と同意するときは Neither + 動詞 + 主語 の形にするので Neither が正しい。So は肯定文に同意するときの形で、否定文には合わない。Either は I didn't either のように文末で使い、文頭に置いて倒置にしない。Not did I という形もない。訳：「昨夜はパーティーに行かなかったよ。」「私も行かなかった。」",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "My sister can't swim, and (   ) can I.",
+   "choices": [
+    "neither",
+    "so",
+    "either",
+    "too"
+   ],
+   "answer": 0,
+   "explanation": "前半の「can't swim」が否定なので、「〜もまた…ない」は neither + 助動詞 + 主語 の形にし、neither が正しい。so は肯定の内容を受ける語で、can't と合わない。either は I can't, either のように否定文の文末に置き、and either can I の語順にしない。too は肯定文の文末に置く語で、ここには入らない。訳：姉は泳げないし、私も泳げない。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "\"Tom will join the soccer club.\" \"So (   ) I. Let's join together.\"",
+   "choices": [
+    "do",
+    "am",
+    "does",
+    "will"
+   ],
+   "answer": 3,
+   "explanation": "相手の文が助動詞「will」を使っているので、「私もそうする」は So will I にする。So + 動詞 + 主語 の動詞は、相手の文の助動詞や be 動詞に合わせる。do は現在の一般動詞の文に使う形で、will の文には合わない。am は be 動詞で、相手の文の will と合わない。does は主語 I と合わず、時制も合わない。訳：「トムはサッカー部に入るつもりだよ。」「私も入るよ。一緒に入ろう。」",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "\"Ken likes cats.\" \"So (   ) his sister.\"",
+   "choices": [
+    "does",
+    "do",
+    "is",
+    "likes"
+   ],
+   "answer": 0,
+   "explanation": "相手の「likes」は一般動詞の現在形なので、「〜もそうだ」は So + does/do + 主語 の形にする。主語 his sister は3人称単数なので does が正しい。do は主語が3人称単数のときには使わない。is は be 動詞で、一般動詞 likes の文には合わない。likes は一般動詞そのものを主語の前に出しており、この形はない。訳：「ケンは猫が好きだよ。」「彼のお姉さんもそうだよ。」",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "Only after I read her letter (   ) why she had left.",
+   "choices": [
+    "I understood",
+    "did I understand",
+    "understood I",
+    "I did understand"
+   ],
+   "answer": 1,
+   "explanation": "「Only after 〜（〜してはじめて）」が文頭にあるので、後ろの主節はふつう疑問文と同じ語順（倒置）になる。過去の一般動詞なので did I understand が正しい。I understood と I did understand はふつうの語順のままで倒置になっていない。understood I は一般動詞を主語の前に出しており誤り。訳：彼女の手紙を読んではじめて、私は彼女がなぜ去ったのかわかった。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "Only once (   ) late for class this year. She is a very careful student.",
+   "choices": [
+    "has she been",
+    "she has been",
+    "has been she",
+    "she been"
+   ],
+   "answer": 0,
+   "explanation": "文頭の「Only once（一度だけ）」のように only で始まる語句が文頭に来ると、後ろはふつう疑問文と同じ語順（倒置）になる。this year から現在完了なので has she been が正しい。she has been はふつうの語順で倒置になっていない。has been she は主語の位置が誤り。she been は has がなく述語にならない。訳：彼女が今年授業に遅れたのは一度だけだ。とても注意深い生徒だ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "Only on clear nights (   ) the stars in this town.",
+   "choices": [
+    "you can see",
+    "can you see",
+    "you see can",
+    "can see you"
+   ],
+   "answer": 1,
+   "explanation": "文頭に「Only on clear nights（晴れた夜にだけ）」があるので、後ろはふつう疑問文と同じ語順（倒置）になり、can you see が正しい。you can see はふつうの語順で倒置になっていない。you see can は助動詞 can が動詞の後にあり誤り。can see you は主語がなく、you が目的語の位置になってしまう。訳：この町では、晴れた夜にだけ星が見える。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "The test was (   ) difficult. Everyone finished it in ten minutes and got full marks.",
+   "choices": [
+    "nothing but",
+    "anything but",
+    "all but",
+    "everything but"
+   ],
+   "answer": 1,
+   "explanation": "「Everyone finished it in ten minutes and got full marks」から、「決して〜ではない」の anything but が正しい。nothing but は「ただ〜だけ」、all but は「ほとんど〜」の意味で、どちらも難しかったことになり文脈と逆。everything but はこの意味を表さない。訳：そのテストは決して難しくなかった。全員が10分で終えて満点を取った。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "否定・倒置",
+   "level": "basic",
+   "stem": "His English is far (   ) perfect, so he still practices every day.",
+   "choices": [
+    "of",
+    "to",
+    "from",
+    "for"
+   ],
+   "answer": 2,
+   "explanation": "「far from 〜」で「〜からほど遠い・決して〜ではない」の意味になり、「still practices every day（今も毎日練習している）」とつながるので from が正しい。far from は not などの否定語を使わずに強い否定を表す。far of、far to、far for はどれも「〜とはほど遠い」の意味を表す決まった形ではない。訳：彼の英語は決して完璧ではないので、今も毎日練習している。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "This train is as (   ) as the express, so we'll arrive at the same time.",
+   "choices": [
+    "faster",
+    "fastest",
+    "more fast",
+    "fast"
+   ],
+   "answer": 3,
+   "explanation": "「as ... as」の間には形容詞・副詞の原級が入るので fast が正しい。「同じ時刻に着く」とも合う。faster は比較級で、後ろに than が必要になる。fastest は最上級で、ふつう the を付けて3つ以上の中の1番を表す。more fast は1音節の fast には使わない形で誤り。訳：この電車は急行と同じくらい速いので、私たちは同じ時刻に着くだろう。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "Today is not (   ) cold as yesterday, so you don't need a coat.",
+   "choices": [
+    "as",
+    "than",
+    "more",
+    "much"
+   ],
+   "answer": 0,
+   "explanation": "後ろの「cold as yesterday」の as と組んで not as ... as「…ほど～ではない」になるので as が正しい。than は比較級の後に置く語で、原級の cold とは組まない。more を入れると more cold as となり、than がなく形が崩れる。much は比較級を強める語で、原級の前で as と組む働きはない。訳：今日は昨日ほど寒くないので、コートはいらないよ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "Ken can't sing as (   ) as his sister.",
+   "choices": [
+    "better",
+    "best",
+    "well",
+    "more well"
+   ],
+   "answer": 2,
+   "explanation": "動詞「sing」を説明するので副詞が必要で、as ... as の間は原級だから well が正しい。better は well の比較級で、as ... as の間には入らない。best は最上級で、比べる相手との同じ程度を表す形にならない。more well は well の比較級としては使わない形で誤り。訳：ケンは姉（妹）ほど上手に歌えない。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "I have as many comic books (   ) my friend Ryo.",
+   "choices": [
+    "than",
+    "as",
+    "so",
+    "like"
+   ],
+   "answer": 1,
+   "explanation": "前の「as many」と組んで as many ＋名詞＋ as「…と同じ数の～」になるので as が正しい。than は比較級の後で使う語で、as many とは組まない。so は not so ... as のように否定文で使うのがふつうで、肯定文のこの位置には入らない。like は「…のような」の意味で as many と組まない。訳：私は友だちのリョウと同じくらいたくさんのマンガを持っている。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "The movie was not as (   ) as I expected, so we got home early.",
+   "choices": [
+    "longer",
+    "long",
+    "longest",
+    "length"
+   ],
+   "answer": 1,
+   "explanation": "「not as ... as」の間には原級が入るので long が正しい。「早く帰れた」とも意味が合う。longer は比較級で、後ろに than が必要になる。longest は最上級で、as ... as の間には入らない。length は「長さ」という名詞で、be 動詞の後で映画の様子を表す形容詞の位置に合わない。訳：その映画は思っていたほど長くなかったので、私たちは早く家に帰れた。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "My new phone is (   ) than my old one.",
+   "choices": [
+    "more small",
+    "smallest",
+    "small",
+    "smaller"
+   ],
+   "answer": 3,
+   "explanation": "後ろに「than」があるので比較級が必要で、1音節の small は -er を付けて smaller とするのが正しい。more small は1音節の語にはふつう使わない形で誤り。smallest は最上級で、than とは組まない。small は原級で、than の前に置けない。訳：私の新しい電話は古いものより小さい。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "This dictionary is (   ) than the one I used before.",
+   "choices": [
+    "more useful",
+    "usefuler",
+    "most useful",
+    "useful"
+   ],
+   "answer": 0,
+   "explanation": "「than」があるので比較級が必要で、useful のように長めの語はふつう more を前に置いて more useful とする。usefuler は -er を付けた誤った形。most useful は最上級で、than とは組まない。useful は原級のままで、than の前に置けない。訳：この辞書は前に使っていたものより役に立つ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "This summer was (   ) than last summer.",
+   "choices": [
+    "hoter",
+    "more hot",
+    "hottest",
+    "hotter"
+   ],
+   "answer": 3,
+   "explanation": "「than」があるので比較級が必要。hot は〈短母音＋子音字〉で終わるので、t を重ねて hotter とする。hoter は t を重ねていない誤ったつづり。more hot は1音節の hot にはふつう使わない形。hottest は最上級で、than とは組まない。訳：今年の夏は去年の夏より暑かった。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "My grandmother looks (   ) than before since she started gardening.",
+   "choices": [
+    "happyer",
+    "happiest",
+    "happier",
+    "happy"
+   ],
+   "answer": 2,
+   "explanation": "「than before」があるので比較級が必要。happy は〈子音字＋y〉で終わるので、y を i に変えて -er を付け happier とする。happyer は y を i に変えていない誤ったつづり。happiest は最上級で、than とは組まない。happy は原級で、than の前に置けない。訳：祖母は庭いじりを始めてから、前より幸せそうに見える。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "My cold is (   ) today than yesterday, so I can go to school.",
+   "choices": [
+    "better",
+    "gooder",
+    "best",
+    "well"
+   ],
+   "answer": 0,
+   "explanation": "「than yesterday」と「学校に行ける」から「昨日より良い」の意味の比較級が必要で、good（well）の比較級は不規則変化の better になる。gooder という形はない。best は最上級で、than とは組まない。well は原級で、than の前に置けない。訳：かぜが昨日より良くなったので、学校に行ける。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "The rain got (   ) in the afternoon than in the morning, so we canceled the picnic.",
+   "choices": [
+    "worse",
+    "badder",
+    "worst",
+    "more bad"
+   ],
+   "answer": 0,
+   "explanation": "「than in the morning」と「ピクニックを中止した」から「ひどくなった」の比較級が必要で、bad の比較級は不規則変化の worse になる。badder は誤った形。worst は最上級で、than とは組まない。more bad も bad の比較級としては使わない。訳：午前中より午後のほうが雨がひどくなったので、私たちはピクニックを中止した。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "Could you speak (   )? I can't follow you.",
+   "choices": [
+    "slowlier",
+    "more slowlier",
+    "more slowly",
+    "the most slowly"
+   ],
+   "answer": 2,
+   "explanation": "「話についていけない」から「もっとゆっくり」の意味の比較級が必要。-ly で終わる副詞 slowly はふつう more を前に置いて more slowly とする。slowlier は -er を付けた誤った形。more slowlier は more と -er を重ねた誤り。the most slowly は最上級で、比べる範囲もなく意味が合わない。訳：もっとゆっくり話していただけますか。話についていけません。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "There are (   ) students in this class than in that one.",
+   "choices": [
+    "many",
+    "most",
+    "more",
+    "much"
+   ],
+   "answer": 2,
+   "explanation": "後ろに「than」があるので比較級が必要で、many の比較級 more が正しい。many は原級で、than の前に置けない。most は最上級で、than とは組まない。much は数えられない名詞に使う語で、students には使わず、比較級でもない。訳：このクラスにはあのクラスよりたくさんの生徒がいる。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "Ms. Sato is younger (   ) my mother.",
+   "choices": [
+    "as",
+    "to",
+    "that",
+    "than"
+   ],
+   "answer": 3,
+   "explanation": "前に比較級「younger」があるので、比べる相手を示す than が正しい。as は as young as のように原級と組む語で、younger の後には来ない。to は senior / junior などラテン語由来の語で使い、younger には使わない。that は比べる相手を示す働きがない。訳：佐藤さんは私の母より若い。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "Kenji is the (   ) runner in our club.",
+   "choices": [
+    "fastest",
+    "faster",
+    "fast",
+    "most fast"
+   ],
+   "answer": 0,
+   "explanation": "前の「the」と後ろの「in our club」から、集団の中で1番を表す最上級 fastest が正しい。faster は比較級で、than がなく、クラブ全体の中の1番も表せない。fast は原級で、in our club の中での1番を表せない。most fast は1音節の fast には使わない形で誤り。訳：ケンジは私たちのクラブで一番速い走者だ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "This is the most popular café (   ) this town.",
+   "choices": [
+    "of",
+    "than",
+    "at",
+    "in"
+   ],
+   "answer": 3,
+   "explanation": "最上級の後で範囲を示すとき、「this town」のような場所・集団にはふつう in を使う。of はふつう of all や of the three のように同じ種類の複数のものの中で比べるときに使う。than は比較級と組む語で、最上級の後には来ない。at は town のような範囲を示すのに使わない。訳：ここはこの町で一番人気のあるカフェだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "I like summer the best (   ) all the seasons.",
+   "choices": [
+    "in",
+    "than",
+    "of",
+    "from"
+   ],
+   "answer": 2,
+   "explanation": "「all the seasons」のように同じ種類の複数のものの中で比べるときは、最上級の後にふつう of を使う。in は場所・集団の範囲を示すときに使う語。than は比較級と組む語で、the best とは組まない。from は比べる範囲を表さない。訳：私はすべての季節の中で夏が一番好きだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "This is the (   ) pizza in town. You should try it.",
+   "choices": [
+    "better",
+    "goodest",
+    "most good",
+    "best"
+   ],
+   "answer": 3,
+   "explanation": "前の「the」と後ろの「in town」「食べてみて」から最上級が必要で、good の最上級は不規則変化の best になる。better は比較級で、町全体の中の1番を表せない。goodest という形はない。most good も good の最上級としては使わない。訳：これは町で一番おいしいピザだよ。食べてみて。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "That was the (   ) day of my life; I lost my wallet and missed the train.",
+   "choices": [
+    "worse",
+    "worst",
+    "baddest",
+    "most bad"
+   ],
+   "answer": 1,
+   "explanation": "前の「the」と後ろの「of my life」、財布をなくし電車に乗り遅れた内容から、「最悪の」の最上級が必要で、bad の最上級は不規則変化の worst になる。worse は比較級で、人生の中の1番を表せない。baddest は誤った形。most bad も bad の最上級としては使わない。訳：あれは人生で最悪の日だった。財布をなくし、電車にも乗り遅れた。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "Kyoto is one of the most beautiful (   ) in Japan.",
+   "choices": [
+    "city",
+    "city's",
+    "a city",
+    "cities"
+   ],
+   "answer": 3,
+   "explanation": "「one of the＋最上級」の後には複数名詞が来るので cities が正しい。「…のうちの1つ」だから、選ぶもとになるものは複数になる。city は単数形で one of の後に合わない。city's は所有格で、後ろに名詞がない。a city は a が付いた単数で、the most beautiful の後に置けない。訳：京都は日本で最も美しい都市の1つだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "Soccer is one of (   ) popular sports in the world.",
+   "choices": [
+    "most",
+    "the most",
+    "more",
+    "the more"
+   ],
+   "answer": 1,
+   "explanation": "「one of ... 複数名詞」と「in the world」から、「最も…なものの1つ」を表す the＋最上級が必要なので the most が正しい。most は the がなく、one of の後で範囲の中の最上を表す形にならない。more は比較級で than がない。the more は比較級で、世界の中の最上を表せない。訳：サッカーは世界で最も人気のあるスポーツの1つだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "This apple is (   ) sweeter than the one I ate yesterday.",
+   "choices": [
+    "very",
+    "more",
+    "much",
+    "so"
+   ],
+   "answer": 2,
+   "explanation": "比較級「sweeter」を強めて「ずっと甘い」とするには much を使う。very は原級を強める語で、比較級の前には置かない。more を入れると more sweeter となり、比較級を重ねた誤りになる。so も原級を強める語で、比較級を強めない。訳：このリンゴは昨日食べたものよりずっと甘い。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "Your plan is (   ) better than mine. Let's use yours.",
+   "choices": [
+    "very",
+    "far",
+    "too",
+    "so"
+   ],
+   "answer": 1,
+   "explanation": "比較級「better」を強めて「はるかに良い」とするには far を使う。「あなたの案を使おう」とも合う。very は原級を強める語で、比較級の前には置かない。too は「…すぎる」の意味で原級と使い、比較級を強めない。so も原級を強める語で、比較級の前には置かない。訳：君の計画は私のよりはるかに良い。君のを使おう。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "The new hall is big, but the old one was (   ) bigger.",
+   "choices": [
+    "very",
+    "too",
+    "even",
+    "so"
+   ],
+   "answer": 2,
+   "explanation": "「新しいホールは大きいが」と前で大きさを認めた上で、「古いほうはさらに大きかった」と比較級「bigger」を強めるので even が正しい。very は原級を強める語で、比較級の前には置かない。too は「…すぎる」の意味で原級と使う。so も原級を強める語で、比較級を強めない。訳：新しいホールは大きいが、古いホールはさらに大きかった。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "This road is three times as (   ) as that path.",
+   "choices": [
+    "wide",
+    "wider",
+    "widest",
+    "width"
+   ],
+   "answer": 0,
+   "explanation": "「three times as ... as」で「…の3倍～」の意味になり、as と as の間には原級が入るので wide が正しい。wider は比較級で、as ... as の間には入らない。widest は最上級で、この形に入らない。width は「幅」という名詞で、as ... as の間の形容詞の位置に合わない。訳：この道路はあの小道の3倍の幅がある。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "My uncle earns three (   ) as much as I do.",
+   "choices": [
+    "time",
+    "twice",
+    "times",
+    "double"
+   ],
+   "answer": 2,
+   "explanation": "「three」と後ろの「as much as」から、「3倍」を表す three times が正しい。倍数の times は複数形で使う。time は単数で、three の後では「3倍」にならない。twice は「2倍」の意味で、three と並べられない。double も「2倍」を表す語で、three の後に置けない。訳：おじは私の3倍のお金を稼いでいる。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "The (   ) you practice, the better you will play the piano.",
+   "choices": [
+    "most",
+    "much",
+    "many",
+    "more"
+   ],
+   "answer": 3,
+   "explanation": "後半の「the better」と組んで「the＋比較級, the＋比較級（…すればするほど～）」になるので、前半も比較級 more が必要。most は最上級で、この形に入らない。much と many は原級で、比較級の形にならない。訳：練習すればするほど、ピアノが上手に弾けるようになる。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "The higher we climbed, the (   ) it became.",
+   "choices": [
+    "colder",
+    "coldest",
+    "cold",
+    "much colder"
+   ],
+   "answer": 0,
+   "explanation": "前半の「The higher」と組んで「the＋比較級, the＋比較級」になるので、後半も比較級 colder が正しい。coldest は最上級で、この形に入らない。cold は原級で比較級になっていない。much colder は比較級を強める much が the と比較級の間に入り、この形では使わない。訳：高く登れば登るほど、寒くなった。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "The older my dog gets, (   ) he sleeps.",
+   "choices": [
+    "longer",
+    "the longer",
+    "the longest",
+    "the long"
+   ],
+   "answer": 1,
+   "explanation": "前半の「The older」と組んで「the＋比較級, the＋比較級」になるので the longer が正しい。longer は the がなく、この形の後半として不完全。the longest は最上級で、この形に入らない。the long は原級で比較級になっていない。訳：私の犬は年をとるほど、長く眠るようになる。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "The days are getting (   ) and longer in spring.",
+   "choices": [
+    "long",
+    "longest",
+    "longer",
+    "more"
+   ],
+   "answer": 2,
+   "explanation": "後ろの「and longer」と組んで「比較級＋and＋比較級（ますます…）」になるので、同じ比較級 longer が正しい。long は原級で、比較級と並ばない。longest は最上級で、この形に入らない。more を入れると more and longer となり、同じ語の比較級を繰り返す形にならない。訳：春には日がますます長くなっていく。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "English is becoming more and more (   ) around the world.",
+   "choices": [
+    "important",
+    "importanter",
+    "most important",
+    "importance"
+   ],
+   "answer": 0,
+   "explanation": "「more and more」の後に長めの形容詞の原級を置いて「ますます…」を表すので important が正しい。importanter は -er を付けた誤った形。most important は最上級で、more and more の後には来ない。importance は「重要性」という名詞で、becoming の後の形容詞の位置に合わない。訳：英語は世界中でますます重要になってきている。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "Mika is taller than (   ) other girl in her class.",
+   "choices": [
+    "all",
+    "both",
+    "many",
+    "any"
+   ],
+   "answer": 3,
+   "explanation": "「比較級＋than any other＋単数名詞」で「ほかのどの…よりも」と最上級の意味になるので any が正しい。後ろの「girl」が単数であることが手がかり。all は後ろにふつう複数名詞が来る。both は2人を表し、複数名詞と使う。many も複数名詞と使う語で、単数の girl には合わない。訳：ミカはクラスのほかのどの女の子よりも背が高い。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "For me, no other subject is (   ) than music.",
+   "choices": [
+    "as interesting",
+    "more interesting",
+    "most interesting",
+    "interesting"
+   ],
+   "answer": 1,
+   "explanation": "「no other」と「than」から、No other＋名詞＋比較級＋than で最上級の意味になるので more interesting が正しい。as interesting は後ろに than ではなく as が必要になる。most interesting は最上級で、than とは組まない。interesting は原級で、than の前に置けない。訳：私にとって、音楽ほどおもしろい教科はほかにない。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "This jacket is (   ) expensive than that one, so I'll take this one.",
+   "choices": [
+    "fewer",
+    "less",
+    "little",
+    "least"
+   ],
+   "answer": 1,
+   "explanation": "後ろの「expensive than」と「こちらにする」から「…ほど高くない」の意味になり、形容詞の前に置いて程度が低いことを表す less が正しい。fewer は数えられる名詞の数が少ないことを表し、形容詞の前には置かない。little は原級で、than と組まない。least は最上級で、than とは組まない。訳：このジャケットはあれほど高くないので、こちらにします。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "比較",
+   "level": "basic",
+   "stem": "I prefer dogs (   ) cats because I like going for walks.",
+   "choices": [
+    "to",
+    "than",
+    "from",
+    "for"
+   ],
+   "answer": 0,
+   "explanation": "「prefer A to B」で「BよりAを好む」の意味になり、比べる相手には to を使うので to が正しい。than は比較級の後に置く語で、prefer の後ではふつう使わない。from は「…から」の意味で、比べる相手を示さない。for は「…のために」の意味で、ここでは意味が通らない。訳：散歩に行くのが好きなので、私は猫より犬のほうが好きだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "I washed the dishes, (   ) my sister dried them.",
+   "choices": [
+    "unless",
+    "and",
+    "until",
+    "because"
+   ],
+   "answer": 1,
+   "explanation": "「私が皿を洗った」と「姉が皿をふいた」は、同じ場面の2つの動作を対等に並べているだけなので、追加を表す and が正しい。unless は「〜しない限り」、until は「〜するまで」で、どちらも意味がつながらない。because は「〜なので」と理由を表すが、姉がふいたことは皿を洗った理由にならない。訳：私が皿を洗い、姉がそれをふいた。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "The test was difficult, (   ) I answered all the questions.",
+   "choices": [
+    "so",
+    "or",
+    "but",
+    "if"
+   ],
+   "answer": 2,
+   "explanation": "「難しかった」のに「全部の問題に答えた」という、予想に反する内容が続くので、逆接の but が正しい。so は「だから」で、難しかったから全部答えた、という不自然な因果になる。or は「または」で2つを選ぶ関係ではない。if は「もし〜なら」で、過去の事実を述べる文に合わない。訳：そのテストは難しかったが、私は全部の問題に答えた。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "Would you like to eat at home (   ) go out for dinner tonight?",
+   "choices": [
+    "or",
+    "but",
+    "so",
+    "because"
+   ],
+   "answer": 0,
+   "explanation": "「家で食べる」と「夕食に出かける」の2つから1つを選ばせる疑問文なので、選択を表す or が正しい。but は逆接で、どちらかを選ばせる形にならない。so は「だから」と結果を表し、2つの案を並べる意味にならない。because は理由を表すが、出かけることは家で食べる理由ではない。訳：今夜は家で食べたいですか、それとも夕食に出かけたいですか。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "It started to snow heavily, (   ) the school closed early.",
+   "choices": [
+    "but",
+    "or",
+    "although",
+    "so"
+   ],
+   "answer": 3,
+   "explanation": "「大雪が降り始めた」が原因で、「学校が早く閉まった」がその結果なので、結果を導く so が正しい。but と although はどちらも逆接で、大雪と早い休校は予想どおりの流れなので合わない。or は「または」で、2つのうち1つを選ぶ関係ではない。訳：雪が激しく降り始めたので、学校は早く終わった。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "Turn left at the next corner, (   ) you will see the post office.",
+   "choices": [
+    "or",
+    "and",
+    "but",
+    "so"
+   ],
+   "answer": 1,
+   "explanation": "「命令文, and ...」は「〜しなさい、そうすれば…」の意味。「次の角を左に曲がる」と「郵便局が見える」という結果につながるので and が正しい。or は「そうしないと」で、曲がらないと郵便局が見えることになり道案内として不自然。but は逆接で意味が通らない。so はふつう命令文のあとで「そうすれば」の意味には使わない。訳：次の角を左に曲がりなさい、そうすれば郵便局が見えます。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "Do your homework now, (   ) you won't be able to watch TV tonight.",
+   "choices": [
+    "and",
+    "but",
+    "so",
+    "or"
+   ],
+   "answer": 3,
+   "explanation": "「命令文, or ...」は「〜しなさい、さもないと…」の意味。「今宿題をしなさい」と、しなかった場合の「今夜テレビが見られない」が続くので or が正しい。and だと「宿題をすればテレビが見られない」となり意味が逆になる。but は逆接で意味が通らない。so も「宿題をするとテレビが見られない」となり不自然。訳：今宿題をしなさい、さもないと今夜テレビが見られませんよ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "(   ) I opened the window, a bird flew into the room.",
+   "choices": [
+    "Unless",
+    "When",
+    "Because of",
+    "Until"
+   ],
+   "answer": 1,
+   "explanation": "「窓を開けた」ときに「鳥が部屋に飛び込んできた」という、ある時点に起きたことを表すので、時を表す When が正しい。Unless は「〜しない限り」で、過去の出来事に合わない。Because of は前置詞なので、あとに主語と動詞のある節を続けられない。Until は「〜するまでずっと」で、鳥が飛び込むという一度の出来事とつながらない。訳：私が窓を開けたとき、鳥が部屋に飛び込んできた。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "My dog sleeps on the sofa (   ) I am at work.",
+   "choices": [
+    "during",
+    "until",
+    "while",
+    "unless"
+   ],
+   "answer": 2,
+   "explanation": "空所のあとに「I am at work」という主語と動詞のある節が続き、「仕事に出ている間」という期間を表すので、接続詞の while が正しい。during も「〜の間」だが前置詞なので、ふつう名詞が続き節は続けられない。until は「〜するまで」で、仕事に出るまで寝ることになり不自然。unless は「〜しない限り」で意味が通らない。訳：私が仕事に出ている間、うちの犬はソファで寝ている。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "Please wait here (   ) I come back.",
+   "choices": [
+    "by",
+    "until",
+    "during",
+    "unless"
+   ],
+   "answer": 1,
+   "explanation": "「ここで待つ」という動作が「私が戻ってくる」ときまで続くので、継続の終わりを表す接続詞 until が正しい。by は「〜までに」の意味の前置詞で、節を続けられず、待つという継続にも合わない。during は前置詞で節が続かない。unless は「〜しない限り」で、戻ってこない限り待つ、と意味が通らない。訳：私が戻ってくるまでここで待っていてください。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "The concert will already be over (   ) we get there.",
+   "choices": [
+    "until",
+    "during",
+    "by the time",
+    "unless"
+   ],
+   "answer": 2,
+   "explanation": "「already（すでに）」から、私たちが着く時点までにコンサートが終わっている、という完了の期限を表すので by the time が正しい。until は「〜するまでずっと」と状態の継続を表し、「終わってしまう」という一回の変化には合わない。during は前置詞で節を続けられない。unless は「〜しない限り」で意味が通らない。訳：私たちが着くころには、コンサートはもう終わっているだろう。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "The children ran outside (   ) the bell rang.",
+   "choices": [
+    "as long as",
+    "even if",
+    "unless",
+    "as soon as"
+   ],
+   "answer": 3,
+   "explanation": "「ベルが鳴った」直後に「子どもたちが外へ走り出た」という時の流れなので、「〜するとすぐに」の as soon as が正しい。as long as は「〜する限り・〜する間は」と条件や期間を表し、一度の出来事に合わない。even if は「たとえ〜でも」で過去の事実に合わない。unless は「〜しない限り」で意味が通らない。訳：ベルが鳴るとすぐに、子どもたちは外へ走り出た。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "I have lived in this town (   ) I was ten.",
+   "choices": [
+    "since",
+    "during",
+    "until",
+    "by"
+   ],
+   "answer": 0,
+   "explanation": "「have lived」という現在完了と、「I was ten（10歳だった）」という過去の起点から、「〜して以来ずっと」を表す since が正しい。during と by は前置詞で、あとに主語と動詞のある節を続けられない。until は「〜するまで」で、過去の10歳まで住んでいたなら現在完了とつながらない。訳：私は10歳のときからずっとこの町に住んでいる。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "Wash your hands (   ) you eat lunch.",
+   "choices": [
+    "until",
+    "unless",
+    "so",
+    "before"
+   ],
+   "answer": 3,
+   "explanation": "昼食を食べる前に手を洗う、という順序を表すので before が正しい。until は「〜するまでずっと」で、昼食まで手を洗い続けることになり不自然。unless は「〜しない限り」で、昼食を食べないなら手を洗え、と意味がおかしい。so は結果を表し、手を洗う指示の理由や時を表せない。訳：昼食を食べる前に手を洗いなさい。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "We went for a walk (   ) we had dinner. We were very full.",
+   "choices": [
+    "after",
+    "unless",
+    "though",
+    "or"
+   ],
+   "answer": 0,
+   "explanation": "「We were very full（とてもおなかがいっぱいだった）」から、夕食を食べたあとに散歩に出たとわかるので after が正しい。unless は「〜しない限り」で、過去の事実に合わない。though は逆接だが、夕食と散歩の間に対立の関係はない。or は「または」で、散歩と夕食のどちらかを選ぶ意味になり不自然。訳：私たちは夕食を食べたあと散歩に出かけた。とてもおなかがいっぱいだったのだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "I didn't go to school yesterday (   ) I had a bad cold.",
+   "choices": [
+    "though",
+    "because of",
+    "because",
+    "unless"
+   ],
+   "answer": 2,
+   "explanation": "「ひどいかぜをひいていた」ことが「学校に行かなかった」理由で、空所のあとに「I had」という主語と動詞のある節が続くので、接続詞の because が正しい。because of は前置詞の働きをするので、あとには名詞が続き節は続けられない。though は逆接で、かぜと欠席は対立しない。unless は「〜しない限り」で意味が通らない。訳：ひどいかぜをひいていたので、私は昨日学校を休んだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "The train was late (   ) an accident.",
+   "choices": [
+    "because of",
+    "because",
+    "although",
+    "unless"
+   ],
+   "answer": 0,
+   "explanation": "空所のあとが「an accident」という名詞だけで、事故が遅れの原因なので、前置詞の働きをする because of が正しい。because と although と unless はどれも接続詞で、ふつうあとに主語と動詞のある節が必要になる。また although は逆接、unless は「〜しない限り」で、意味の面でも合わない。訳：事故のせいで電車が遅れた。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "(   ) it was a holiday, the streets were quiet.",
+   "choices": [
+    "Until",
+    "Unless",
+    "Despite",
+    "As"
+   ],
+   "answer": 3,
+   "explanation": "「休日だった」ことが「通りが静かだった」理由なので、理由を表す接続詞 As が正しい。Until は「〜するまで」、Unless は「〜しない限り」で、どちらも理由を表さず意味が通らない。Despite は「〜にもかかわらず」の前置詞で、あとに節を続けられず、意味も逆になる。訳：休日だったので、通りは静かだった。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "(   ) it's your birthday, I'll pay for dinner today.",
+   "choices": [
+    "Since",
+    "Unless",
+    "Until",
+    "Though"
+   ],
+   "answer": 0,
+   "explanation": "「あなたの誕生日だ」ことが「今日は私が夕食代を払う」理由なので、「〜だから」の Since が正しい。Since のあとが現在形 it's で主節も完了形ではないので、時の「〜以来」ではなく理由の意味になる。Unless は「〜しない限り」で意味が通らない。Until は「〜するまで」で合わない。Though は逆接で、誕生日とおごることは対立しない。訳：あなたの誕生日だから、今日は私が夕食代を払うよ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "(   ) my grandfather is eighty, he still plays tennis every week.",
+   "choices": [
+    "Despite",
+    "Because of",
+    "Though",
+    "Unless"
+   ],
+   "answer": 2,
+   "explanation": "「80歳だ」のに「still（今でも）テニスをしている」という予想に反する内容なので、譲歩の接続詞 Though が正しい。Despite も「〜にもかかわらず」だが前置詞なので、あとに「my grandfather is」のような節を続けられない。Because of も前置詞で節が続かず、意味も理由になる。Unless は「〜しない限り」で意味が通らない。訳：祖父は80歳だが、今でも毎週テニスをしている。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "(   ) his hard work, he failed the test.",
+   "choices": [
+    "Though",
+    "Because of",
+    "Unless",
+    "Despite"
+   ],
+   "answer": 3,
+   "explanation": "空所のあとが「his hard work」という名詞で、「懸命な努力」なのに「不合格だった」と予想に反するので、前置詞の Despite が正しい。Though は接続詞なので、ふつうあとに主語と動詞のある節が必要。Because of は名詞を続けられるが、努力のせいで落ちたことになり意味が逆。Unless は接続詞で節が必要なうえ、意味も通らない。訳：一生懸命努力したにもかかわらず、彼はそのテストに落ちた。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "I like this song, (   ) I don't know who sings it.",
+   "choices": [
+    "although",
+    "because",
+    "unless",
+    "until"
+   ],
+   "answer": 0,
+   "explanation": "「この歌が好きだ」と「誰が歌っているのか知らない」は、好きなのに知らない、という予想に反する関係なので、逆接の although が正しい。because だと、歌手を知らないから好き、という不自然な理由になる。unless は「〜しない限り」で、意味が通らない。until は「〜するまで」で、好きだという状態の終わりを表すことになり合わない。訳：誰が歌っているのか知らないけれど、私はこの歌が好きだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "I will finish this report tonight (   ) I have to stay up late.",
+   "choices": [
+    "because of",
+    "even if",
+    "despite",
+    "until"
+   ],
+   "answer": 1,
+   "explanation": "「夜ふかししなければならない」としても「今夜レポートを終わらせる」という、仮の条件があっても結果が変わらないことを表すので、「たとえ〜でも」の even if が正しい。because of と despite は前置詞なので、あとに主語と動詞のある節を続けられない。until は「〜するまで」で、夜ふかしする時点までに終える意味にはならず通じない。訳：たとえ夜ふかしすることになっても、今夜このレポートを終わらせるつもりだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "(   ) you need help, please ask me.",
+   "choices": [
+    "Unless",
+    "Though",
+    "If",
+    "Until"
+   ],
+   "answer": 2,
+   "explanation": "「助けが必要なら」「私に頼んでね」という条件と依頼の関係なので、条件を表す If が正しい。Unless は「〜しない限り」で、助けが必要でないなら頼んで、と意味が逆になる。Though は逆接で、助けが必要なことと頼むことは対立しない。Until は「〜するまで」で、意味が通らない。訳：助けが必要なら、私に頼んでください。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "You can't enter the room (   ) you have a ticket.",
+   "choices": [
+    "if",
+    "unless",
+    "because",
+    "so"
+   ],
+   "answer": 1,
+   "explanation": "「入れない」という否定と「チケットを持っている」から、「持っていない限り入れない」となる unless が正しい。if だと「チケットを持っていたら入れない」となり意味が逆になる。because は「持っているから入れない」となり不自然。so は「だから」で、入れないからチケットを持っている、と因果が成り立たない。訳：チケットを持っていない限り、その部屋には入れない。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "You can use my computer (   ) you don't break it.",
+   "choices": [
+    "as soon as",
+    "until",
+    "even though",
+    "as long as"
+   ],
+   "answer": 3,
+   "explanation": "「こわさない」ことを条件に「パソコンを使ってよい」と許可しているので、「〜しさえすれば・〜する限り」の as long as が正しい。as soon as は「〜するとすぐに」で、こわさないとすぐに使える、と意味が通らない。until は「〜するまで」で合わない。even though は「〜だけれども」で、事実を前提にした逆接になり、許可の条件を表せない。訳：こわさないなら、私のパソコンを使っていいよ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "Let's buy extra water (   ) we get thirsty on the hike.",
+   "choices": [
+    "in case",
+    "unless",
+    "even though",
+    "so that"
+   ],
+   "answer": 0,
+   "explanation": "ハイキングでのどがかわく場合に備えて水を多めに買う、という意味なので、「〜するといけないから・〜する場合に備えて」の in case が正しい。unless は「〜しない限り」で、のどがかわかないなら買う、と意味が逆。even though は逆接で、事実でないことを表せない。so that は目的を表し、のどがかわくために買う、となり不自然。訳：ハイキングでのどがかわくといけないから、水を多めに買っておこう。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "The problem is (   ) we don't have enough time.",
+   "choices": [
+    "what",
+    "that",
+    "which",
+    "so"
+   ],
+   "answer": 1,
+   "explanation": "「The problem is」のあとに補語となる名詞節が必要で、「時間が足りない」は完全な文なので、「〜ということ」を表す接続詞 that が正しい。what と which はあとの文に欠けた名詞が必要だが、「we don't have enough time」には欠けた部分がない。so は「だから」で、be 動詞のあとに名詞のかたまりを作れない。訳：問題は、私たちに時間が足りないということだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "Can you tell me (   ) the store is open on Sunday?",
+   "choices": [
+    "what",
+    "which",
+    "whether",
+    "that"
+   ],
+   "answer": 2,
+   "explanation": "「その店が日曜日に開いているか」を相手にたずねているので、「〜かどうか」を表す whether が正しい。what と which は、あとの文に欠けた名詞が必要だが、「the store is open」には欠けた部分がない。that は「〜ということ」で、事実を伝える意味になり、開いているかどうかをたずねる文に合わない。訳：その店が日曜日に開いているかどうか教えてもらえますか。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "I asked my teacher (   ) I could leave early.",
+   "choices": [
+    "that",
+    "what",
+    "unless",
+    "if"
+   ],
+   "answer": 3,
+   "explanation": "「asked（たずねた）」の内容として「早く帰ってよいかどうか」を表すので、名詞節を作る if（〜かどうか）が正しい。that は「〜ということ」で、ふつう ask のあとでたずねる内容を表すのには使わない。what はあとの文に欠けた名詞が必要だが、ここでは欠けていない。unless は「〜しない限り」で、たずねた内容にならない。訳：私は先生に、早く帰ってもよいかたずねた。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "The box was (   ) heavy that I couldn't carry it.",
+   "choices": [
+    "too",
+    "very",
+    "so",
+    "such"
+   ],
+   "answer": 2,
+   "explanation": "形容詞「heavy」のあとに「that I couldn't carry it」が続くので、so ... that（とても〜なので…）の so が正しい。too は「〜すぎる」で、ふつう too ... to ～ の形になり that 節とは組まない。very はあとに that 節を続けられない。such はふつう名詞を含むかたまり（such a heavy box など）の前に置く。訳：その箱はとても重かったので、私は運べなかった。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "It was (   ) an interesting book that I read it in one night.",
+   "choices": [
+    "so",
+    "such",
+    "very",
+    "too"
+   ],
+   "answer": 1,
+   "explanation": "空所のあとが「an interesting book」という冠詞＋形容詞＋名詞のかたまりで、that 節が続くので、such ... that（とても〜なので…）の such が正しい。so はふつう形容詞や副詞の前に置き、「so an interesting book」の語順はとれない。very と too は that 節を続けられず、冠詞の前にも置けない。訳：それはとても面白い本だったので、私は一晩で読んだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "(   ) my father and my mother work at a hospital.",
+   "choices": [
+    "Either",
+    "Neither",
+    "Both",
+    "Not only"
+   ],
+   "answer": 2,
+   "explanation": "「and」で父と母を結び、動詞が複数形の「work」なので、both A and B（AもBも）の Both が正しい。Either はふつう or と組み、Neither は nor と組むので、and とは合わない。Not only はふつう but also と組むので、ここでは使えない。訳：父も母も病院で働いている。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "You can pay (   ) by cash or by card.",
+   "choices": [
+    "both",
+    "either",
+    "neither",
+    "not"
+   ],
+   "answer": 1,
+   "explanation": "「or」で「現金で」と「カードで」を結び、どちらか一方で払えるという意味なので、either A or B の either が正しい。both はふつう and と組むので or とは合わない。neither はふつう nor と組み、「どちらでもない」の意味になる。not を置くと「現金でもカードでも払えない」という不自然な文になる。訳：現金かカードのどちらかで支払えます。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "(   ) Ken nor his sister likes vegetables.",
+   "choices": [
+    "Either",
+    "Both",
+    "Not only",
+    "Neither"
+   ],
+   "answer": 3,
+   "explanation": "「nor」とセットになり、「ケンも姉も野菜が好きではない」という意味になるので、neither A nor B の Neither が正しい。Either はふつう or と組む。Both は and と組み、動詞も複数形になるので likes と合わない。Not only はふつう but also と組むので nor とは合わない。訳：ケンもお姉さんも野菜が好きではない。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "This town is famous not only for its hot springs (   ) for its delicious food.",
+   "choices": [
+    "but also",
+    "and",
+    "or",
+    "nor"
+   ],
+   "answer": 0,
+   "explanation": "前の「not only」とセットで「AだけでなくBも」を表すので but also が正しい。and はふつう both と組み、not only とは組まない。or は「または」で、温泉と料理のどちらかを選ぶ意味になる。nor は neither と組んで否定を表すので、「有名だ」という肯定の文には合わない。訳：この町は温泉だけでなく、おいしい料理でも有名だ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "接続詞",
+   "level": "basic",
+   "stem": "Mom left a note on the table (   ) I would know where she was.",
+   "choices": [
+    "so that",
+    "because of",
+    "even if",
+    "until"
+   ],
+   "answer": 0,
+   "explanation": "「メモを残した」目的が「私が彼女の居場所がわかるように」なので、「〜するように」の so that が正しい。because of は前置詞で、あとに主語と動詞のある節を続けられない。even if は「たとえ〜でも」で、目的を表せない。until は「〜するまで」で、メモを残す行為とつながらない。訳：母は、自分がどこにいるか私にわかるように、テーブルにメモを残していった。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "It was this old photo (   ) made my grandmother cry.",
+   "choices": [
+    "that",
+    "who",
+    "what",
+    "where"
+   ],
+   "answer": 0,
+   "explanation": "「It was ～」と空所のあとの「made」から、It was と that を外しても This old photo made my grandmother cry. が成り立つ強調構文で、強調する語が物なので that が正しい。who はふつう強調する語が人のときに使う。what は前に名詞があるので入らない。where は場所を表す語で、物を強調する文には使わない。訳：祖母を泣かせたのはこの古い写真だった。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "It is my mother (   ) gets up first in our family every morning.",
+   "choices": [
+    "which",
+    "who",
+    "where",
+    "what"
+   ],
+   "answer": 1,
+   "explanation": "It is と空所を外すと My mother gets up first ... が成り立つので強調構文。強調しているのが「my mother」という人で、空所のあとが「gets」と主語の欠けた形なので who が入る。which は物に使う語で人には使わない。where は主語の代わりにならない。what は前に名詞があるときには使えない。訳：毎朝家族で一番早く起きるのは母だ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "It was on the bus (   ) I left my umbrella yesterday.",
+   "choices": [
+    "which",
+    "what",
+    "that",
+    "when"
+   ],
+   "answer": 2,
+   "explanation": "It was と空所を外すと I left my umbrella on the bus yesterday. が成り立つので強調構文で、「on the bus」という前置詞のついた語句を強調するときは that を使う。which や what は前置詞つきの語句を強調する形にならない。when は時を表す語で、場所を表す on the bus とは合わない。訳：昨日私が傘を置き忘れたのはバスの中だった。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "It is important (   ) you drink enough water in summer.",
+   "choices": [
+    "what",
+    "which",
+    "who",
+    "that"
+   ],
+   "answer": 3,
+   "explanation": "It is と空所を外すと Important you drink ... となり文にならないので、これは強調構文ではなく形式主語の It で、本当の主語は that 以下。「important」のあとに「you drink」と完全な文が続くので that が入る。what と which は後ろに欠けた要素が必要。who は人を表す語がなく使えない。訳：夏には十分に水を飲むことが大切だ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "(   ) was Emma that called you last night, not me.",
+   "choices": [
+    "This",
+    "There",
+    "It",
+    "What"
+   ],
+   "answer": 2,
+   "explanation": "「was Emma that called」と「not me」から、「あなたに電話したのはエマで、私ではない」とエマを強調する強調構文なので、It was ... that の形を作る It が入る。This was Emma that ... という強調の形はない。There は be 動詞のあとに人を置いて that で続ける強調の形をとらない。What では文の形が崩れる。訳：昨夜あなたに電話したのはエマで、私ではない。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "It was pizza (   ) we ate for dinner last night, not curry.",
+   "choices": [
+    "that",
+    "what",
+    "who",
+    "where"
+   ],
+   "answer": 0,
+   "explanation": "It was と空所を外すと We ate pizza for dinner last night. が成り立ち、「not curry」とピザを強調しているので強調構文。強調する語が物なので that が入る。what は前に名詞 pizza があるので入らない。who は人を強調するときに使う。where は ate の目的語が欠けた形に続けられない。訳：昨夜夕食に食べたのはピザで、カレーではなかった。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "It is a pity (   ) you can't come to the party.",
+   "choices": [
+    "what",
+    "which",
+    "whether",
+    "that"
+   ],
+   "answer": 3,
+   "explanation": "It is と空所を外すと A pity you can't come ... となり文にならないので、形式主語の It で、本当の主語は that 以下。「you can't come」と完全な文が続くので that が入る。what と which は後ろに欠けた要素が必要。whether は「～かどうか」で、来られない事実を残念がる文脈に合わない。訳：あなたがパーティーに来られないのは残念だ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "My sister (   ) like cats, but she can't keep one because of her allergy.",
+   "choices": [
+    "do",
+    "does",
+    "likes",
+    "did"
+   ],
+   "answer": 1,
+   "explanation": "「本当に猫が好きだが、アレルギーで飼えない」と好きな気持ちを強めているので、強調の does＋原形 like。主語が三人称単数で「can't」と現在の話なので does が正しい。do は主語が三人称単数なので合わない。likes は like と動詞が二つ並び、文にならない。did は過去になり、今の話と合わない。訳：姉は本当に猫が好きだが、アレルギーのため飼えない。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "I know you didn't believe me, but I (   ) see a ghost last night!",
+   "choices": [
+    "do",
+    "did",
+    "was",
+    "have"
+   ],
+   "answer": 1,
+   "explanation": "「信じてくれなかったが」と「last night」から、過去の出来事を「本当に見た」と強める強調の did＋原形 see。do は現在の形で last night と合わない。was のあとに原形 see は続かない。have のあとは過去分詞 seen が必要で、さらに現在完了は last night とふつう一緒に使わない。訳：信じてくれなかったのはわかっているけど、昨夜本当に幽霊を見たんだ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "Thank you for the cake. My children (   ) love sweets, so they'll be very happy.",
+   "choices": [
+    "does",
+    "are",
+    "did",
+    "do"
+   ],
+   "answer": 3,
+   "explanation": "「they'll be very happy」から今の好みの話で、主語が複数の「My children」なので、強調の do＋原形 love で「本当に甘いものが大好き」となる。does は主語が三人称単数のときの形。are のあとに原形 love は続かない。did は過去になり、今の好みを表す文脈に合わない。訳：ケーキをありがとう。うちの子たちは甘いものが本当に大好きなので、とても喜ぶでしょう。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "He said he would come, and he (   ) come in the end.",
+   "choices": [
+    "did",
+    "does",
+    "was",
+    "do"
+   ],
+   "answer": 0,
+   "explanation": "「来ると言って、結局本当に来た」と、言ったとおりになったことを強めるので、過去の強調 did＋原形 come。「said」「in the end」から過去の話とわかる。does と do は現在の形で、過去の出来事に合わない。was のあとに原形 come は続かない。訳：彼は来ると言い、結局本当に来た。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "How (   ) did you finish all that homework in one hour?",
+   "choices": [
+    "on the world",
+    "at the world",
+    "in the world",
+    "of the world"
+   ],
+   "answer": 2,
+   "explanation": "疑問詞のすぐあとに置いて「いったい」と驚きを強める言い方は in the world（または on earth）。「1時間であの宿題を全部」に対する驚きを表す。on the world、at the world、of the world はどれもこの強調の言い方として使わない。前置詞は in と覚える。訳：いったいどうやってあの宿題を全部1時間で終わらせたの？",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "What (   ) is that strange noise in the kitchen?",
+   "choices": [
+    "at all",
+    "at the end",
+    "by far",
+    "on earth"
+   ],
+   "answer": 3,
+   "explanation": "疑問詞「What」の直後に置いて「いったい」と疑問を強めるのは on earth。「strange noise（変な音）」への驚きに合う。at all はふつう否定文や疑問文で「少しでも」の意味で、疑問詞の直後には置かない。at the end は「終わりに」の意味で疑問詞を強めない。by far は最上級や比較級を強める語句。訳：台所のあの変な音はいったい何？",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "Why (   ) earth is the train so late today?",
+   "choices": [
+    "in",
+    "at",
+    "on",
+    "by"
+   ],
+   "answer": 2,
+   "explanation": "疑問詞を強めて「いったい」とする言い方は on earth で、空所のあとの「earth」と組み合わせる前置詞は on。in は in the world の形なら使えるが、in earth とは言わない。at earth、by earth という強調の言い方もない。訳：今日はいったいなぜ電車がこんなに遅れているの？",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "This is the (   ) dress I wanted! Thank you so much, Mom.",
+   "choices": [
+    "much",
+    "very",
+    "so",
+    "such"
+   ],
+   "answer": 1,
+   "explanation": "「the ＋形容詞＋名詞」の形で「まさにその」と名詞を強めるのは very で、the very dress は「まさに欲しかったそのドレス」。much は the と名詞の間に置いて名詞を強めることはできない。so は副詞で名詞を直接修飾できない。such は such a dress の語順になり、the のあとには置かない。訳：これはまさに私が欲しかったドレスよ！お母さん、本当にありがとう。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "He left the room at the (   ) moment I came in.",
+   "choices": [
+    "very",
+    "much",
+    "too",
+    "quite"
+   ],
+   "answer": 0,
+   "explanation": "「私が入ってきたまさにその瞬間に」と時を強めるので、the のあとに置いて名詞を強める very が正しい。much と too は副詞で、the と名詞の間に置いて名詞を修飾できない。quite は quite a moment のように a の前に置く語で、the のあとには来ない。訳：私が部屋に入ったまさにその瞬間に、彼は出ていった。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "Ken is the (   ) person for this job. He speaks three languages.",
+   "choices": [
+    "very",
+    "much",
+    "so",
+    "more"
+   ],
+   "answer": 0,
+   "explanation": "「3か国語を話せる」から「この仕事にまさにぴったりの人」と言っているので、the のあとに置いて名詞を強める very が入る。much と so は副詞で、the と名詞の間に置いて名詞を修飾できない。more は比較級で、比べる相手もないので文意が通らない。訳：ケンはこの仕事にまさにうってつけの人だ。3か国語を話せる。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "I didn't buy this cake at a shop. I made it (   ).",
+   "choices": [
+    "me",
+    "mine",
+    "myself",
+    "my own"
+   ],
+   "answer": 2,
+   "explanation": "「店で買ったのではない」から「自分で作った」と主語 I を強めるので、再帰代名詞 myself を文末に置く。me は made の目的語 it がすでにあるので入れる場所がない。mine は「私のもの」で文意に合わない。my own はふつう my own cake のように後ろに名詞が必要。訳：このケーキは店で買ったのではない。私が自分で作った。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "The children painted the wall (   ), without any help from adults.",
+   "choices": [
+    "them",
+    "themselves",
+    "each other",
+    "theirs"
+   ],
+   "answer": 1,
+   "explanation": "「without any help from adults（大人の手を一切借りずに）」から「子どもたちが自分たちで」と主語を強めるので、再帰代名詞 themselves が入る。them は目的語の the wall がすでにあり、置く場所がない。each other は「お互い」で、主語を強める働きはない。theirs は「彼らのもの」で文意に合わない。訳：子どもたちは大人の助けを一切借りずに、自分たちで壁を塗った。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "You (   ) said the test would be easy, so don't complain now.",
+   "choices": [
+    "yours",
+    "your own",
+    "you're",
+    "yourself"
+   ],
+   "answer": 3,
+   "explanation": "「今さら文句を言わないで」から「ほかでもないあなた自身が」と主語 You を強めるので、主語のすぐあとに再帰代名詞 yourself を置く。yours は「あなたのもの」で主語と並べられない。your own は後ろに名詞が必要。you're は you are の短縮形で、said と続かない。訳：テストは簡単だと言ったのはあなた自身なのだから、今さら文句を言わないで。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "(   ) in Tokyo, I visited my aunt twice.",
+   "choices": [
+    "During",
+    "For",
+    "While",
+    "Since"
+   ],
+   "answer": 2,
+   "explanation": "「東京にいる間に」の意味で、接続詞 While のあとの「I was」が省略された形。主節の主語と同じ主語と be 動詞は、ふつう副詞節で省略できる。During は前置詞で後ろに名詞が必要なため、in Tokyo を続けられない。For も前置詞で期間の名詞が必要。Since は「～以来」で、過去形の visited と合わない。訳：東京にいる間に、私はおばを2回訪ねた。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "If (   ) in hot water, this sweater will get smaller.",
+   "choices": [
+    "washing",
+    "wash",
+    "to wash",
+    "washed"
+   ],
+   "answer": 3,
+   "explanation": "主語の「this sweater」は「洗われる」側なので、If it is washed の it is が省略された形で、過去分詞 washed が入る。washing は「セーターが洗う」という能動の意味になり不自然。wash は原形で、接続詞 If のあとに主語なしで置けない。to wash は If のあとに続ける形にならない。訳：お湯で洗うと、このセーターは縮んでしまう。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "If (   ), I'd like to sit by the window.",
+   "choices": [
+    "possible",
+    "possibly",
+    "possibility",
+    "impossible"
+   ],
+   "answer": 0,
+   "explanation": "「できれば窓側に座りたい」という希望なので、If it is possible の it is が省略された If possible が正しい。possibly は副詞で、be 動詞が省略された形の補語にならない。possibility は名詞で「可能性」となり、If のあとに冠詞もなく置けない。impossible では「不可能なら窓側に座りたい」となり意味が通らない。訳：できれば窓側の席に座りたいのですが。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "Though (   ), she speaks English very well.",
+   "choices": [
+    "youth",
+    "young",
+    "youthfully",
+    "is young"
+   ],
+   "answer": 1,
+   "explanation": "「幼いけれども英語をとても上手に話す」の意味で、Though she is young の she is が省略された形なので形容詞 young が入る。youth は名詞「若さ」で、冠詞もなく補語として置くと不自然。youthfully は副詞で補語にならない。is young は主語がないまま be 動詞だけを残すことになり、文にならない。訳：幼いけれども、彼女は英語をとても上手に話す。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "When (   ) a book, my sister doesn't like to be disturbed.",
+   "choices": [
+    "read",
+    "reading",
+    "reads",
+    "to read"
+   ],
+   "answer": 1,
+   "explanation": "「本を読んでいるときは」の意味で、When she is reading の she is が省略された形なので reading が入る。read は過去分詞なら姉が「読まれる」受け身になり a book と合わず、原形と考えても主語がない。reads は主語がないまま動詞を置くことになる。to read は When のあとに続ける形にならない。訳：本を読んでいるとき、姉はじゃまされるのを嫌がる。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "You can go home early if you want (   ).",
+   "choices": [
+    "to",
+    "it",
+    "so",
+    "that"
+   ],
+   "answer": 0,
+   "explanation": "「帰りたければ」の意味で、want to go home early の go home early を省いて to だけを残す代不定詞の to が入る。前に出た動詞の部分をくり返さないための形。it は want it で「それが欲しい」となり、帰るという行為を指せない。so と that も want のあとで「そうしたい」の意味にはならない。訳：帰りたければ早めに帰ってもいいですよ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "\"Shall we go shopping this afternoon?\" \"I'd like (   ), but I have to work.\"",
+   "choices": [
+    "for",
+    "so",
+    "doing",
+    "to"
+   ],
+   "answer": 3,
+   "explanation": "「行きたいけれど仕事がある」の意味で、I'd like to go shopping の go shopping を省いた代不定詞の to が入る。would like は to 不定詞をとるので、省くと to が残る。for は後ろに名詞が必要。so は「そうしたい」の意味にならない。doing は would like のあとに置けない。訳：「今日の午後、買い物に行かない？」「行きたいけど、仕事があるんだ。」",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "I didn't go to the party, though I really wanted (   ).",
+   "choices": [
+    "it",
+    "so",
+    "to",
+    "going"
+   ],
+   "answer": 2,
+   "explanation": "「本当は行きたかったけれど」の意味で、wanted to go to the party の go to the party を省いた代不定詞の to が入る。it は wanted it で「それが欲しかった」となり、行くという行為を指せない。so は wanted のあとで「そうしたかった」の意味にならない。going は want のあとに置けない。訳：本当は行きたかったけれど、パーティーには行かなかった。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "I can't swim, but my little sister (   ).",
+   "choices": [
+    "does",
+    "is",
+    "do",
+    "can"
+   ],
+   "answer": 3,
+   "explanation": "前半の「I can't swim」を受けて、my little sister can swim の swim をくり返さずに助動詞 can だけを残した形。前の文で使った助動詞をそのまま受けるのがふつう。does は一般動詞を受ける形で、can't swim には合わない。is は be 動詞の文を受ける形。do は主語が三人称単数なので合わず、助動詞 can の文も受けられない。訳：私は泳げないが、妹は泳げる。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "Tom has finished his homework, but I (   ) yet.",
+   "choices": [
+    "don't",
+    "haven't",
+    "didn't",
+    "hasn't"
+   ],
+   "answer": 1,
+   "explanation": "前半の「has finished」を受けて、I haven't finished my homework yet の finished my homework を省いた形なので haven't が入る。don't と didn't は一般動詞を受ける形で、現在完了の has finished とそろわない。hasn't は主語 I と合わない。訳：トムは宿題を終えたが、私はまだ終えていない。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "My father likes coffee, but my mother (   ).",
+   "choices": [
+    "isn't",
+    "don't",
+    "doesn't",
+    "didn't"
+   ],
+   "answer": 2,
+   "explanation": "前半の「likes coffee」を受けて、my mother doesn't like coffee の like coffee を省いた形。一般動詞の現在の文を受けるので、主語が三人称単数なら doesn't が入る。isn't は be 動詞の文を受ける形。don't は主語が三人称単数なので合わない。didn't は過去になり、現在形の likes とそろわない。訳：父はコーヒーが好きだが、母は好きではない。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "My brother runs faster than I (   ).",
+   "choices": [
+    "do",
+    "am",
+    "does",
+    "is"
+   ],
+   "answer": 0,
+   "explanation": "比較の than のあとで、than I run の run をくり返さずに代動詞 do で受けた形。主語が I で一般動詞 runs の現在の文なので do が入る。am と is は be 動詞で、一般動詞 runs を受けられない（is は主語 I とも合わない）。does は主語が三人称単数のときの形で、I には使わない。訳：兄は私より速く走る。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "The weather today is colder than (   ) of yesterday.",
+   "choices": [
+    "that",
+    "it",
+    "this",
+    "those"
+   ],
+   "answer": 0,
+   "explanation": "比べているのは「今日の天気」と「昨日の天気」で、くり返しを避けるために the weather を that で受け、that of yesterday とする。it は of などの修飾語句をつけて名詞の代わりに使えない。this はふつうこの形で前の名詞を受けない。those は複数の名詞を受ける形で、単数の weather には合わない。訳：今日の天気は昨日の天気より寒い。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "Mary is older than her husband (   ).",
+   "choices": [
+    "does",
+    "has",
+    "are",
+    "is"
+   ],
+   "answer": 3,
+   "explanation": "比較の than のあとで、than her husband is old の old を省き、be 動詞 is だけを残した形。前半が「is older」と be 動詞の文なので is で受ける。does は一般動詞の文を受ける形で、be 動詞の文には使わない。has は have の文を受ける形。are は主語が単数の her husband と合わない。訳：メアリーは夫より年上だ。",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "\"Is Ken coming to school today?\" \"I don't think (   ). He has a bad cold.\"",
+   "choices": [
+    "it",
+    "that",
+    "so",
+    "not"
+   ],
+   "answer": 2,
+   "explanation": "「ひどいかぜをひいている」から「来ないと思う」と答えるので、I don't think so が正しい。so が前の内容「ケンが今日学校に来ること」を受けている。it と that はこの形で think のあとに置いて前の内容を受けるのはふつうではない。not は I think not なら使えるが、don't と重ねると否定が二重になり意味が通らない。訳：「ケンは今日学校に来るの？」「来ないと思う。ひどいかぜをひいているから。」",
+   "source": "manual-drill-v3"
+  },
+  {
+   "subject": "english",
+   "unit": "強調・省略",
+   "level": "basic",
+   "stem": "\"Do we have class tomorrow?\" \"I guess (   ). It's a national holiday.\"",
+   "choices": [
+    "no",
+    "not",
+    "so",
+    "don't"
+   ],
+   "answer": 1,
+   "explanation": "「祝日だから」授業はないと答えるので、否定の内容を not 1語で受ける I guess not が入る。I guess so では「授業があると思う」となり、祝日という理由と合わない。no はこの形で guess のあとに置いて文の代わりにはならない。don't は後ろに動詞がなく、guess のあとに置けない。訳：「明日は授業がある？」「ないと思う。祝日だから。」",
    "source": "manual-drill-v3"
   }
  ]
