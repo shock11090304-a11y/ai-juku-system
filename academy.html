@@ -25,6 +25,23 @@
 <meta property="og:image:alt" content="Trillion English Academy｜全科目対応で第一志望を目指すオンライン塾">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://trillion-ai-juku.com/academy-assets/ogp-2026-11.jpg">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "EducationalOrganization",
+  "name": "トリリオン英語塾",
+  "alternateName": "Trillion English Academy",
+  "url": "https://trillion-ai-juku.com/academy",
+  "image": "https://trillion-ai-juku.com/academy-assets/ogp-2026-11.jpg",
+  "description": "元大手予備校講師が主宰するオンライン塾。英語（高校生は国語も）は生ライブ授業、数学・理科・社会はスタディサプリの個別カリキュラム（オプション）、AI学習アプリ（オプション）で、全科目で第一志望合格を目指します。",
+  "email": "info@trillion-ai-juku.com",
+  "areaServed": {"@type": "Country", "name": "日本"},
+  "sameAs": [
+    "https://www.instagram.com/trillion_eng/",
+    "https://www.threads.com/@trillion_eng"
+  ]
+}
+</script>
 
 <style>
   :root{
@@ -1068,6 +1085,21 @@
     .natl-stats>div{padding-left:1rem}
     .natl-stats span{letter-spacing:.04em}
   }
+  /* スマホの画面下の固定ボタン（幅620以下。最初の画面とお問い合わせ欄が見えている間は隠す） */
+  .sp-bar{display:none}
+  @media(max-width:620px){
+    .sp-bar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:45;gap:8px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));
+      background:rgba(5,5,5,.94);border-top:1px solid rgba(255,255,255,.14);transition:transform .3s ease,visibility .3s}
+    .sp-bar.is-hidden{transform:translateY(110%);visibility:hidden}
+    .sp-bar a{flex:1;display:flex;align-items:center;justify-content:center;gap:.45em;min-height:46px;border-radius:999px!important;
+      font-size:.84rem;letter-spacing:.1em;color:#fff;text-decoration:none;white-space:nowrap}
+    .sp-bar-trial{border:1px solid var(--gold)}
+    .sp-bar-trial small{font-size:.74rem;color:var(--gold);letter-spacing:.04em}
+    .sp-bar-line{background:#06c755;border:1px solid #06c755}
+    body:has(.m-menu[open]) .sp-bar{visibility:hidden}
+    footer.ft{padding-bottom:calc(40px + 70px + env(safe-area-inset-bottom))}
+  }
+  @media(max-width:620px) and (prefers-reduced-motion:reduce){ .sp-bar{transition:none} }
 </style>
 </head>
 <body>
@@ -2144,6 +2176,11 @@
 </section>
 
 <!-- ===== フッター ===== -->
+<nav class="sp-bar is-hidden" id="sp-bar" aria-label="体験授業・LINEで相談">
+  <a href="taiken.html" class="sp-bar-trial">体験授業<small>¥1,500</small></a>
+  <a href="https://lin.ee/ZHlrRjh" target="_blank" rel="noopener" class="sp-bar-line">LINEで相談</a>
+</nav>
+
 <footer class="ft">
   <div class="wrap">
     <div class="brand">
@@ -2332,6 +2369,21 @@
       });
     }, {rootMargin:'-40% 0px -55% 0px'});
     document.querySelectorAll('.course-group[id]').forEach(function(g){ io.observe(g); });
+  })();
+
+  /* スマホの画面下の固定ボタン：最初の画面とお問い合わせ欄（同じボタンがある所）が見えている間は隠す */
+  (function(){
+    var bar = document.getElementById('sp-bar');
+    if (!bar) return;
+    var targets = [document.getElementById('top'), document.getElementById('contact')].filter(Boolean);
+    if (!('IntersectionObserver' in window) || !targets.length) { bar.classList.remove('is-hidden'); return; }
+    var seen = {};
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ seen[e.target.id] = e.isIntersecting; });
+      var hide = Object.keys(seen).some(function(k){ return seen[k]; });
+      bar.classList.toggle('is-hidden', hide);
+    }, {threshold:0});
+    targets.forEach(function(t){ io.observe(t); });
   })();
 </script>
 </body>
