@@ -51,6 +51,7 @@ sys.path.insert(0, os.path.join(REPO, "server"))
 REVIEWED_SEEDS = {
     "grammar_drill_pool_v1.json": "english",
     "grammar_drill_pool_v2.json": "english",
+    "grammar_drill_pool_v3.json": "english",   # 2026-11-17 基礎の増量 (盲検 3 名・AI 担任)
     "chugaku_drill_pool_v1.json": "chugaku",
     "chugaku_math_pool_v1.json": "chugaku_math",
     "chugaku_rika_pool_v1.json": "chugaku_rika",
@@ -528,7 +529,7 @@ def main():
           t.get("reviewed") == {"basic": 6, "standard": 8, "advanced": 7}, t)
     check("auto_units: 英検の長文は本文の本数", units.get(("eiken", unit), {}).get("passages") == n_unit, units.get(("eiken", unit)))
     check("auto_units: テスト用の長文単元はレビュー済みの 3 本だけ", units.get(("eiken", tu), {}).get("passages") == 3, units.get(("eiken", tu)))
-    check("allowlist と禁止を返す", d.get("allowlist", {}).get("english") == ["manual-drill-v1", "manual-drill-v2"]
+    check("allowlist と禁止を返す", d.get("allowlist", {}).get("english") == ["manual-drill-v1", "manual-drill-v2", "manual-drill-v3"]
           and "proficiency_test" in (d.get("deny_subjects") or []) and "pt-" in (d.get("deny_source_prefixes") or []), d.get("allowlist"))
     check("応答に生徒名やメールを含まない", "@example.org" not in r.text and "架空 振り分け" not in r.text)
     check("在庫照会は同期の def (イベントループで DB を待たない)",

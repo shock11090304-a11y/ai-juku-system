@@ -565,7 +565,7 @@ def main():
     check("既定は dry_run (書かない)", r.status_code == 200 and j.get("dry_run") is True and counts(mod)["grammar_drills"] == before["grammar_drills"], j)
     check("応答に plan_version 2・enabled_env・weekly_worksheet_enabled・許可リスト・禁止",
           j.get("plan_version") == 2 and j.get("enabled_env") is False and j.get("weekly_worksheet_enabled") is False
-          and j.get("allowlist", {}).get("english") == ["manual-drill-v1", "manual-drill-v2"]
+          and j.get("allowlist", {}).get("english") == ["manual-drill-v1", "manual-drill-v2", "manual-drill-v3"]
           and j.get("deny", {}).get("subjects") == ["proficiency_test"] and "pt-" in j.get("deny", {}).get("source_prefixes", []), j)
     check("API の dry-run も同じ seed なら同じ計画", sig(j) == sig(dry) if j else False)
     check("名前は既定で返さない", all("name" not in e for e in j.get("delivered_students", [])))

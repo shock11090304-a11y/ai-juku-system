@@ -50799,7 +50799,7 @@ def _weakness_routine_cutoffs(now: Optional[datetime] = None) -> dict:
 #   ★新しいシードを自動配信に載せるとき: 盲検 3 名 → ここに 1 行 + test_auto_delivery_shared.py の REVIEWED_SEEDS に 1 行
 #     (盲検していないシードは NOT_AUTO_SEEDS へ。どちらにも無い *pool* / *_drill_* のシードがあるとテストが落ちる)。
 _AUTO_DELIVERY_REVIEWED_SOURCES_DEFAULT = {
-    "english": ("manual-drill-v1", "manual-drill-v2"),
+    "english": ("manual-drill-v1", "manual-drill-v2", "manual-drill-v3"),
     "math": ("mathct-*", "mathwb-*"),
     "chugaku": ("chugaku-drill-v1", "chugaku-drill-v2", "chugaku-drill-v3", "chugaku-drill-v4", "chu2grammar-20260709"),
     "chugaku_math": ("chugaku-math-v1",),
