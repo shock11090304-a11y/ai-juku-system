@@ -9,6 +9,7 @@
   [5] レビュー済みが足りなければ 400 (未レビューで埋めない)・習熟度テストは 422
   [6] 前に配った問題は避ける (2 本目は 1 本目と重ならない)・一覧の kind=owner に出る
   [7] ai_tannin を付けない CEO の配信は今までどおり (created_by='admin'・メールは manual で送る)
+  [8] 高校の古文 (japanese・2026-11-17 のシードの出典) も同じ決まり: レビュー済みだけ・中学生は断る / 許可リストに無い科目は 400
 実行: python3 scripts/health_check/test_ai_tannin_drill.py   # exit 0 = PASS / 1 = FAIL
 """
 import datetime
@@ -145,6 +146,44 @@ def main():
     check("200・created_by=admin・AIなし枠にも配れる (CEO の配信は変えない)", r.status_code == 200 and cb == "admin"
           and [a["student_id"] for a in j["assigned"]] == [s_noai], (r.status_code, cb))
     check("refused は空・reviewed_available は None", j.get("refused") == [] and j.get("reviewed_available") is None, j)
+
+    print("[8] 高校の古文 (2026-11-17・japanese・出典 kosei-kokugo-v1) も同じ決まり")
+    cc = mod.db(); k = cc.cursor()
+    kobun_ok, kobun_ng = set(), set()
+    for i in range(12):   # レビュー済み 12 問 (basic 6・standard 6)
+        k.execute("INSERT INTO grammar_questions (subject, unit, level, stem, choices, answer, explanation, source) "
+                  "VALUES ('japanese', '古文 単語', ?, ?, ?, 0, '解説', 'kosei-kokugo-v1') RETURNING id",
+                  ("basic" if i % 2 else "standard", f"架空の古文 レビュー済み {i}", json.dumps(["a", "b", "c", "d"])))
+        kobun_ok.add(k.fetchone()["id"])
+    for i in range(60):   # 同じ単元の未レビュー 60 問 (exam_questions を分解した古い行のつもり)
+        k.execute("INSERT INTO grammar_questions (subject, unit, level, stem, choices, answer, explanation, source) "
+                  "VALUES ('japanese', '古文 単語', 'standard', ?, ?, 0, '解説', 'pool') RETURNING id",
+                  (f"架空の古文 未レビュー {i}", json.dumps(["a", "b", "c", "d"])))
+        kobun_ng.add(k.fetchone()["id"])
+    for i in range(30):   # 地学は許可リストに無い科目
+        k.execute("INSERT INTO grammar_questions (subject, unit, level, stem, choices, answer, explanation, source) "
+                  "VALUES ('earth', '地学基礎', 'standard', ?, ?, 0, '解説', 'pool')",
+                  (f"架空の地学 未レビュー {i}", json.dumps(["a", "b", "c", "d"])))
+    cc.commit(); cc.close()
+    n_mail, n_line = len(mails), len(lines)   # [7] の CEO の配信で送ったメールは数えない
+    r = client.post("/api/admin/grammar-drill/create", headers=H,
+                    json={"subject": "japanese", "unit": "古文 単語", "count": 10, "levels": ["basic", "standard"],
+                          "ai_tannin": True, "student_ids": [s_ai, s_chu]})
+    j = r.json()
+    check("古文: 200", r.status_code == 200, (r.status_code, r.text[:300]))
+    q8, cb8 = drill_row(j["drill_id"]) if r.status_code == 200 else (set(), None)
+    check("古文: 10 問すべて kosei-kokugo-v1 (同じ単元の未レビュー 60 問は混ざらない)・created_by = ai_tannin",
+          len(q8) == 10 and q8 <= kobun_ok and cb8 == "ai_tannin", (q8 & kobun_ng, cb8))
+    check("古文: 高校生に配り、中学生は band で断る",
+          [a["student_id"] for a in j.get("assigned", [])] == [s_ai]
+          and {x["student_id"]: x["reason"] for x in j.get("refused", [])} == {s_chu: "band"}, (j.get("assigned"), j.get("refused")))
+    check("古文: reviewed_available = 12・メールも LINE も送らない",
+          j.get("reviewed_available") == 12 and len(mails) == n_mail and len(lines) == n_line,
+          (j.get("reviewed_available"), mails[n_mail:], lines[n_line:]))
+    r = client.post("/api/admin/grammar-drill/create", headers=H,
+                    json={"subject": "earth", "unit": "地学基礎", "count": 10, "levels": ["standard"],
+                          "ai_tannin": True, "student_ids": [s_ai]})
+    check("許可リストに無い科目 (地学) は 400 (未レビューで埋めない)", r.status_code == 400 and "レビュー済み" in r.text, (r.status_code, r.text[:200]))
 
     print("\nFAIL:" if FAILURES else "\nPASS", *FAILURES, sep="\n  ")
     return 1 if FAILURES else 0

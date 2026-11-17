@@ -7,7 +7,8 @@
       _SCHEDULER_MAX_AGE_DAYS に weakness_drill_routine_run (2 日)。停止・失敗の通知の名前の表 2 つと prod_status にラベル。
       prod_healthcheck は実行履歴が無いうちは PASS (未有効化)。スケジューラは要約 (_compact_run_props) を記録する
   [2] レビュー済みだけ: 出典が pool / english の chu2grammar / weakness_v1 / pt- の行は 30 回選んでも 1 問も出ない。
-      'english=*' にしても習熟度テスト (pt-) は出ない。高校の物理だけが弱点の生徒は配らない (no_reviewed_pool:physics)。
+      'english=*' にしても習熟度テスト (pt-) は出ない。高校の物理だけが弱点の生徒は 3日ドリルでは配らない (2026-11-17〜 レビュー済みのシードはあるが
+      3日ドリルの科目ではない = not_routine_subject:physics。AI 担任が単元を選んで配る)。地学だけなら no_reviewed_pool:earth。
       未レビューの行しか無い単元は skipped_no_reviewed_inventory
   [3] 中高の取り違えなし: 「中２」→ 中学英語 (基礎+標準)・「中三」→ 中学数学 (標準+やや難)・高校生の 'chugaku' の弱点は band_mismatch・
       中学生の english の弱点は出さない・前置きつきの写しは出さない・小学生と判定できない学年は出さない (env で判定できない学年だけ高校生)。
@@ -326,8 +327,14 @@ def main():
     weak(k2, "physics", "力学", acc=0.1)
     reasons = {}
     p = plan(k2, "kosei", reasons=reasons)
-    check("高校の物理だけが弱点 → 配らない (no_reviewed_pool:physics)",
-          not p["ok"] and p["reason"] == "no_deliverable_weakness" and reasons.get("no_reviewed_pool:physics") == 1, (p, reasons))
+    check("高校の物理だけが弱点 → 3日ドリルでは配らない (not_routine_subject:physics・AI 担任が単元を選んで配る)",
+          not p["ok"] and p["reason"] == "no_deliverable_weakness" and reasons.get("not_routine_subject:physics") == 1, (p, reasons))
+    k2e = make("高校2年")
+    weak(k2e, "earth", "地学基礎", acc=0.1)
+    reasons_e = {}
+    pe = plan(k2e, "kosei", reasons=reasons_e)
+    check("高校の地学だけが弱点 → 配らない (no_reviewed_pool:earth = レビュー済みのシードが無い)",
+          not pe["ok"] and pe["reason"] == "no_deliverable_weakness" and reasons_e.get("no_reviewed_pool:earth") == 1, (pe, reasons_e))
     res = mod._run_weakness_drill_routine(only_student_id=k2, dry_run=True)
     check("dry-run でも 配る 0・skipped_no_weakness 1", res["delivered"] == 0 and res["skipped_no_weakness"] == 1, res)
     k3 = make("高校1年")

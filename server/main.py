@@ -50699,7 +50699,9 @@ def admin_grammar_drill_create(
 _WEAKNESS_ROUTINE_CADENCE_DAYS = 3
 _WEAKNESS_ROUTINE_DRILL_COUNT = 10
 _WEAKNESS_ROUTINE_CREATED_BY = "weakness_routine_3d"
-# 高校数学は単元が粗いので「科目まるごと」配信 (unit 空)。2026-10-15: 理科・社会・国語は自動配信から外した (レビュー済みの在庫が無い)
+# 高校数学は単元が粗いので「科目まるごと」配信 (unit 空)。2026-10-15: 理科・社会・国語は自動配信から外した (レビュー済みの在庫が無い)。
+#   2026-11-17: 古文・化学・物理・生物・社会にレビュー済みのシードができたが、3日ドリルには戻していない (国語・社会は中の科目が分かれるので
+#   科目まるごとでは配れない。AI 担任が生徒ごとに単元を選んで配る → _AUTO_DELIVERY_REVIEWED_SOURCES_DEFAULT の注記)
 _SUBJECT_LEVEL_DRILL = {'math': '数学'}
 # 📐 2026-10-06 塾長「数学Ⅲは自動配信は外して」: 弱点ルーティン (自動配信) が数学を科目まるごとで配るときは数学III の単元を出さない。
 #   高校数学ドリルに数学III (極限・微分法・積分法) が入ったので、文系の生徒に未習の数III が混ざり、誤答で数III の弱点行が立って
@@ -50793,7 +50795,17 @@ def _weakness_routine_cutoffs(now: Optional[datetime] = None) -> dict:
 #   - english_long: 英語長文 (2026-10-15)。取込でサーバが盲検 3 名の記録 (review) を必須にしている科目なので、取込スクリプト
 #     (scripts/drill_import) が付ける出典の形 = 設問 el-<set_id>-<qid> / 本文 englong:<set_id>:<pid> をそのまま許可する。
 #     自動で配るのはクラス自動宿題の長文クラス (高校生) だけ (3日ドリルの科目ではない・_drill_subject_band_ok で中学生には出ない)
-#   ★入っていないもの: 高校の物理・化学・生物・地学・社会・国語 (盲検記録のあるシードが無い)・弱点特訓 32 問 weakness_v1
+#   - japanese / chemistry / physics / biology / social: 🏫 2026-11-17 高校の古文・化学・物理・生物基礎・日本史・世界史・地理
+#     (AI 担任のため・塾長「高校の社会・理科・国語も今から作って」)。seed-data/kosei_{kokugo,chemistry,physics,biology,social}_pool_v1.json
+#     (出典 kosei-kokugo-v1 / kosei-chem-v1 / kosei-phys-v1 / kosei-bio-v1 / kosei-social-v1)。作問 → 機械検査 →
+#     答えを伏せた独立ソルバー 3 名の全員一致かつ別解・事実の指摘なし → 別担当が事実と解説を校閲 → 正解を見たうえで別解・
+#     答えの漏れ・範囲外を探す監査 (drop は除外)。単元名は「古文 単語」「化学基礎 酸塩基」「日本史 中世」のように 科目名＋スタディサプリの弱点タグ (SAPURI_TAG_VOCAB) にしてある (弱点 topic がそのまま講座の推薦に効く)。
+#     ★許可リストに入れても 3日ドリルは配らない (_ROUTINE_SUBJECTS_BY_BAND は english・math のまま)。国語は古文・漢文・現代文、
+#       社会は日本史・世界史・地理が 1 つの科目なので、科目まるごとでは配れない (日本史の生徒に世界史が出る)。配るのは AI 担任
+#       (grammar-drill/create の ai_tannin: 生徒ごとに単元を選ぶ) と塾長の手動配信だけ。
+#       exam_questions を分解した古い行 (同じ科目の単元「古文」「化学基礎」など・出典が別) は今までどおり自動では出ない。
+#       漢文・現代文・地学・生物 (生物基礎でない方)・倫理・政経はまだシードが無い。
+#   ★入っていないもの: 高校の地学 (盲検記録のあるシードがまだ無い)・弱点特訓 32 問 weakness_v1
 #     (検証済みと書かれているが盲検 3 名の記録が無い・塾長の判断待ち)・english の chu2grammar-20260709・exam_questions を分解した
 #     古い英文法の行 (pool / legacy / '' など)。
 #   ★新しいシードを自動配信に載せるとき: 盲検 3 名 → ここに 1 行 + test_auto_delivery_shared.py の REVIEWED_SEEDS に 1 行
@@ -50808,6 +50820,11 @@ _AUTO_DELIVERY_REVIEWED_SOURCES_DEFAULT = {
     "chugaku_kokugo": ("chugaku-kokugo-v1",),
     "eiken": ("eiken2-*", "eikenp1-*"),
     "english_long": ("el-*", "englong:*"),
+    "japanese": ("kosei-kokugo-v1",),
+    "chemistry": ("kosei-chem-v1",),
+    "physics": ("kosei-phys-v1",),
+    "biology": ("kosei-bio-v1",),
+    "social": ("kosei-social-v1",),
 }
 # ⛔ 自動配信に絶対に出さないもの (env AUTO_DELIVERY_REVIEWED_SOURCES の '*' でも外せない)。
 #   習熟度テスト (subject 'proficiency_test'・出典 'pt-<テストID>-<設問>' / 本文 'ptest:<テストID>:S<nn>') は 1 回分 = 1 本のドリルで
@@ -50878,7 +50895,8 @@ _CHU_DRILL_SUBJECTS = ("chugaku", "chugaku_math", "chugaku_rika", "chugaku_shaka
 _KOSEI_ONLY_DRILL_SUBJECTS = frozenset({"english", "math", "english_long", "physics", "chemistry", "biology", "earth",
                                         "japanese", "social"})
 # 3日ドリル (AIあり) が自動で出す科目 (band ごと)。高校の理科・社会・国語・英検・英語長文は出さない
-#   (盲検記録なし / 英検と英語長文はクラス宿題だけ・習熟度テストはどの自動配信にも出ない)。
+#   (理科・社会・国語は AI 担任が生徒ごとに単元を選ぶ (2026-11-17)・盲検記録の無い科目は誰も自動では出さない /
+#    英検と英語長文はクラス宿題だけ・習熟度テストはどの自動配信にも出ない)。
 _ROUTINE_SUBJECTS_BY_BAND = {"kosei": ("english", "math"), "chugaku": _CHU_DRILL_SUBJECTS}
 
 
@@ -51314,8 +51332,8 @@ def _weakness_routine_pick_drills(c, sid, limit=5, *, band, reasons=None):
     在庫は見ない (在庫と既出の除外は _weakness_routine_plan)。配信可能が無ければ []。
     🧒 2026-10-15 塾長「中学生と高校生は問題の配信はミスらないように」: band (_student_grade_band) は必須。
       - 並べる**前に**その band の弱点だけを残す (他の区分の弱点が 8 枠を食わないように)。外した理由は reasons に数える
-        (band_mismatch:<科目> = 区分違い / no_reviewed_pool:<科目> = 高校の理科・社会・国語などレビュー済みの在庫が無い /
-        not_routine_subject:<科目> = 英検など 3日ドリルで出さない科目)。
+        (band_mismatch:<科目> = 区分違い / no_reviewed_pool:<科目> = 高校の地学などレビュー済みの在庫が無い /
+        not_routine_subject:<科目> = 英検や、レビュー済みの在庫はあるが 3日ドリルで出さない科目 (2026-11-17〜 高校の理科・社会・古文))。
       - 高校生 (kosei): english は文法 20 単元へ (_eng_drill_unit_for_topic。長文・語彙など単元に当たらない弱点は eng_not_grammar_unit)、
         math は科目まるごと (数学III の弱点は候補にしない = math_iii_excluded)。
       - 中学生 (chugaku): 高校入試演習の 1 バケット 'chugaku' の topic を中学 5 教科の単元に**完全一致**で当てる (_chu_drill_for_topic)。

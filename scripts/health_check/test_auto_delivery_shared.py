@@ -63,6 +63,11 @@ REVIEWED_SEEDS = {
     "eiken_vocab_pool_v2.json": "eiken",
     "eiken_reading_pool_v1.json": "eiken",
     "eiken_reading_pool_v2.json": "eiken",
+    "kosei_kokugo_pool_v1.json": "japanese",     # 2026-11-17 高校 古文 (盲検 3 名・AI 担任)
+    "kosei_chemistry_pool_v1.json": "chemistry",  # 2026-11-17 高校 化学基礎・化学 (盲検 3 名・AI 担任)
+    "kosei_physics_pool_v1.json": "physics",      # 2026-11-17 高校 物理基礎・物理 (盲検 3 名・監査・AI 担任)
+    "kosei_biology_pool_v1.json": "biology",      # 2026-11-17 高校 生物基礎 (盲検 3 名・監査・AI 担任)
+    "kosei_social_pool_v1.json": "social",        # 2026-11-17 高校 日本史・世界史・地理 (盲検 3 名・監査・AI 担任)
 }
 # 自動配信に載せないシード (盲検 3 名の記録が無い・ボタンにつながっていない)
 NOT_AUTO_SEEDS = {
@@ -175,8 +180,14 @@ def main():
     allow = mod._auto_delivery_allowlist()
     for subj in allow:
         check(f"許可リストの科目 {subj} は単元ドリルの科目", subj in mod._GRAMMAR_CANON_SUBJECTS)
-    check("許可リストに高校の理科・社会・国語は無い (盲検記録のあるシードが無い)",
-          not ({"physics", "chemistry", "biology", "earth", "social", "japanese"} & set(allow)), sorted(allow))
+    check("許可リストに、盲検記録のあるシードがまだ無い高校の科目 (地学) は無い",
+          "earth" not in allow, sorted(allow))
+    kosei_src = {"japanese": ("kosei-kokugo-v1",), "chemistry": ("kosei-chem-v1",), "physics": ("kosei-phys-v1",),
+                 "biology": ("kosei-bio-v1",), "social": ("kosei-social-v1",)}
+    check("高校の国語・理科・社会は 2026-11-17 のシードの出典だけ (exam_questions を分解した古い行は通らない)",
+          all(allow.get(k) == v for k, v in kosei_src.items()), {k: allow.get(k) for k in kosei_src})
+    check("3日ドリルが自動で出す高校の科目は english・math のまま (国語・理科・社会は AI 担任が単元を選んで配る)",
+          tuple(mod._ROUTINE_SUBJECTS_BY_BAND["kosei"]) == ("english", "math"), mod._ROUTINE_SUBJECTS_BY_BAND["kosei"])
 
     # ------------------------------------------------------------------
     print("\n[2] 許可リスト・禁止・env の差し替え")
@@ -186,6 +197,11 @@ def main():
         ("english", "chu2grammar-20260709", False), ("chugaku", "chu2grammar-20260709", True),
         ("chugaku", "chugaku-drill-v4", True), ("chugaku", "chugaku-drill-v5", False),
         ("japanese", "weakness_v1", False), ("physics", "pool", False), ("math", "mathwb-kI:1:1", True),
+        ("japanese", "kosei-kokugo-v1", True), ("japanese", "pool", False), ("japanese", "kosei-chem-v1", False),
+        ("chemistry", "kosei-chem-v1", True), ("chemistry", "pool", False), ("chemistry", "", False),
+        ("physics", "kosei-phys-v1", True), ("physics", "kosei-chem-v1", False), ("biology", "kosei-bio-v1", True),
+        ("biology", "pool", False), ("social", "kosei-social-v1", True), ("social", "pool", False),
+        ("earth", "kosei-phys-v1", False), ("english", "kosei-kokugo-v1", False),
         ("math", "mathct-r1-ia-1-1", True), ("math", "pool", False), ("eiken", "eikenp1-mock-v1 S1-A", True),
         ("eiken", "eiken2-honban-r1 大問2[2A]", True), ("eiken", "pool", False),
         ("chugaku_math", "chugaku-math-v1", True), ("chugaku_math", "chugaku-drill-v1", False),
