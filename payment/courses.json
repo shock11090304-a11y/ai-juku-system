@@ -1,6 +1,6 @@
 {
   "_comment": "AI学習コーチ塾 コース単価カタログ。register.html (表示) と api/register-subscribe.py の COURSES/OPTIONS (実課金額) の両方で参照される。label = 入塾申込書と同じ保護者向け表示名 (Stripe 明細・メール用。name は名簿の正規名なので変えない)。価格改定時は両ファイルを必ず同じ値に更新し、`python3 scripts/check_course_price_sync.py` で一致を検証すること (ズレると表示価格と請求額が食い違う)。",
-  "version": "2026-11-17a",
+  "version": "2026-11-17b",
   "currency": "JPY",
   "courses": [
     { "id": "kobetsu",      "name": "個別指導",          "price": 25000, "tier": "kobetsu" },
@@ -10,6 +10,9 @@
     { "id": "kanri-monitor","name": "学習管理モニター",     "price": 16500, "tier": "high" },
     { "id": "gmarch",       "name": "GMARCH",         "price": 12500, "tier": "mid", "label": "GMARCHコース（大学別演習）" },
     { "id": "soukei",       "name": "早慶クラス",         "price": 12500, "tier": "mid", "label": "早慶クラス（大学別演習）" },
+    { "id": "archive-kankan",    "name": "関関同立（アーカイブ）",           "price": 12500, "tier": "mid", "label": "関関同立クラス（アーカイブ配信）" },
+    { "id": "archive-kokuritsu", "name": "国公立（アーカイブ）",             "price": 12500, "tier": "mid", "label": "国公立 入試対策クラス（アーカイブ配信）" },
+    { "id": "archive-chuken",    "name": "日東駒専・産近甲龍（アーカイブ）", "price": 12500, "tier": "mid", "label": "日東駒専・産近甲龍クラス（アーカイブ配信）" },
     { "id": "eiken-jun1",   "name": "英検準１級",         "price": 8500,  "tier": "standard", "label": "英検準1級対策" },
     { "id": "chu2",         "name": "中学2年",           "price": 7500,  "tier": "standard", "label": "中学2年 英語" },
     { "id": "chu1",         "name": "中学基礎（中1・中2）",   "price": 7500,  "tier": "standard", "label": "中学基礎（定期テスト・中1/2）" },

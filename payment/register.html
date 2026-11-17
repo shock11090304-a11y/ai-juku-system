@@ -336,10 +336,10 @@ const GRADE_COURSE_MAP = {
   '中学1年': ['chu1', 'grammar-1', 'eiken-jun2', 'eiken-2', 'long-1'],
   '中学2年': ['chu1', 'chu2', 'chu3-monday', 'grammar-1', 'eiken-jun2', 'eiken-2', 'long-1'],
   '中学3年': ['chu3-monday', 'grammar-1', 'grammar-2', 'eiken-jun1', 'eiken-2', 'long-1'],
-  '高校1年': ['kou2-grammar', 'grammar-1', 'grammar-2', 'eiken-jun1', 'eiken-2', 'long-1', 'long-2', 'kaishaku', 'gmarch', 'soukei', 'kanri-monitor', 'kanri', 'kokuritsu', 'kokugo'],
-  '高校2年': ['kou2-grammar', 'grammar-1', 'grammar-2', 'eiken-jun1', 'eiken-2', 'long-1', 'long-2', 'kaishaku', 'gmarch', 'soukei', 'kanri-monitor', 'kanri', 'kokuritsu', 'kokugo'],
-  '高校3年': ['kou2-grammar', 'grammar-1', 'grammar-2', 'eiken-jun1', 'eiken-2', 'long-1', 'long-2', 'kaishaku', 'gmarch', 'soukei', 'kanri-monitor', 'kanri', 'kokuritsu', 'kokugo'],
-  '浪人':    ['ronin', 'kokuritsu', 'gmarch', 'soukei', 'kanri', 'grammar-2', 'long-2', 'eiken-jun1', 'kokugo'],
+  '高校1年': ['kou2-grammar', 'grammar-1', 'grammar-2', 'eiken-jun1', 'eiken-2', 'long-1', 'long-2', 'kaishaku', 'gmarch', 'soukei', 'archive-kankan', 'archive-kokuritsu', 'archive-chuken', 'kanri-monitor', 'kanri', 'kokuritsu', 'kokugo'],
+  '高校2年': ['kou2-grammar', 'grammar-1', 'grammar-2', 'eiken-jun1', 'eiken-2', 'long-1', 'long-2', 'kaishaku', 'gmarch', 'soukei', 'archive-kankan', 'archive-kokuritsu', 'archive-chuken', 'kanri-monitor', 'kanri', 'kokuritsu', 'kokugo'],
+  '高校3年': ['kou2-grammar', 'grammar-1', 'grammar-2', 'eiken-jun1', 'eiken-2', 'long-1', 'long-2', 'kaishaku', 'gmarch', 'soukei', 'archive-kankan', 'archive-kokuritsu', 'archive-chuken', 'kanri-monitor', 'kanri', 'kokuritsu', 'kokugo'],
+  '浪人':    ['ronin', 'kokuritsu', 'gmarch', 'soukei', 'archive-kankan', 'archive-kokuritsu', 'archive-chuken', 'kanri', 'grammar-2', 'long-2', 'eiken-jun1', 'kokugo'],
   'その他':  null,
 };
 
@@ -433,7 +433,7 @@ function renderCourses() {
     { key: 'kobetsu', label: '👤 個別指導' },
     { key: 'premium', label: '🎓 大学受験 (難関)' },
     { key: 'high',    label: '📈 学習管理コース' },
-    { key: 'mid',     label: '🏛 私立大学コース' },
+    { key: 'mid',     label: '🏛 大学別コース' },
     { key: 'standard',label: '📖 標準コース (¥7,500〜)' },
   ];
   let html = '';

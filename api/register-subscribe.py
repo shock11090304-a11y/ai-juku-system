@@ -104,6 +104,10 @@ COURSES = {
     "kanri-monitor": {"name": "学習管理モニター", "price": 16500},
     "gmarch":        {"name": "GMARCH",     "price": 12500, "label": "GMARCHコース（大学別演習）"},
     "soukei":        {"name": "早慶クラス",     "price": 12500, "label": "早慶クラス（大学別演習）"},
+    # 2026-11-17 塾長決定: アーカイブ専用の大学別クラス3つ (塾生専用・毎週2本・各12,500円・12月開講)
+    "archive-kankan":    {"name": "関関同立（アーカイブ）",           "price": 12500, "label": "関関同立クラス（アーカイブ配信）"},
+    "archive-kokuritsu": {"name": "国公立（アーカイブ）",             "price": 12500, "label": "国公立 入試対策クラス（アーカイブ配信）"},
+    "archive-chuken":    {"name": "日東駒専・産近甲龍（アーカイブ）", "price": 12500, "label": "日東駒専・産近甲龍クラス（アーカイブ配信）"},
     "eiken-jun1":    {"name": "英検準１級",     "price": 8500, "label": "英検準1級対策"},
     "chu2":          {"name": "中学2年",       "price": 7500, "label": "中学2年 英語"},
     "chu1":          {"name": "中学基礎（中1・中2）", "price": 7500, "label": "中学基礎（定期テスト・中1/2）"},
