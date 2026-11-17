@@ -3376,7 +3376,7 @@
   <!-- ★ceo.js を変えたら必ず ?v= を更新する。vercel.json の no-cache は *.html と
        auth-guard.js / cache-purge.js だけで、ceo.js はこのクエリだけが頼り。
        据え置くと「新しい ceo.html + キャッシュされた古い ceo.js」で動く端末が出る。 -->
-  <script src="ceo.js?v=20261117a-archive-classes"></script>
+  <script src="ceo.js?v=20261118a-archive-kokuritsu2"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {
@@ -13918,7 +13918,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       // 🎬 アーカイブ専用クラス (server の _ARCHIVE_CLASSES・時間帯なし)。この授業を 1 クラス 1 つ作り (日付は空でよい)、
       //   上の「🎬 授業の録画を登録」でこの授業を選び、授業日に動画の公開日を入れて毎週の動画を登録する。
       { label: 'アーカイブ 関関同立', subject: 'アーカイブ', start: '', end: '', archive: true },
-      { label: 'アーカイブ 国公立', subject: 'アーカイブ', start: '', end: '', archive: true },
+      { label: 'アーカイブ 旧帝大・神戸大', subject: 'アーカイブ', start: '', end: '', archive: true },
+      { label: 'アーカイブ 人気国公立', subject: 'アーカイブ', start: '', end: '', archive: true },
       { label: 'アーカイブ 日東駒専・産近甲龍', subject: 'アーカイブ', start: '', end: '', archive: true }
     ];
     (function initTtPick() {

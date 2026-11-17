@@ -56475,15 +56475,16 @@ _TIMETABLE_CLASSES = [
 #     クラス別ブリーフ・録画の再生リスト名 (曜日+限) による自動割り当て) は dow/time を前提にしていて、
 #     ここに混ぜると「None限」や int(None) で壊れる。どれもアーカイブ専用クラスには用が無いので自然に飛ばす。
 #   ★一方 label の照合 (_TIMETABLE_LABELS) には入れる = 受講クラスの登録・クラス別配布ファイル・クラス宿題の一括作成・
-#     一斉送信のクラス指定・登録フォームの承認 がこの 3 クラスをそのまま受け付ける。
+#     一斉送信のクラス指定・登録フォームの承認 がこのクラスをそのまま受け付ける。
 #   ★動画の届け方: CEO「🏫 授業」で label と同じタイトルの授業 (class_sessions) を 1 クラス 1 つ作り、
 #     「🎬 授業の録画を登録」でその授業を選んで URL・授業日 (= 公開日) を入れて登録する。生徒の 🎬 動画タブには
 #     students.class_labels にこの label がある生徒だけ・受講開始月以降の回だけ (_archive_cutoff) が出る。
-#     再生リスト名からの自動割り当て (class_recording_assign.slot_of) は曜日+限で読むので、この 3 クラスは対象外 (手で登録)。
+#     再生リスト名からの自動割り当て (class_recording_assign.slot_of) は曜日+限で読むので、アーカイブ専用クラスは対象外 (手で登録)。
 #   label の写しは ceo.html (CLS_TIMETABLE の archive 行) と juku-register.html (ARCHIVE_CLASSES)。check_timetable_sync.py が照合する。
 _ARCHIVE_CLASSES = [
     {"label": "アーカイブ 関関同立", "archive": True},
-    {"label": "アーカイブ 国公立", "archive": True},
+    {"label": "アーカイブ 旧帝大・神戸大", "archive": True},
+    {"label": "アーカイブ 人気国公立", "archive": True},
     {"label": "アーカイブ 日東駒専・産近甲龍", "archive": True},
 ]
 _ARCHIVE_CLASS_LABELS = set(c["label"] for c in _ARCHIVE_CLASSES)
@@ -61687,7 +61688,8 @@ _CLASS_HW_ROUTINE_MAP = {
     # 🎬 アーカイブ専用クラス: 毎朝の自動宿題は出さない (コマが無く、宿題は塾長が「クラスに宿題を出す」で手で出す)。
     #   hold = 「まだ出さない」(早慶・GMARCH と同じ)。毎朝の実行は _TIMETABLE_CLASSES しか回さないのでどのみち対象外。
     "アーカイブ 関関同立": {"kind": "hold"},
-    "アーカイブ 国公立": {"kind": "hold"},
+    "アーカイブ 旧帝大・神戸大": {"kind": "hold"},
+    "アーカイブ 人気国公立": {"kind": "hold"},
     "アーカイブ 日東駒専・産近甲龍": {"kind": "hold"},
 }
 _CLASS_HW_ORDER = {c_["label"]: i_ for i_, c_ in enumerate(_TIMETABLE_CLASSES)}

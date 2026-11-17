@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """🎬 アーカイブ専用クラス (server/main.py の _ARCHIVE_CLASSES・2026-11-17 塾長指示) の回帰テスト。
 
-背景: ライブ授業の無い 3 クラス (「アーカイブ 関関同立」「アーカイブ 国公立」「アーカイブ 日東駒専・産近甲龍」) に
+背景: ライブ授業の無い 3 クラス (「アーカイブ 関関同立」「アーカイブ 旧帝大・神戸大」「アーカイブ 人気国公立」「アーカイブ 日東駒専・産近甲龍」) に
   毎週 2 本の講義動画 (YouTube 限定公開) を配る。曜日・時限が無いので _TIMETABLE_CLASSES には入れず、
   label の照合 (_TIMETABLE_LABELS) にだけ入れる。
 
@@ -37,7 +37,8 @@ sys.path.insert(0, os.path.join(REPO, "server"))
 
 FAILURES = []
 KKDR = "アーカイブ 関関同立"
-KOKU = "アーカイブ 国公立"
+KOKU = "アーカイブ 旧帝大・神戸大"
+NINKI = "アーカイブ 人気国公立"
 NTKS = "アーカイブ 日東駒専・産近甲龍"
 
 
@@ -106,7 +107,7 @@ def main():
     adm = {"Authorization": "Bearer " + admin_token(mod)}
 
     print("[1] 照合の表")
-    arch = {KKDR, KOKU, NTKS}
+    arch = {KKDR, KOKU, NINKI, NTKS}
     check("_ARCHIVE_CLASS_LABELS = 3 クラス", mod._ARCHIVE_CLASS_LABELS == arch, sorted(mod._ARCHIVE_CLASS_LABELS))
     check("_TIMETABLE_LABELS に入っている", arch <= mod._TIMETABLE_LABELS)
     check("_TIMETABLE_CLASSES (曜日+時限のコマ) には入っていない = 出欠・時間割・毎朝の宿題・ブリーフが回さない",
@@ -139,7 +140,7 @@ def main():
     cls = r.json().get("classes", []) if r.status_code == 200 else []
     ar = [x for x in cls if x.get("archive")]
     check("timetable-classes: 18 クラス・アーカイブ 3 つは archive=true・dow/time は None",
-          len(cls) == 18 and [x["label"] for x in ar] == [KKDR, KOKU, NTKS] and all(x["dow"] is None and x["time"] is None for x in ar), str(ar))
+          len(cls) == 19 and [x["label"] for x in ar] == [KKDR, KOKU, NINKI, NTKS] and all(x["dow"] is None and x["time"] is None for x in ar), str(ar))
     sid_in = make_student(mod, "アーカイブ受講 A", "arch-a@example.org", [KOKU], start_month="2026-11")
     sid_out = make_student(mod, "アーカイブ非受講 B", "arch-b@example.org", ["水曜2限 GMARCH"])
     sid_all = make_student(mod, "アーカイブ受講 C", "arch-c@example.org", [KOKU])   # start_month NULL = 全部

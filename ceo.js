@@ -2964,7 +2964,7 @@ function renderCourseApps(apps) {
     const primary = rows.find(r => r.referrer === '塾生アプリ') || rows[0];
     const multi = rows.length > 1;
     const badges = _uniq(rows.map(r => r.referrer === '塾生アプリ' ? '塾生アプリ' : 'other')).map(_badge).join('');
-    const subjectsUnion = _uniq(rows.reduce((acc, r) => acc.concat((r.subjects || '').split(/・(?!産近甲龍)/).map(x => x.trim())), []));
+    const subjectsUnion = _uniq(rows.reduce((acc, r) => acc.concat((r.subjects || '').split(/・(?!産近甲龍|神戸大)/).map(x => x.trim())), []));
     const targets = _uniq(rows.map(r => (r.target_university || '').trim()));
     const emails = _uniq(rows.map(r => _normEmail(r.email)));
     const loginEmail = _normEmail(primary.email);

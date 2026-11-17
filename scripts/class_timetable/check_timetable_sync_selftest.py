@@ -91,14 +91,14 @@ MUTATIONS = [
      "subjects: buildSubjects() || undefined,", "// subjects は送らない"),
     # 🎬 アーカイブ専用クラス (2026-11-17): 写しのズレ・時刻の混入・行の読み落としを捕まえる
     ("登録フォームのアーカイブ専用クラスの label を変える", "juku-register.html",
-     "['アーカイブ 国公立', '国公立']", "['アーカイブ 国公立大', '国公立']"),
+     "['アーカイブ 人気国公立', '人気国公立']", "['アーカイブ 人気国公立大', '人気国公立']"),
     ("ceo.html からアーカイブ専用クラスを 1 つ消す", "ceo.html",
-     "      { label: 'アーカイブ 国公立', subject: 'アーカイブ', start: '', end: '', archive: true },\n", ""),
+     "      { label: 'アーカイブ 人気国公立', subject: 'アーカイブ', start: '', end: '', archive: true },\n", ""),
     ("ceo.html のアーカイブ専用クラスに時刻を入れる", "ceo.html",
      "{ label: 'アーカイブ 関関同立', subject: 'アーカイブ', start: '', end: '', archive: true }",
      "{ label: 'アーカイブ 関関同立', subject: 'アーカイブ', start: '19:15', end: '20:15', archive: true }"),
     ("正典のアーカイブ専用クラスに曜日を付ける", "server/main.py",
-     '{"label": "アーカイブ 国公立", "archive": True}', '{"label": "アーカイブ 国公立", "dow": 3, "archive": True}'),
+     '{"label": "アーカイブ 人気国公立", "archive": True}', '{"label": "アーカイブ 人気国公立", "dow": 3, "archive": True}'),
     ("コースLPに subjects を足してしまう (AIコースのLPなので誤り)", "course-kokuritsu-nankan.html",
      "              note: note || undefined,", "              note: note || undefined,\n              subjects: '国公立難関大コース',"),
 ]

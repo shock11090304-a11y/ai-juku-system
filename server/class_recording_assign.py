@@ -48,7 +48,8 @@ LEGACY_SLOT = {}
 #   判定は main.py の feed・出欠と同じ「label と完全一致」(前方一致にすると、表記の揺れた授業が
 #   ここでは外れるのに feed では全員向けに出る、という食い違いになる)。
 ARCHIVE_SESSION_TITLES = {unicodedata.normalize("NFKC", t) for t in (
-    "アーカイブ 関関同立", "アーカイブ 国公立", "アーカイブ 日東駒専・産近甲龍")}
+    "アーカイブ 関関同立", "アーカイブ 旧帝大・神戸大", "アーカイブ 人気国公立",
+    "アーカイブ 日東駒専・産近甲龍")}
 
 
 def is_archive_session(title):
