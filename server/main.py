@@ -2238,6 +2238,14 @@ def init_db():
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_winter_purchases_session ON winter_purchases(session_id);
     CREATE INDEX IF NOT EXISTS idx_winter_purchases_email ON winter_purchases(email);
+    -- ❄️ 冬期講習の申込ページの閲覧数 (2026-11-18)。日付 (JST)・ページ・来た元ごとの件数だけ。IP・端末・個人は残さない。
+    CREATE TABLE IF NOT EXISTS winter_pageviews (
+        day TEXT NOT NULL,
+        page TEXT NOT NULL,
+        src TEXT NOT NULL,
+        n INTEGER DEFAULT 0,
+        PRIMARY KEY (day, page, src)
+    );
     -- 出欠: 生徒の自己申告。(student_id, session_id) ユニークで再申告は UPDATE 上書き。
     CREATE TABLE IF NOT EXISTS class_attendance (
         id {pk},
@@ -58697,16 +58705,124 @@ def _winter_seats_left(counts: Optional[dict] = None) -> dict:
     return {k: max(0, int(v["cap"]) - counts.get(k, 0)) for k, v in WINTER_ITEMS.items() if v.get("cap")}
 
 
+# 先着特典 (塾長 2026-11-18「提案通りで」): 冬期講習 (どの講座でも) を支払った先着 5 名に、塾長との学習相談 (Zoom・15分)。
+# 数えるのは支払った人 (1 つのメールにつき 1 回)。順番は支払いの記録順。
+# 返金された人も数えたまま (特典も取り消し・繰り上げはしない。申込ページにそう書いている)。
+# ★告知した人数を後から増やさない (景品表示法)。残りは /api/winter/seats の bonus で申込ページに出す。
+WINTER_BONUS_CAP = 5
+WINTER_BONUS_NAME = "塾長との学習相談（Zoom・15分）"
+# 特典を始めた時刻 (UTC の naive ISO・paid_at と同じ形)。これより前の支払い (公開日の確認など) は数えない
+WINTER_BONUS_SINCE_UTC = "2026-11-18T00:00:00"
+
+
+def _winter_bonus_order() -> list:
+    """[(email, 最初の支払いの id)] — 先着特典の順番 (支払いの記録順・1 人 1 回・返金も数えたまま)。"""
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, email FROM winter_purchases WHERE livemode = 1 AND paid_at >= ? ORDER BY paid_at, id",
+                  (WINTER_BONUS_SINCE_UTC,))
+        rows = c.fetchall()
+    finally:
+        conn.close()
+    seen, out = set(), []
+    for r in rows:
+        em = (r["email"] or "").strip().lower()
+        if em and em not in seen:
+            seen.add(em)
+            out.append((em, r["id"]))
+    return out
+
+
+def _winter_bonus_left() -> int:
+    return max(0, WINTER_BONUS_CAP - len(_winter_bonus_order()))
+
+
+def _winter_bonus_rank(email: str, purchase_id) -> Optional[int]:
+    """この決済で特典の対象になったら順番 (1〜5)。2 回目以降の決済・枠の外は None。"""
+    em = (email or "").strip().lower()
+    for i, (e, pid) in enumerate(_winter_bonus_order()[:WINTER_BONUS_CAP]):
+        if e == em:
+            return i + 1 if pid == purchase_id else None
+    return None
+
+
 @app.get("/api/winter/seats")
 def winter_seats():
-    """❄️ 申込ページ (Netlify) が読む: 大学別パックの定員と残り。個人情報は返さない。"""
+    """❄️ 申込ページ (Netlify) が読む: 大学別パックの定員と残り・先着特典の残り。個人情報は返さない。"""
     try:
         left = _winter_seats_left()
     except Exception as e:
         log.warning(f"[winter] seats lookup failed: {type(e).__name__}")
         return JSONResponse({"ok": False}, status_code=503, headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "no-store"})
-    return JSONResponse({"ok": True, "cap": WINTER_UNIV_CAP, "left": left},
-                        headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "no-store"})
+    body = {"ok": True, "cap": WINTER_UNIV_CAP, "left": left}
+    try:
+        body["bonus"] = {"cap": WINTER_BONUS_CAP, "left": _winter_bonus_left()}
+    except Exception as e:
+        log.warning(f"[winter] bonus lookup failed: {type(e).__name__}")
+    return JSONResponse(body, headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "no-store"})
+
+
+# 申込ページの閲覧数 (2026-11-18 塾長「申し込みのページにどれだけの人がアクセスしているのか」)。
+# Netlify の無料プランは 24 時間分しか残らないので、ページの JS が 1 回の表示につき 1 回ここへ送る (ロボットは JS を動かさないので数えない)。
+_WINTER_PV_PAGES = ("winter", "winter-chugaku")
+_WINTER_PV_SRCS = ("threads", "instagram", "x", "line", "facebook", "hp", "note", "youtube", "google", "yahoo", "mail", "direct", "other")
+
+
+def _winter_pv_record(page: str, src: str):
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("INSERT INTO winter_pageviews (day, page, src, n) VALUES (?,?,?,1) "
+                  "ON CONFLICT (day, page, src) DO UPDATE SET n = winter_pageviews.n + 1", (_winter_today(), page, src))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+@app.post("/api/winter/pv")
+def winter_pageview(request: Request, body: bytes = Depends(_raw_body_dep)):
+    """❄️ 申込ページの表示を数える (日付・ページ・来た元の件数だけ)。sendBeacon の text/plain の JSON を受ける。
+    def (threadpool) なので DB 待ちでイベントループを止めない。行は 1 日に最大 26 (ページ×来た元の決まった組) で増えない。"""
+    hdr = {"Access-Control-Allow-Origin": "*", "Cache-Control": "no-store"}
+    try:
+        # ★Netlify → Vercel の rewrite 経由で IP は共有されがちなので上限は緩め (閲覧は多くて毎分数回)
+        _check_rate_limit_ip(request, bucket="winter_pv", limit=120, window=60)
+    except HTTPException:
+        return JSONResponse({"ok": False}, status_code=429, headers=hdr)
+    if len(body or b"") > 2000:
+        return JSONResponse({"ok": False}, status_code=413, headers=hdr)
+    try:
+        j = json.loads((body or b"{}").decode("utf-8", "ignore") or "{}")
+    except Exception:
+        j = {}
+    if not isinstance(j, dict):
+        j = {}
+    page = str(j.get("page") or "")[:30]
+    src = str(j.get("src") or "other")[:20].lower()
+    if page not in _WINTER_PV_PAGES:
+        return JSONResponse({"ok": False}, status_code=400, headers=hdr)
+    if src not in _WINTER_PV_SRCS:
+        src = "other"
+    try:
+        _winter_pv_record(page, src)
+    except Exception as e:
+        log.warning(f"[winter] pageview record failed: {type(e).__name__}")
+        return JSONResponse({"ok": False}, status_code=503, headers=hdr)
+    return JSONResponse({"ok": True}, headers=hdr)
+
+
+def _winter_pageviews(days: int = 14) -> list:
+    """[{day, page, src, n}] 直近 days 日 (新しい順)。"""
+    since = (date.fromisoformat(_winter_today()) - timedelta(days=max(1, min(int(days), 120)) - 1)).isoformat()
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT day, page, src, n FROM winter_pageviews WHERE day >= ? ORDER BY day DESC, page, n DESC", (since,))
+        rows = c.fetchall()
+    finally:
+        conn.close()
+    return [{"day": r["day"], "page": r["page"], "src": r["src"], "n": int(r["n"] or 0)} for r in rows]
 
 
 def _winter_part_name(part: str) -> str:
@@ -59073,6 +59189,42 @@ def _winter_webhook_record(session: dict) -> bool:
         member = _winter_ensure_member(email, name)
         log.info(f"[winter] purchase recorded id={row['id']} items={items} amount={amount}")
         _winter_check_over_cap(session, email, items)
+        bonus_rank = None
+        try:
+            if session.get("livemode") is not False:
+                bonus_rank = _winter_bonus_rank(email, row["id"])
+        except Exception as e:
+            # 記録は済んでいるので、この決済でここは二度と通らない → 黙って落とさず、塾長が気づける記録に残す
+            log.warning(f"[winter] bonus rank failed: {type(e).__name__}")
+            try:
+                _record_ai_critical_event("winter_bonus_rank_failed", {"purchase_id": row["id"], "error": type(e).__name__})
+            except Exception:
+                pass
+            try:   # 記録 (events) は画面に出ないので、塾長にメールで知らせる
+                _course_send_email(COURSE_CONTACT_EMAIL, "[冬期講習] ★先着特典の対象かどうかを判定できませんでした",
+                                   f"冬期講習の支払いは記録しましたが、先着{WINTER_BONUS_CAP}名の特典の対象かどうかを判定できませんでした"
+                                   f"（{type(e).__name__}）。\n\n購入者のメール: {email}\nStripe の決済: {sid}\n\n"
+                                   "購入一覧（CEO の講習の購入一覧、または GET /api/admin/winter/purchases）で、11月18日9時（日本時間）以降の支払いの順番を確かめ"
+                                   "（1つのメールアドレスは最初の1回だけ数える・返金になった人も数える）、"
+                                   f"{WINTER_BONUS_CAP}人目までならこの方に特典「{WINTER_BONUS_NAME}」の連絡をしてください。")
+            except Exception:
+                pass
+        if bonus_rank:
+            try:
+                _course_send_email(COURSE_CONTACT_EMAIL, f"[冬期講習] ★先着{WINTER_BONUS_CAP}名の特典の対象者（{bonus_rank}人目）",
+                                   f"冬期講習の先着{WINTER_BONUS_CAP}名の特典「{WINTER_BONUS_NAME}」の対象になった方です（{bonus_rank}人目）。\n\n"
+                                   f"購入者のメール: {email}\nお名前: {name or '（未記入）'}\n講座: {'・'.join(WINTER_ITEMS[k]['name'] for k in items)}\nStripe の決済: {sid}\n\n"
+                                   "購入者への案内メール（視聴ページのご案内）に、特典の対象であることと「数日のうちに塾から日程の調整の連絡をします」を書きます"
+                                   "（案内メールを止めている間〔WINTER_WELCOME_ENABLED=0〕は書かれません）。"
+                                   "上の購入者のメールアドレスへ、数日のうちに相談の候補日時（2〜3つ）を送ってください。\n"
+                                   "※案内メールが届いていないこともあるので、連絡では必ず特典の対象であることも書いてください。"
+                                   "講習が返金になった場合は特典も取り消しです（繰り上げはしません）。")
+            except Exception as e:
+                log.warning(f"[winter] bonus owner mail failed: {type(e).__name__}")
+                try:
+                    _record_ai_critical_event("winter_bonus_owner_mail_failed", {"purchase_id": row["id"], "rank": bonus_rank})
+                except Exception:
+                    pass
         if os.getenv("WINTER_WELCOME_ENABLED", "1").strip().lower() in ("0", "false", "off", "no"):
             return True
         if not member:
@@ -59082,6 +59234,10 @@ def _winter_webhook_record(session: dict) -> bool:
         ready = _winter_published_videos([WINTER_VIDEO_PREFIX + k for k in items], today)
         lines = [f"{WINTER_LABEL}のお申し込みとお支払い（合計 {amount:,}円・税込）を確認しました。ありがとうございます。", "",
                  "■ お申し込みの講座", _winter_items_text(items).rstrip("\n"), ""]
+        if bonus_rank:
+            lines += [f"■ 先着{WINTER_BONUS_CAP}名の特典", f"先着{WINTER_BONUS_CAP}名のうち{bonus_rank}人目としてお支払いいただいたため、特典「{WINTER_BONUS_NAME}」の対象となります。"
+                      "講習の進め方と入試までの計画について、一緒に考えます。日程の調整のご連絡は、数日のうちに、このメールが届いたアドレスへお送りします。"
+                      "講習の代金が返金になった場合は、特典も取り消しになります。", ""]
         if ready:
             lines.append(f"すでに配信している動画（{len(ready)}本）は、下のリンクから視聴ページを開くとすぐにご覧いただけます。"
                          "まだの講座は、配信日の朝にメールでお知らせします。")
@@ -59351,6 +59507,12 @@ async def _winter_notify_scheduler():
                     log.warning(f"[Winter] stripe sync failed: {type(_e).__name__}")
                 res = await asyncio.to_thread(_winter_notify_due)
                 log.info(f"[Winter] notify due: {res}")
+                try:   # 申込ページの閲覧数 (直近 8 日分・今日は 8 時までの途中の数) を毎朝ログに残す (railway logs で読める)
+                    pv = await asyncio.to_thread(_winter_pageviews, 8)
+                    bl = await asyncio.to_thread(_winter_bonus_left)
+                    log.info(f"[Winter] pageviews: {[(r['day'], r['page'], r['src'], r['n']) for r in pv]} bonus_left={bl}")
+                except Exception as _e:
+                    log.warning(f"[Winter] pageviews log failed: {type(_e).__name__}")
                 target += timedelta(days=1)
             await asyncio.sleep(max(60.0, (target - datetime.now(JST)).total_seconds()))
         except asyncio.CancelledError:
@@ -59378,6 +59540,15 @@ def admin_winter_notify_due(request: Request, payload: Optional[WinterNotifyDueI
     preview = _winter_notify_due(dry_run=True)
     threading.Thread(target=_winter_notify_due, daemon=True, name="winter-notify-due").start()
     return {"ok": True, "background": True, **preview}
+
+
+@app.get("/api/admin/winter/pageviews")
+def admin_winter_pageviews(days: int = 14, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """塾長: 申込ページの閲覧数 (日付・ページ・来た元ごと) と先着特典の残り。"""
+    if not _admin_or_cron_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    rows = _winter_pageviews(days)
+    return {"rows": rows, "total": sum(r["n"] for r in rows), "bonus_left": _winter_bonus_left(), "bonus_cap": WINTER_BONUS_CAP}
 
 
 @app.get("/api/admin/winter/purchases")

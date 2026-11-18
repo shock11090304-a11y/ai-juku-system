@@ -92,6 +92,7 @@ def main():
     MAILS = []
     mod._course_send_email = lambda to, subject, body: (MAILS.append({"to": to, "subject": subject, "body": body}) or {"sent": True, "resend_id": "re_x"})
     mod._email_rate_limit = lambda *a, **k: None
+    mod.WINTER_BONUS_CAP = 0   # 先着特典は I でだけ確かめる (A〜H の案内メールの数を変えない)
     fake = FakeStripe()
     _orig_get_stripe = mod.get_stripe
     mod.get_stripe = lambda: fake
@@ -467,6 +468,55 @@ def main():
     it = {x["sku"]: x for x in ar.json().get("items", [])} if ar.status_code == 200 else {}
     check("H8. 管理の一覧に定員と残り", it.get("u-doshisha", {}).get("cap") == 20 and it["u-doshisha"].get("left") == 1
           and it.get("h3-r", {}).get("cap") is None, ar.text[:200])
+
+    # ---- I. 先着特典 (塾長 2026-11-18: 支払った先着5名に学習相談)・申込ページの閲覧数 ----
+    mod.WINTER_BONUS_CAP = 5
+    conn = mod.db(); c = conn.cursor(); c.execute("UPDATE winter_purchases SET livemode = 0"); conn.commit()   # ここまでの購入は数えない
+    c.execute("INSERT INTO winter_purchases (session_id, email, name, plan, item_keys, amount, status, app_id, livemode, paid_at, created_at) "
+              "VALUES (?,?,?,?,?,?,'paid','',1,?,?)", ("cs_before_bonus", "early@example.invalid", "", json.dumps(["h3-r"]), json.dumps(["h3-r"]),
+              7500, "2026-11-10T08:00:00", "2026-11-10T08:00:00"))
+    conn.commit(); conn.close()
+    sj = client.get("/api/winter/seats").json()
+    check("I1. 残り席 API に先着特典 (5名・残り5)・特典を始める前 (11-18 より前) の支払いは数えない", sj.get("bonus") == {"cap": 5, "left": 5}, sj.get("bonus"))
+    def buy(sid, email, item="h3-m"):
+        mod._winter_webhook_record({"id": sid, "livemode": True, "amount_total": 7500, "customer_details": {"email": email, "name": ""},
+                                    "metadata": {"system": "juku-payment-winter", "items": item, "plan": item}})
+    MAILS.clear(); buy("cs_bonus_1", "b1@example.invalid")
+    owner = [m for m in MAILS if "先着5名の特典の対象者（1人目）" in m["subject"]]
+    mine = [m for m in MAILS if m["to"] == "b1@example.invalid"]
+    check("I2. 1人目: 塾長に知らせ、案内メールに特典と日程の連絡", len(owner) == 1 and owner[0]["to"] == mod.COURSE_CONTACT_EMAIL
+          and "b1@example.invalid" in owner[0]["body"] and len(mine) == 1 and "先着5名の特典" in mine[0]["body"] and "1人目" in mine[0]["body"]
+          and "日程の調整" in mine[0]["body"], [m["subject"] for m in MAILS])
+    def recorded(sid):
+        conn = mod.db(); c = conn.cursor(); c.execute("SELECT COUNT(*) FROM winter_purchases WHERE session_id = ?", (sid,)); n = c.fetchone()[0]; conn.close()
+        return n == 1
+    MAILS.clear(); buy("cs_bonus_1b", "B1@example.invalid", "h3-b")
+    check("I3. 同じ人の2回目の決済は記録して案内も送るが、数えず特典の知らせも出さない", recorded("cs_bonus_1b")
+          and [m for m in MAILS if m["to"].lower() == "b1@example.invalid"] and not [m for m in MAILS if "先着" in m["subject"] + m["body"]]
+          and client.get("/api/winter/seats").json()["bonus"]["left"] == 4, [m["subject"] for m in MAILS])
+    conn = mod.db(); c = conn.cursor(); c.execute("UPDATE winter_purchases SET status = 'refunded' WHERE session_id = 'cs_bonus_1'"); conn.commit(); conn.close()
+    check("I3b. 対象の人が返金しても数えたまま (繰り上げない・残り4のまま)", client.get("/api/winter/seats").json()["bonus"]["left"] == 4)
+    for i in range(2, 6):
+        buy(f"cs_bonus_{i}", f"b{i}@example.invalid")
+    MAILS.clear(); buy("cs_bonus_6", "b6@example.invalid")
+    check("I4. 6人目は対象外 (記録して案内は送る・特典の知らせなし・残り0)", recorded("cs_bonus_6") and [m for m in MAILS if m["to"] == "b6@example.invalid"]
+          and not [m for m in MAILS if "先着" in m["subject"] + m["body"]]
+          and client.get("/api/winter/seats").json()["bonus"] == {"cap": 5, "left": 0}, [m["subject"] for m in MAILS])
+    conn = mod.db(); c = conn.cursor(); c.execute("UPDATE winter_purchases SET status = 'refunded' WHERE session_id = 'cs_bonus_6'"); conn.commit(); conn.close()
+    check("I5. 枠の外の人が返金しても残りは0のまま", client.get("/api/winter/seats").json()["bonus"]["left"] == 0)
+    for body in (b'{"page":"winter","src":"threads"}', b'{"page":"winter","src":"threads"}', b'{"page":"winter-chugaku","src":"zzz"}'):
+        client.post("/api/winter/pv", content=body, headers={"Content-Type": "text/plain"})
+    bad = client.post("/api/winter/pv", content=b'{"page":"index","src":"x"}', headers={"Content-Type": "text/plain"})
+    pr = client.get("/api/admin/winter/pageviews", headers=ADMIN)
+    pj = pr.json() if pr.status_code == 200 else {}
+    got = {(r["page"], r["src"]): r["n"] for r in pj.get("rows", [])}
+    check("I6. 閲覧数: ページ・来た元ごとに数える (知らない来た元は other・知らないページは 400)",
+          got.get(("winter", "threads")) == 2 and got.get(("winter-chugaku", "other")) == 1 and bad.status_code == 400
+          and pj.get("total") == 3 and pj.get("bonus_left") == 0, pj)
+    check("I7. 閲覧数の一覧は認証必須・閲覧の送信は誰でも (CORS *)", client.get("/api/admin/winter/pageviews").status_code == 401
+          and bad.headers.get("access-control-allow-origin") == "*")
+    odd = [client.post("/api/winter/pv", content=b, headers={"Content-Type": "text/plain"}).status_code for b in (b"[1]", b"null", b'"x"', b"{bad", b"x" * 3000)]
+    check("I8. 形の違う送信は 400/413 (500 にしない)", odd == [400, 400, 400, 400, 413], odd)
     mod.get_stripe = _orig_get_stripe
 
     import stripe as _stripe_lib
