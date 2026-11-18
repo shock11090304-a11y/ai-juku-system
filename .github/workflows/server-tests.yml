@@ -792,3 +792,9 @@ jobs:
         run: |
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_line_code_gate.py
+
+      - name: 塾長メッセージの LINE 併送 (AI 担任) 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_admin_message_line.py

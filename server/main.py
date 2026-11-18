@@ -51469,10 +51469,14 @@ def _weakness_routine_pick_drills(c, sid, limit=5, *, band, reasons=None):
         k = (cand["subject"], cand["unit"])
         if k not in seen:
             seen.add(k)
+            cand["accuracy"] = w.get("accuracy")   # 正答率が低い弱点はやさしめのレベルから出す (_weakness_routine_plan)
             picks.append(cand)
             if len(picks) >= limit:
                 break
     return picks
+
+
+_ROUTINE_LOW_ACCURACY_EASY_BELOW = 0.5   # 弱点の正答率がこれ未満なら 3日ドリルは 基礎+標準 から (2026-11-18 塾長)
 
 
 def _weakness_routine_plan(c, st, band, *, count=None, rng=None, reasons=None) -> dict:
@@ -51487,17 +51491,23 @@ def _weakness_routine_plan(c, st, band, *, count=None, rng=None, reasons=None) -
     picks = _weakness_routine_pick_drills(c, sid, band=band, reasons=reasons)
     if not picks:
         return {"ok": False, "reason": "no_deliverable_weakness", "tried": []}
-    levels = _routine_levels(band, _routine_row_val(st, "grade"))
+    normal = _routine_levels(band, _routine_row_val(st, "grade"))
     seen = _student_seen_grammar_qids(c, sid)
     tried = []
     for p in picks:
         excl = _ROUTINE_SUBJECT_LEVEL_EXCLUDE_UNIT_PREFIXES.get(p["subject"], ()) if not p["unit"] else ()
-        r = _auto_pick_reviewed_question_ids(c, p["subject"], p["unit"], levels, count, seen, excl, rng=rng)
-        tried.append({"subject": p["subject"], "unit": p["unit"], "reviewed_available": r["reviewed_available"]})
-        if r["ids"]:
-            return {"ok": True, "subject": p["subject"], "unit": p["unit"], "label": p["label"], "levels": levels,
-                    "qids": r["ids"], "reviewed_available": r["reviewed_available"],
-                    "unseen_available": r["unseen_available"], "reused_seen": r["reused_seen"], "tried": tried}
+        # 🪜 2026-11-18 塾長「直す」: その弱点の正答率が 5 割未満の子には 基礎+標準 から出す
+        #   (正答率 2〜3 割の子に 標準+やや難 が出続け、1〜3/10 が 4 回続いた)。在庫が足りなければふだんのレベルで選び直す。
+        acc = p.get("accuracy")
+        easy = acc is not None and acc < _ROUTINE_LOW_ACCURACY_EASY_BELOW and normal != _LIGHT_STARTER_LEVELS
+        for levels in ([_LIGHT_STARTER_LEVELS, normal] if easy else [normal]):
+            r = _auto_pick_reviewed_question_ids(c, p["subject"], p["unit"], levels, count, seen, excl, rng=rng)
+            tried.append({"subject": p["subject"], "unit": p["unit"], "levels": list(levels),
+                          "reviewed_available": r["reviewed_available"]})
+            if r["ids"]:
+                return {"ok": True, "subject": p["subject"], "unit": p["unit"], "label": p["label"], "levels": list(levels),
+                        "qids": r["ids"], "reviewed_available": r["reviewed_available"],
+                        "unseen_available": r["unseen_available"], "reused_seen": r["reused_seen"], "tried": tried}
         reasons[f"short_inventory:{p['subject']}"] = reasons.get(f"short_inventory:{p['subject']}", 0) + 1
     return {"ok": False, "reason": "no_reviewed_inventory", "tried": tried}
 
@@ -55609,6 +55619,9 @@ class MessageSendRequest(BaseModel):
     subject: Optional[str] = None
     body: str
     send_email: bool = True
+    # 📱 2026-11-18 塾長「LINE連携済みの子にLINEでも」(AI 担任のアドバイス): 個別 (target='student') だけ。
+    #   LINE 連携済みならアプリ内と同じ文面を LINE でも送る。一斉送信では使えない (月の上限を一度に使い切らない)
+    send_line: bool = False
     # 添付ファイル (任意・授業ファイル送信用 / 塾長指示 2026-05-06)
     attachment_filename: Optional[str] = None
     attachment_mime: Optional[str] = None
@@ -55749,6 +55762,95 @@ def _safe_attachment_response(filename: str, stored_mime: str, data: bytes, inli
     )
 
 
+_LINE_QUOTA_CACHE = {"at": 0.0, "val": None}
+_LINE_QUOTA_CACHE_SEC = 600
+
+
+def _line_advice_quota_reserve() -> int:
+    """LINE_ADVICE_QUOTA_RESERVE (既定 50): 月の残りがこの通数以下になったら、塾長メッセージの LINE 併送をやめる
+    (ログインコード・水曜の一声などのために残す。2026-10-12〜 月の上限で LINE push が全部 429 になった)。"""
+    try:
+        return max(0, int(str(os.getenv("LINE_ADVICE_QUOTA_RESERVE", "50")).strip()))
+    except (TypeError, ValueError):
+        return 50
+
+
+def _line_quota_status(force: bool = False) -> Optional[dict]:
+    """LINE 公式アカウントの今月の送信通数。{type, limit, used, remaining} (上限なしのプランは limit/remaining = None)。
+    LINE 未設定・取得失敗は None。10 分キャッシュ (送るたびに LINE に聞かない)。"""
+    if not LINE_CHANNEL_ACCESS_TOKEN:
+        return None
+    now = time.time()
+    cached = _LINE_QUOTA_CACHE.get("val")
+    if not force and cached is not None and now - _LINE_QUOTA_CACHE["at"] < _LINE_QUOTA_CACHE_SEC:
+        return dict(cached)
+    import urllib.request as _u
+
+    def _get(ep):
+        req = _u.Request(f"https://api.line.me/v2/bot/{ep}", method="GET",
+                         headers={"Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}"})
+        with _u.urlopen(req, timeout=5) as r:
+            return json.loads(r.read().decode("utf-8") or "{}")
+    try:
+        q = _get("message/quota")
+        u = _get("message/quota/consumption")
+    except Exception as e:
+        log.warning(f"[LINE quota] read failed: {e}")
+        return None
+    typ = q.get("type")
+    lim = int(q.get("value") or 0) if typ == "limited" else None
+    used = int(u.get("totalUsage") or 0)
+    val = {"type": typ, "limit": lim, "used": used, "remaining": (max(0, lim - used) if lim is not None else None)}
+    _LINE_QUOTA_CACHE.update({"at": now, "val": dict(val)})
+    return val
+
+
+def _admin_message_line_push(student_id: int, subject: str, body: str) -> str:
+    """塾長メッセージ (個別) を LINE でも送る。返り値: sent / failed / not_linked / quota_low / not_configured。
+    失敗してもアプリ内のメッセージはそのまま (呼び出し側は commit 済み)。notifications に channel='line' で記録する。"""
+    if not LINE_CHANNEL_ACCESS_TOKEN:
+        return "not_configured"
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT line_user_id FROM students WHERE id = ?", (int(student_id),))
+        row = c.fetchone()
+    finally:
+        conn.close()
+    uid = row["line_user_id"] if row else None
+    if not uid:
+        return "not_linked"
+    q = _line_quota_status()
+    if q and q.get("remaining") is not None and q["remaining"] <= _line_advice_quota_reserve():
+        return "quota_low"
+    text = f"📘 {subject}\n\n{body}\n\n（アプリのお知らせでも読めます）\n{BASE_URL}/mypage.html?openExternalBrowser=1"
+    ok = _line_push_text(uid, text)
+    if ok and q and q.get("remaining") is not None and _LINE_QUOTA_CACHE.get("val"):
+        v = _LINE_QUOTA_CACHE["val"]
+        v["used"] = int(v.get("used") or 0) + 1
+        v["remaining"] = max(0, int(v.get("remaining") or 0) - 1)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("INSERT INTO notifications (student_id, channel, template, payload, success) VALUES (?, 'line', ?, ?, ?)",
+                  (int(student_id), "admin_message", json.dumps({"subject": subject}, ensure_ascii=False), 1 if ok else 0))
+        conn.commit()
+    except Exception as e:
+        log.warning(f"[Messages] LINE notification log failed sid={student_id}: {e}")
+    finally:
+        conn.close()
+    return "sent" if ok else "failed"
+
+
+@app.get("/api/admin/line/quota")
+def admin_line_quota(authorization: Optional[str] = Header(None)):
+    """📱 LINE の今月の送信通数 (AI 担任が LINE で併送する前に見る)。未設定・取得失敗は configured/ok で分かる。"""
+    _verify_admin_required(authorization)
+    q = _line_quota_status(force=True)
+    return {"configured": bool(LINE_CHANNEL_ACCESS_TOKEN), "ok": q is not None, "quota": q,
+            "reserve": _line_advice_quota_reserve()}
+
+
 @app.post("/api/admin/messages/send")
 def admin_send_message(payload: MessageSendRequest, background_tasks: BackgroundTasks, request: Request, authorization: Optional[str] = Header(None)):
     """塾長: 個別 or 一斉メッセージを送信。in-app は同期保存、email は BackgroundTasks で非同期送信。"""
@@ -55758,6 +55860,8 @@ def admin_send_message(payload: MessageSendRequest, background_tasks: Background
     target = (payload.target or "").strip()
     if target not in ("student", "broadcast"):
         raise HTTPException(status_code=400, detail="target は 'student' または 'broadcast'")
+    if payload.send_line and target != "student":
+        raise HTTPException(status_code=400, detail="LINE の併送 (send_line) は個別送信 (target='student') だけです")
 
     # broadcast は別途 rate limit (5 分 3 回) — Resend 枠保護 (Security C-1 / feedback_synthetic_monitor_quota.md)
     if target == "broadcast":
@@ -55935,6 +56039,14 @@ def admin_send_message(payload: MessageSendRequest, background_tasks: Background
         # Phase B: email 送信を BackgroundTasks で非同期化 (HTTP リクエストは即返却)
         if payload.send_email:
             background_tasks.add_task(_bg_send_messages_email, msg_records, subject, body)
+        # 📱 LINE の併送 (個別だけ・アプリ内は上で保存済み。LINE が失敗してもアプリ内は残る)
+        line_status = None
+        if payload.send_line and target == "student":
+            try:
+                line_status = _admin_message_line_push(targets[0]["id"], subject, body)
+            except Exception as e:
+                log.warning(f"[Messages] LINE push failed sid={targets[0]['id']}: {e}")
+                line_status = "failed"
 
         # 🚨 同名重複ガード (2026-07-09): 一斉送信で正規化氏名が重複 = 別メールでの二重登録により
         #   同一人物へ2通(両アドレス)飛ぶ疑い。silent dedup はしない (兄弟等の別人同姓同名を無言で
@@ -55958,6 +56070,7 @@ def admin_send_message(payload: MessageSendRequest, background_tasks: Background
             "email_queued": recipients_with_email,
             "broadcast_group_id": broadcast_group_id,
             "warnings": dup_warnings,
+            "line": line_status,
         }
     finally:
         conn.close()

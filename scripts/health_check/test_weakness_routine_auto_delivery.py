@@ -27,6 +27,8 @@
       なっていた)・積まない判定に数える未提出は直近 WEAKNESS_ROUTINE_OPEN_STALE_DAYS (既定 14・0 = 全部・3〜365 に丸める) 日の分だけ
       (古いドリルは消さず生徒の一覧に残る・stale_open_ignored)・assigned_at が空の未提出は数える・錠の中の読み直しも同じ境目・
       デスクトップの予約タスクの行 (created_by='mission_2day_routine') は数えない = 両方届く
+  [13] 2026-11-18 塾長「直す」: 弱点の正答率が 5 割未満なら 基礎+標準 から出す (高校生・中3)。ちょうど 5 割は学年どおり。
+      中1・中2 はもともと 基礎+標準。基礎+標準の在庫が足りなければ学年どおりのレベルで選び直す
   [12] CEO の 🎯 カードの「前回の自動配信」(2026-10-16 塾長決定): dry-run の応答の last_run = events の最後の実行記録 {at_jst (M/D HH:MM・JST),
       at, delivered, error} / 記録なしは null・いちばん新しい行・壊れた props でも落ちない・DB が読めなければ None・何も書かない・名前なし。
       カード ([10] の JS): 見出しは「今もう一度回したら配る」・その上に「前回の自動配信: M/D HH:MM に N 名」(失敗は ❌ と理由を escape)・
@@ -209,7 +211,7 @@ def main():
         conn.commit(); conn.close()
         return sid
 
-    def weak(sid, subject, topic, acc=0.3, att=10):
+    def weak(sid, subject, topic, acc=0.6, att=10):   # 既定 0.6 = 学年どおりのレベル。5 割未満の扱いは [13]
         ex(mod, "INSERT INTO student_weakness (student_id, subject, topic, question_count, qa_accuracy, qa_attempts) VALUES (?, ?, ?, ?, ?, ?)",
            (sid, subject, topic, att, acc, att))
 
@@ -534,6 +536,40 @@ def main():
     p = plan(n1, "kosei", seed=9)
     check("在庫 8 問 → 配らない (no_reviewed_inventory)", not p["ok"] and p["reason"] == "no_reviewed_inventory", p)
     ex(mod, f"UPDATE grammar_questions SET active = 1 WHERE id IN ({','.join('?' * len(rev))})", tuple(rev))
+
+    # ------------------------------------------------------------------
+    print("\n[13] 正答率 5 割未満の弱点は 基礎+標準 から (2026-11-18 塾長)")
+    lo = make("高校2年")
+    weak(lo, "english", "時制", acc=0.26, att=82)
+    p = plan(lo, "kosei", seed=3)
+    rows = sources_of(p.get("qids") or [])
+    check("高校生・時制 26% → 基礎+標準・10 問 (やや難を出さない)",
+          p.get("ok") and p["levels"] == ["basic", "standard"] and len(rows) == 10
+          and all(r["level"] in ("basic", "standard") for r in rows), (p, [r["level"] for r in rows]))
+    edge = make("高校2年")
+    weak(edge, "english", "時制", acc=0.5, att=20)
+    p = plan(edge, "kosei", seed=3)
+    check("ちょうど 5 割 → 学年どおり 標準+やや難", p.get("ok") and p["levels"] == ["standard", "advanced"], p)
+    c9 = make("中三")
+    weak(c9, "chugaku", "正負の数（累乗）", acc=0.2)
+    p = plan(c9, "chugaku", seed=2)
+    check("中3・正負の数 20% → 基礎+標準", p.get("ok") and p["levels"] == ["basic", "standard"], p)
+    c8 = make("中２")
+    weak(c8, "chugaku", "関係代名詞", acc=0.2)
+    p = plan(c8, "chugaku", seed=1)
+    check("中1・中2 はもともと 基礎+標準 (選び直しをしない)",
+          p.get("ok") and p["levels"] == ["basic", "standard"] and len(p["tried"]) == 1, p)
+    easy_ids = [r["id"] for r in q(mod, "SELECT id FROM grammar_questions WHERE subject = 'english' AND unit = '時制' "
+                                        "AND level IN ('basic', 'standard') AND active = 1")]
+    ex(mod, f"UPDATE grammar_questions SET active = 0 WHERE id IN ({','.join('?' * len(easy_ids))})", tuple(easy_ids))
+    n_adv = sum(1 for r in q(mod, "SELECT source FROM grammar_questions WHERE subject = 'english' AND unit = '時制' "
+                                  "AND level = 'advanced' AND active = 1") if mod._auto_delivery_source_ok("english", r["source"]))
+    p = plan(lo, "kosei", seed=3)
+    tried_lv = [t.get("levels") for t in p.get("tried", [])]
+    check("基礎+標準の在庫が無ければ 学年どおりのレベルで選び直す (2 回試す)",
+          tried_lv[:2] == [["basic", "standard"], ["standard", "advanced"]]
+          and ((p.get("ok") and p["levels"] == ["standard", "advanced"]) if n_adv >= 10 else not p.get("ok")), (p, n_adv))
+    ex(mod, f"UPDATE grammar_questions SET active = 1 WHERE id IN ({','.join('?' * len(easy_ids))})", tuple(easy_ids))
 
     # ------------------------------------------------------------------
     print("\n[6] dry-run は本番と同じ選び方")
