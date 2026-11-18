@@ -306,7 +306,18 @@ def main():
     check("C15. 知らない商品が混ざった決済は、分かる分を記録して塾長に知らせる",
           r_mx is True and mod._kt_keys_for_email("mixed@example.invalid") == ["kt-r-2026"]
           and any(m["to"] == mod.COURSE_CONTACT_EMAIL and "kt-r-2020" in m["body"] for m in MAILS), MAILS)
-    conn = mod.db(); conn.cursor().execute("DELETE FROM kt_purchases WHERE session_id IN ('cs_live_mixed', 'cs_live_late')"); conn.commit(); conn.close()
+    _orig_pi = fake.PaymentIntent
+    class _PIpart:
+        @staticmethod
+        def retrieve(pi, **kw):
+            return {"id": pi, "latest_charge": {"amount": 10780, "amount_refunded": 1980, "refunded": False, "disputed": False}}
+    fake.PaymentIntent = _PIpart
+    r_pt = mod._kt_webhook_record({"id": "cs_live_part", "payment_status": "paid", "amount_total": 10780, "livemode": True, "payment_intent": "pi_part",
+                                   "customer_details": {"email": "part@example.invalid"}, "metadata": {"system": "juku-payment-kakomon", "items": "kt-r-2026"}})
+    fake.PaymentIntent = _orig_pi
+    check("C16. 記録より先に一部返金だけなら paid で記録 (どの年度を止めるかは塾長が決める)",
+          r_pt is True and mod._kt_keys_for_email("part@example.invalid") == ["kt-r-2026"], mod._kt_keys_for_email("part@example.invalid"))
+    conn = mod.db(); conn.cursor().execute("DELETE FROM kt_purchases WHERE session_id IN ('cs_live_mixed', 'cs_live_late', 'cs_live_part')"); conn.commit(); conn.close()
 
     # ---- D. 視聴ページ ----
     tok = welcome_link[0].split("?t=", 1)[1].strip() if welcome_link else ""
@@ -491,14 +502,16 @@ def main():
         rpl = json.dumps({"id": "evt_kt_r1", "object": "event", "api_version": "2024-06-20", "created": int(time.time()), "livemode": True,
                           "type": "charge.refunded", "data": {"object": {"object": "charge", "id": "ch_wh_k1", "payment_intent": "pi_wh_k1",
                           "amount": 1980, "amount_refunded": 1980, "refunded": True, "metadata": {"system": "juku-payment-kakomon"}}}}).encode()
+        MAILS.clear()
         try:
             rf1 = client.post("/api/stripe/webhook", content=rpl, headers=_signed(rpl))
+            alert_mails = [m for m in MAILS if m["to"] == mod.COURSE_CONTACT_EMAIL and "反映できませんでした" in m["subject"]]
             still = mod._kt_keys_for_email("wh@example.invalid")
             _down["on"] = False
             rf2 = client.post("/api/stripe/webhook", content=rpl, headers=_signed(rpl))
         finally:
             _stripe_lib.checkout.Session.list = _orig_sl
-        check("G3. 返金の照会が落ちたら 500・同じイベントの再送で視聴が止まる", rf1.status_code == 500 and still == ["kt-r-2026"]
+        check("G3. 返金の照会が落ちたら 500・塾長に1通知らせる・同じイベントの再送で視聴が止まる", rf1.status_code == 500 and len(alert_mails) == 1 and still == ["kt-r-2026"]
               and rf2.status_code == 200 and mod._kt_keys_for_email("wh@example.invalid") == [], (rf1.status_code, rf2.status_code, rf2.text[:200]))
 
     print()

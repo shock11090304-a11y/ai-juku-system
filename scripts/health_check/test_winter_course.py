@@ -285,6 +285,38 @@ def main():
     rp = mod._winter_on_refund({"payment_intent": "pi_missed", "amount": 7500, "amount_refunded": 2000, "refunded": False, "metadata": {"system": "juku-payment-winter"}})
     check("C13. 一部返金は視聴を止めずに塾長に知らせるだけ", rp.get("updated") is False and mod._winter_keys_for_email("missed@example.invalid") == ["w26-h3-k"]
           and len(MAILS) == 1 and "一部返金" in MAILS[0]["body"], (rp, MAILS))
+    # 返金のときに Stripe への照会が失敗 → 例外を上げる (webhook が 500 で再送させる)。握りつぶして「記録が無い」と知らせない (11-18)
+    def _list_down(**kw):
+        raise RuntimeError("stripe 503")
+    fake.checkout.Session.list = staticmethod(_list_down)
+    MAILS.clear()
+    try:
+        mod._winter_on_refund({"payment_intent": "pi_missed", "amount": 7500, "amount_refunded": 7500, "refunded": True, "metadata": {"system": "juku-payment-winter"}})
+        raised = False
+    except Exception:
+        raised = True
+    fake.checkout.Session.list = staticmethod(_list2)
+    check("C14. 返金の照会が失敗したら例外 (再送させる)・塾長に誤った知らせを送らない・視聴はまだ付いたまま",
+          raised and not MAILS and mod._winter_keys_for_email("missed@example.invalid") == ["w26-h3-k"], (raised, MAILS))
+    # 記録より先に返金が済んでいた (再送待ちの間に返金) → refunded で記録し、視聴・案内メール・特典の処理をしない
+    MAILS.clear()
+    r_rf = mod._winter_webhook_record({"id": "cs_live_late", "payment_status": "paid", "amount_total": 7500, "livemode": True, "payment_intent": "pi_refunded",
+                                       "customer_details": {"email": "late@example.invalid"}, "metadata": {"system": "juku-payment-winter", "items": "h3-k", "plan": "h3-k"}})
+    conn = mod.db(); c_ = conn.cursor(); c_.execute("SELECT status FROM winter_purchases WHERE session_id = 'cs_live_late'"); st_late = c_.fetchone(); conn.close()
+    check("C15. 記録より先に全額返金されていたら refunded で記録 (視聴なし・メールなし)",
+          r_rf is True and st_late and st_late["status"] == "refunded" and not mod._winter_keys_for_email("late@example.invalid") and not MAILS, (st_late and dict(st_late), MAILS))
+    _orig_pi = fake.PaymentIntent
+    class _PIpart:
+        @staticmethod
+        def retrieve(pi, **kw):
+            return {"id": pi, "latest_charge": {"amount": 7500, "amount_refunded": 2000, "refunded": False, "disputed": False}}
+    fake.PaymentIntent = _PIpart
+    r_pt = mod._winter_webhook_record({"id": "cs_live_part", "payment_status": "paid", "amount_total": 7500, "livemode": True, "payment_intent": "pi_part",
+                                       "customer_details": {"email": "part@example.invalid"}, "metadata": {"system": "juku-payment-winter", "items": "h3-k", "plan": "h3-k"}})
+    fake.PaymentIntent = _orig_pi
+    check("C16. 記録より先に一部返金だけなら paid で記録 (どの講座を止めるかは塾長が決める)",
+          r_pt is True and mod._winter_keys_for_email("part@example.invalid") == ["w26-h3-k"], mod._winter_keys_for_email("part@example.invalid"))
+    conn = mod.db(); conn.cursor().execute("DELETE FROM winter_purchases WHERE session_id IN ('cs_live_late', 'cs_live_part')"); conn.commit(); conn.close()   # 後の人数・特典の検査に混ぜない
 
     # ---- D. 視聴ページ ----
     tok = welcome_link[0].split("?t=", 1)[1].strip() if welcome_link else ""
@@ -540,6 +572,28 @@ def main():
         wr2 = client.post("/api/stripe/webhook", content=payload2, headers=_signed(payload2))
         check("G2. 記録に失敗したら 500 (Stripe が再送)・同じイベントの再送で記録できる", wf.status_code == 500 and wr2.status_code == 200
               and wr2.json().get("duplicate") is not True and mod._winter_keys_for_email("wh2@example.invalid") == ["w26-h3-m"], (wf.status_code, wr2.text[:200]))
+        # 返金の webhook: Stripe への照会が落ちたら 500 (再送で視聴を止められる)
+        _orig_sl = _stripe_lib.checkout.Session.list
+        _down = {"on": True}
+        def _sl(**kw):
+            if _down["on"]:
+                raise RuntimeError("stripe 503")
+            return {"data": [{"id": "cs_wh_w1"}]}
+        _stripe_lib.checkout.Session.list = _sl
+        rpl = json.dumps({"id": "evt_winter_r1", "object": "event", "api_version": "2024-06-20", "created": int(time.time()), "livemode": True,
+                          "type": "charge.refunded", "data": {"object": {"object": "charge", "id": "ch_wh_w1", "payment_intent": "pi_wh_w1",
+                          "amount": 7500, "amount_refunded": 7500, "refunded": True, "metadata": {"system": "juku-payment-winter"}}}}).encode()
+        MAILS.clear()
+        try:
+            rf1 = client.post("/api/stripe/webhook", content=rpl, headers=_signed(rpl))
+            alert_mails = [m for m in MAILS if m["to"] == mod.COURSE_CONTACT_EMAIL and "反映できませんでした" in m["subject"]]
+            still = mod._winter_keys_for_email("wh@example.invalid")
+            _down["on"] = False
+            rf2 = client.post("/api/stripe/webhook", content=rpl, headers=_signed(rpl))
+        finally:
+            _stripe_lib.checkout.Session.list = _orig_sl
+        check("G3. 返金の照会が落ちたら 500・塾長に1通知らせる・同じイベントの再送で視聴が止まる", rf1.status_code == 500 and len(alert_mails) == 1 and still == ["w26-h3-m"]
+              and rf2.status_code == 200 and mod._winter_keys_for_email("wh@example.invalid") == [], (rf1.status_code, rf2.status_code, rf2.text[:200]))
 
     print()
     if FAILURES:

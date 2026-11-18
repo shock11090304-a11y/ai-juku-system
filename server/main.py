@@ -34097,7 +34097,7 @@ def stripe_webhook(
                 raise HTTPException(status_code=500, detail="winter purchase record failed (Stripe will retry)")
         if _meta_system == KT_SYSTEM_TAG and session.get("payment_status") in ("paid", "no_payment_required"):
             if not _kt_webhook_record(session):   # 📝 共通テスト過去問 (students に触れない)。記録できなければ 500 で再送させる
-                _kt_forget_event(event_id)
+                _stripe_event_forget(event_id)
                 raise HTTPException(status_code=500, detail="kt purchase record failed (Stripe will retry)")
         if _meta_system.startswith("juku-payment"):
             log.info(f"[Stripe webhook] Skipping juku-payment event (system={_meta_system}) - handled by Vercel /payment/api/stripe-webhook")
@@ -34771,18 +34771,22 @@ def stripe_webhook(
         # amount_refunded は cumulative なので同イベントが何度届いても冪等。
         charge = event["data"]["object"]
         if ((charge.get("metadata") or {}).get("system") or "").strip() == WINTER_SYSTEM_TAG:
-            # ❄️ 冬期講習の返金 → 視聴を止める (payments には行が無いので下は no-op のまま)
+            # ❄️ 冬期講習の返金 → 視聴を止める (payments には行が無いので下は no-op のまま)。照会・DB の失敗は 500 で Stripe に再送させる
             try:
                 _winter_on_refund(charge)
             except Exception as _wr_e:
                 log.error(f"[winter] refund handling failed: {type(_wr_e).__name__}: {str(_wr_e)[:200]}")
+                _refund_fail_alert("冬期講習", event_id, charge, _wr_e)
+                _stripe_event_forget(event_id)
+                raise HTTPException(status_code=500, detail="winter refund handling failed (Stripe will retry)")
         if ((charge.get("metadata") or {}).get("system") or "").strip() == KT_SYSTEM_TAG:
             # 📝 共通テスト過去問の返金 → 視聴を止める。照会・DB の失敗は 500 で Stripe に再送させる (視聴が止まらないまま終わらせない)
             try:
                 _kt_on_refund(charge)
             except Exception as _kr_e:
                 log.error(f"[kt] refund handling failed: {type(_kr_e).__name__}: {str(_kr_e)[:200]}")
-                _kt_forget_event(event_id)
+                _refund_fail_alert("共通テスト過去問", event_id, charge, _kr_e)
+                _stripe_event_forget(event_id)
                 raise HTTPException(status_code=500, detail="kt refund handling failed (Stripe will retry)")
         _ch_inv = charge.get("invoice")
         if isinstance(_ch_inv, dict):
@@ -59223,13 +59227,15 @@ def _winter_webhook_record(session: dict) -> bool:
         except Exception:
             amount = 0
         app_id = (meta.get("app_id") or "")[:40]
+        # 記録より先に返金が済んでいた (記録の失敗 → 再送待ちの間に返金) なら、視聴を付けない
+        status = "refunded" if _winter_session_fully_refunded(session) else "paid"
         try:
             conn = db()
             try:
                 c = conn.cursor()
                 c.execute("INSERT INTO winter_purchases (session_id, email, name, plan, item_keys, amount, status, app_id, livemode, paid_at, created_at) "
-                          "VALUES (?,?,?,?,?,?,'paid',?,?,?,?) ON CONFLICT (session_id) DO NOTHING RETURNING id",
-                          (sid, email, name, json.dumps(plan), json.dumps(items), amount, app_id,
+                          "VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT (session_id) DO NOTHING RETURNING id",
+                          (sid, email, name, json.dumps(plan), json.dumps(items), amount, status, app_id,
                            0 if session.get("livemode") is False else 1, _utc_naive_iso(), _utc_naive_iso()))
                 row = c.fetchone()
                 conn.commit()
@@ -59245,8 +59251,14 @@ def _winter_webhook_record(session: dict) -> bool:
         if not row:
             log.info("[winter] purchase already recorded (duplicate webhook)")
             return True
-        member = _winter_ensure_member(email, name)
-        log.info(f"[winter] purchase recorded id={row['id']} items={items} amount={amount}")
+        log.info(f"[winter] purchase recorded id={row['id']} items={items} amount={amount} status={status}")
+        if status != "paid":
+            return True   # 返金済み: 特典・定員・案内メールの処理はしない
+        try:
+            member = _winter_ensure_member(email, name)
+        except Exception as e:
+            log.warning(f"[winter] ensure member failed: {type(e).__name__}")
+            member = None
         _winter_check_over_cap(session, email, items)
         bonus_rank = None
         try:
@@ -59376,6 +59388,27 @@ def _winter_session_refunded(s_: dict) -> bool:
         return False
 
 
+def _winter_session_fully_refunded(s_: dict) -> bool:
+    """記録のときに使う: この Checkout の支払いが全額返金・異議申し立て済みか。一部返金は False (視聴は付けたまま、
+    どの講座を止めるかは返金の知らせを受けた塾長が決める)。確かめられないときも False (支払い済みを優先)。"""
+    pi = s_.get("payment_intent")
+    if isinstance(pi, dict):
+        pi = pi.get("id")
+    if not pi:
+        return False
+    try:
+        obj = get_stripe().PaymentIntent.retrieve(pi, expand=["latest_charge"])
+        obj = obj.to_dict() if hasattr(obj, "to_dict") else dict(obj)
+        ch = obj.get("latest_charge") or {}
+        if not isinstance(ch, dict):
+            return False
+        amt = int(ch.get("amount") or 0)
+        return bool(ch.get("refunded") or ch.get("disputed") or (amt > 0 and int(ch.get("amount_refunded") or 0) >= amt))
+    except Exception as e:
+        log.warning(f"[winter] full-refund check failed for {pi}: {type(e).__name__}")
+        return False
+
+
 def _winter_on_refund(charge: dict) -> dict:
     """本体 webhook の charge.refunded から呼ぶ: 講習の決済の返金を視聴に反映する。
     全額返金 → その決済の講座をまとめて refunded (視聴ページから消える)。一部返金 → どの講座を止めるかは決められないので塾長に知らせる。"""
@@ -59388,14 +59421,12 @@ def _winter_on_refund(charge: dict) -> dict:
     if not pi or refunded_amt <= 0:
         return {"skipped": "no refund"}
     sid = ""
-    try:
-        lst = get_stripe().checkout.Session.list(payment_intent=pi, limit=1)
-        data = list(lst.get("data") if hasattr(lst, "get") else lst)
-        if data:
-            d0 = data[0].to_dict() if hasattr(data[0], "to_dict") else dict(data[0])
-            sid = d0.get("id") or ""
-    except Exception as e:
-        log.warning(f"[winter] refund: session lookup failed: {type(e).__name__}")
+    # ★照会の失敗は握りつぶさない (呼び出し側が 500 → Stripe が再送)。握ると「記録が無い」と誤って知らせ、視聴も止まらない (11-18 過去問と同じ直し)
+    lst = get_stripe().checkout.Session.list(payment_intent=pi, limit=1)
+    data = list(lst.get("data") if hasattr(lst, "get") else lst)
+    if data:
+        d0 = data[0].to_dict() if hasattr(data[0], "to_dict") else dict(data[0])
+        sid = d0.get("id") or ""
     row = None
     if sid:
         conn = db()
@@ -59756,8 +59787,8 @@ def _kt_priced_parts(parts: list, owned) -> list:
     return out
 
 
-def _kt_forget_event(event_id):
-    """webhook を 500 で返す前に processed_events の印を消す (Stripe の再送で、もう一度処理させる)。"""
+def _stripe_event_forget(event_id):
+    """webhook を 500 で返す前に processed_events の印を消す (Stripe の再送で、もう一度処理させる)。冬期講習・過去問の返金で共用。"""
     if not event_id:
         return
     try:
@@ -59768,7 +59799,34 @@ def _kt_forget_event(event_id):
         finally:
             _c.close()
     except Exception as _e:
-        log.error(f"[kt] processed_events cleanup failed: {type(_e).__name__}")
+        log.error(f"[stripe] processed_events cleanup failed: {type(_e).__name__}")
+
+
+_REFUND_FAIL_ALERTED = set()
+
+
+def _refund_fail_alert(label: str, event_id, charge: dict, err: Exception):
+    """講習・過去問の返金の処理に失敗した (Stripe の再送に任せる)。DB の障害で再送の印も消せないと、そのまま落ちて誰も気づかないので、
+    塾長に知らせる (同じイベントは 1 プロセスで 1 回だけ)。"""
+    key = event_id or (charge or {}).get("id") or ""
+    if key in _REFUND_FAIL_ALERTED:
+        return
+    _REFUND_FAIL_ALERTED.add(key)
+    try:
+        _record_ai_critical_event("refund_handling_failed", {"label": label, "event_id": event_id, "error": type(err).__name__})
+    except Exception:
+        pass
+    try:
+        pi = (charge or {}).get("payment_intent")
+        if isinstance(pi, dict):
+            pi = pi.get("id")
+        _course_send_email(COURSE_CONTACT_EMAIL, f"[{label}] ★返金を視聴に反映できませんでした（自動で再試行します）",
+                           f"{label}の返金の知らせを受けましたが、処理に失敗しました（{type(err).__name__}）。Stripe が自動で送り直すので、たいていは数時間のうちに"
+                           "視聴が止まり、「返金を確認しました」のメールが届きます。\n\n"
+                           "半日たっても「返金を確認しました」のメールが来ない場合は、購入一覧で該当の購入を refunded にしてください（Claude に頼めます）。\n\n"
+                           f"Stripe の支払い: {pi or '-'}\nイベント: {event_id or '-'}")
+    except Exception as e:
+        log.warning(f"[stripe] refund fail alert failed: {type(e).__name__}")
 
 
 def _kt_is_set(sku: str) -> bool:
@@ -60012,7 +60070,7 @@ def _kt_webhook_record(session: dict) -> bool:
             log.warning(f"[kt] webhook missing fields (sid={bool(sid)} email={bool(email)} keys={len(keys)})")
             return True
         # 記録より先に返金が済んでいた (記録の失敗 → 再送待ちの間に返金) なら、視聴を付けない
-        status = "refunded" if _winter_session_refunded(session) else "paid"
+        status = "refunded" if _winter_session_fully_refunded(session) else "paid"
         name = (cd.get("name") or "").strip()[:100]
         try:
             amount = int(session.get("amount_total") or 0)
