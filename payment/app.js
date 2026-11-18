@@ -5398,6 +5398,10 @@ function chargesToRows(charges) {
   const winter = charges.filter(c => ((c.metadata || {}).system === 'juku-payment-winter'));
   if (winter.length) console.info(`stripe import: 冬期講習の決済 ${winter.length} 件は除外 (月謝ではない)`);
   charges = charges.filter(c => !((c.metadata || {}).system === 'juku-payment-winter'));
+  // 📝 共通テスト過去問の解説動画の買い切り (metadata.system=juku-payment-kakomon) も月謝ではない (2026-11-18)
+  const kakomon = charges.filter(c => ((c.metadata || {}).system === 'juku-payment-kakomon'));
+  if (kakomon.length) console.info(`stripe import: 共通テスト過去問の決済 ${kakomon.length} 件は除外 (月謝ではない)`);
+  charges = charges.filter(c => !((c.metadata || {}).system === 'juku-payment-kakomon'));
   return charges.map(c => {
     const d = new Date((c.created || 0) * 1000);
     const yyyy = d.getFullYear();

@@ -292,6 +292,14 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_winter_course.py
 
+      # 📝 共通テスト過去問 解説動画 (/api/kt/checkout・webhook の記録 kt_purchases・視聴ページ・配信のお知らせ・返金) (2026-11-18)。Stripe とメールは偽物。
+      #   冬期講習の表・先着特典の数に混ざらないこと、月謝アプリの取込で除外すること、特商法の表記の金額がサーバと同じことも見る。
+      - name: 共通テスト過去問 決済と視聴 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_kt_kakomon_course.py
+
       # 📺 月額講座「再生リストから取り込む」(2026-10-05)。YouTube (class_recording_assign.http_get) とメールは偽物。
       - name: 月額講座 再生リスト取り込み 回帰テスト
         if: ${{ !cancelled() }}

@@ -2238,6 +2238,25 @@ def init_db():
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_winter_purchases_session ON winter_purchases(session_id);
     CREATE INDEX IF NOT EXISTS idx_winter_purchases_email ON winter_purchases(email);
+    -- 📝 共通テスト過去問 解説動画 (単発の買い切り・/api/kt/checkout の Checkout・2026-11-18) の購入記録。形は winter_purchases と同じ。
+    --   plan = 買った商品 (1 年分 / 直前セット)、item_keys = 見られる講座 (kt-<科目>-<年度>・セットは 6 年度に展開済み)。
+    --   冬期講習と表を分ける (講習の先着特典・定員の数に混ぜない)。student_id 列なし (_ORPHAN_SWEEP_TABLES 対象外)。
+    CREATE TABLE IF NOT EXISTS kt_purchases (
+        id {pk},
+        session_id TEXT NOT NULL,
+        email TEXT NOT NULL,
+        name TEXT DEFAULT '',
+        plan TEXT DEFAULT '[]',
+        item_keys TEXT DEFAULT '[]',
+        amount INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'paid',
+        app_id TEXT DEFAULT '',
+        livemode INTEGER DEFAULT 1,
+        paid_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_kt_purchases_session ON kt_purchases(session_id);
+    CREATE INDEX IF NOT EXISTS idx_kt_purchases_email ON kt_purchases(email);
     -- ❄️ 冬期講習の申込ページの閲覧数 (2026-11-18)。日付 (JST)・ページ・来た元ごとの件数だけ。IP・端末・個人は残さない。
     CREATE TABLE IF NOT EXISTS winter_pageviews (
         day TEXT NOT NULL,
@@ -4040,6 +4059,11 @@ async def _start_background_tasks():
         task = asyncio.create_task(_winter_notify_scheduler())
         _BACKGROUND_TASKS.append(task)
         log.info("[Startup] Winter course notify scheduler launched")
+    # 📝 共通テスト過去問の配信お知らせ (毎日 JST 8:03・視聴期間が終わると止まる)。KT_NOTIFY_ENABLED=0 で止める
+    if os.getenv("KT_NOTIFY_ENABLED", "1").strip().lower() not in ("0", "false", "off", "no") and _winter_today() <= KT_VIEW_UNTIL:
+        task = asyncio.create_task(_kt_notify_scheduler())
+        _BACKGROUND_TASKS.append(task)
+        log.info("[Startup] Kyotsu kakomon notify scheduler launched")
     if CRON_SECRET and CLASS_REC_AUTO_ASSIGN_ENABLED:
         task = asyncio.create_task(_class_rec_auto_assign_scheduler())
         _BACKGROUND_TASKS.append(task)
@@ -34071,6 +34095,10 @@ def stripe_webhook(
                 except Exception as _e:
                     log.error(f"[winter] processed_events cleanup failed: {type(_e).__name__}")
                 raise HTTPException(status_code=500, detail="winter purchase record failed (Stripe will retry)")
+        if _meta_system == KT_SYSTEM_TAG and session.get("payment_status") in ("paid", "no_payment_required"):
+            if not _kt_webhook_record(session):   # 📝 共通テスト過去問 (students に触れない)。記録できなければ 500 で再送させる
+                _kt_forget_event(event_id)
+                raise HTTPException(status_code=500, detail="kt purchase record failed (Stripe will retry)")
         if _meta_system.startswith("juku-payment"):
             log.info(f"[Stripe webhook] Skipping juku-payment event (system={_meta_system}) - handled by Vercel /payment/api/stripe-webhook")
             return JSONResponse({"received": True, "skipped_reason": "juku-payment system tag"}, status_code=200)
@@ -34748,6 +34776,14 @@ def stripe_webhook(
                 _winter_on_refund(charge)
             except Exception as _wr_e:
                 log.error(f"[winter] refund handling failed: {type(_wr_e).__name__}: {str(_wr_e)[:200]}")
+        if ((charge.get("metadata") or {}).get("system") or "").strip() == KT_SYSTEM_TAG:
+            # 📝 共通テスト過去問の返金 → 視聴を止める。照会・DB の失敗は 500 で Stripe に再送させる (視聴が止まらないまま終わらせない)
+            try:
+                _kt_on_refund(charge)
+            except Exception as _kr_e:
+                log.error(f"[kt] refund handling failed: {type(_kr_e).__name__}: {str(_kr_e)[:200]}")
+                _kt_forget_event(event_id)
+                raise HTTPException(status_code=500, detail="kt refund handling failed (Stripe will retry)")
         _ch_inv = charge.get("invoice")
         if isinstance(_ch_inv, dict):
             _ch_inv = _ch_inv.get("id")
@@ -57866,8 +57902,8 @@ COURSE_NOTIFY_INLINE_MAX = 15   # これを超える宛先はバックグラウ�
 def _course_notify_targets(video_id: int, course_key: str, resend_all: bool = False) -> list:
     """お知らせの宛先 = その講座の有効受講者。resend_all=False なら、この動画をまだ受け取っていない人だけ。
     ❄️ 冬期講習の講座 (w26-…) は、その講座を買った人 (paid・視聴期間内) が宛先。"""
-    if _winter_is_video_key(course_key):
-        buyers = _winter_buyers()
+    if _winter_is_video_key(course_key) or course_key in KT_COURSES:
+        buyers = _winter_buyers() if _winter_is_video_key(course_key) else _kt_buyers()   # 📝 過去問は kt_purchases の購入者
         done = set()
         if not resend_all:
             conn = db()
@@ -58169,8 +58205,8 @@ def course_login_request(payload: CourseLoginRequest, request: Request):
             log.warning("[course] login lookup budget exceeded (no Stripe call)")
             return generic
     member = _course_member_refresh(email)
-    if not member and _winter_keys_for_email(email):
-        member = _winter_ensure_member(email)   # ❄️ 講習の購入はあるのに行が無い (記録の途中で落ちた等) → ここで用意
+    if not member and (_winter_keys_for_email(email) or _kt_keys_for_email(email)):
+        member = _winter_ensure_member(email)   # ❄️📝 講習・過去問の購入はあるのに行が無い (記録の途中で落ちた等) → ここで用意
     member = _course_member_with_access(member)
     if not member:
         log.info("[course] login requested for non-member (no mail)")
@@ -58229,7 +58265,10 @@ def course_me(authorization: Optional[str] = Header(None)):
             # ❄️ 冬期講習: 購入した講座と最初の配信日 (配信前の講座は視聴ページに「○月○日配信」と出す)
             "winter": [{"key": k, "name": _course_key_name(k), "delivery": WINTER_ITEMS[k[len(WINTER_VIDEO_PREFIX):]]["delivery"]}
                        for k in (member.get("winter") or [])],
-            "winter_view_until": WINTER_VIEW_UNTIL if member.get("winter") else None}
+            "winter_view_until": WINTER_VIEW_UNTIL if member.get("winter") else None,
+            # 📝 共通テスト過去問: 買った講座 (年度) と配信日・視聴期限 (配信前の年度は「○月○日配信」と出す)
+            "kt": [{"key": k, "name": _course_key_name(k), "delivery": KT_COURSES[k]["delivery"]} for k in (member.get("kt") or [])],
+            "kt_view_until": KT_VIEW_UNTIL if member.get("kt") else None}
 
 
 @app.post("/api/admin/course/videos")
@@ -58238,7 +58277,7 @@ def admin_course_video_create(payload: CourseVideoCreateRequest, request: Reques
     _check_rate_limit_ip(request, bucket="course_admin", limit=60, window=60)
     _verify_admin_required(authorization)
     key = (payload.course_key or "").strip()
-    if key not in COURSE_KEYS and not _winter_is_video_key(key):
+    if key not in COURSE_KEYS and not _winter_is_video_key(key) and key not in KT_COURSES:
         raise HTTPException(status_code=400, detail="講座の指定が不正です")
     title = _sanitize_text(payload.title, 200)
     if not title:
@@ -58267,8 +58306,8 @@ def admin_course_video_create(payload: CourseVideoCreateRequest, request: Reques
     finally:
         conn.close()
     result = {"ok": True, "id": vid, "youtube_id": yid, "publish_date": pub, "notified": None}
-    if _winter_is_video_key(key) and payload.notify is False:
-        # ❄️ 「知らせる」を外して登録した講習の動画は、配信日の朝のまとめでも知らせない (印を台帳に残す)
+    if (_winter_is_video_key(key) or key in KT_COURSES) and payload.notify is False:
+        # ❄️📝 「知らせる」を外して登録した講習・過去問の動画は、配信日の朝のまとめでも知らせない (印を台帳に残す)
         try:
             _winter_mark_noticed(_WINTER_NOAUTO, [vid])
         except Exception as e:
@@ -58305,8 +58344,15 @@ def admin_course_video_list(authorization: Optional[str] = Header(None)):
     winter_courses = [{"key": WINTER_VIDEO_PREFIX + k, "name": v["name"], "delivery": v["delivery"],
                        "active_members": sum(1 for b in _wb.values() if WINTER_VIDEO_PREFIX + k in b["keys"])}
                       for k, v in WINTER_ITEMS.items()]
+    try:
+        _kb = _kt_buyers()
+    except Exception:
+        _kb = {}
+    # 📝 共通テスト過去問の講座 (CEO の講座の選択肢に「共通テスト過去問」として足す。active_members = 視聴期間内の購入者)
+    kt_courses = [{"key": k, "name": v["name"], "delivery": v["delivery"],
+                   "active_members": sum(1 for b in _kb.values() if k in b["keys"])} for k, v in KT_COURSES.items()]
     return {"videos": videos, "courses": [{"key": k, "name": v, "active_members": counts[k]} for k, v in COURSE_KEYS.items()],
-            "winter_courses": winter_courses}
+            "winter_courses": winter_courses, "kt_courses": kt_courses}
 
 
 @app.patch("/api/admin/course/videos/{video_id}")
@@ -58406,10 +58452,16 @@ def admin_course_members(authorization: Optional[str] = Header(None)):
         _wb = _winter_buyers()
     except Exception:
         _wb = {}
+    try:
+        _kb = _kt_buyers()
+    except Exception:
+        _kb = {}
     for m in members:
         m["course_names"] = [COURSE_KEYS[k] for k in m["courses"]]
         _wk = (_wb.get(m["email"]) or {}).get("keys") or set()
         m["winter_names"] = [_course_key_name(WINTER_VIDEO_PREFIX + k) for k in WINTER_ITEMS if WINTER_VIDEO_PREFIX + k in _wk]
+        _kk = (_kb.get(m["email"]) or {}).get("keys") or set()
+        m["kt_names"] = [KT_COURSES[k]["name"] for k in KT_COURSES if k in _kk]
         m["ending_list"] = [{"key": k, "name": COURSE_KEYS[k], "end": m["ending"][k]} for k in m["courses"] if k in m["ending"]]
     return {"members": members, "notify_toggle": _table_has_column("course_members", "notify_off")}
 
@@ -58639,6 +58691,8 @@ def _course_key_name(key: str) -> str:
         return COURSE_KEYS[key]
     if _winter_is_video_key(key):
         return WINTER_ITEMS[key[len(WINTER_VIDEO_PREFIX):]]["name"]
+    if key in KT_COURSES:
+        return KT_COURSES[key]["name"]
     return key
 
 
@@ -58765,7 +58819,7 @@ def winter_seats():
 
 # 申込ページの閲覧数 (2026-11-18 塾長「申し込みのページにどれだけの人がアクセスしているのか」)。
 # Netlify の無料プランは 24 時間分しか残らないので、ページの JS が 1 回の表示につき 1 回ここへ送る (ロボットは JS を動かさないので数えない)。
-_WINTER_PV_PAGES = ("winter", "winter-chugaku")
+_WINTER_PV_PAGES = ("winter", "winter-chugaku", "kakomon")   # kakomon = 共通テスト過去問の申込ページ (2026-11-18)
 _WINTER_PV_SRCS = ("threads", "instagram", "x", "line", "facebook", "hp", "note", "youtube", "google", "yahoo", "mail", "direct", "other")
 
 
@@ -58833,15 +58887,17 @@ def _winter_part_price(part: str) -> int:
     return int((WINTER_BUNDLES.get(part) or WINTER_ITEMS.get(part) or {}).get("price") or 0)
 
 
-def _winter_error_page(message: str, page: str = "winter", status: int = 400):
+def _winter_error_page(message: str, page: str = "winter", status: int = 400, label: str = "", back_url: str = ""):
+    """label / back_url は共通テスト過去問 (kt) が使う (冬期講習は既定のまま = 文面は変わらない)。"""
     from fastapi.responses import HTMLResponse
     def _esc(s):
         return (str(s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;"))
-    back = f"{WINTER_SITE_URL}/{page if page in _WINTER_PAGES else 'winter'}.html"
+    back = back_url or f"{WINTER_SITE_URL}/{page if page in _WINTER_PAGES else 'winter'}.html"
+    label = label or WINTER_LABEL
     html = ("<!DOCTYPE html><html lang=\"ja\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
-            "<meta name=\"robots\" content=\"noindex\"><title>お手続きを続けられませんでした | 冬期講習2026</title></head>"
+            f"<meta name=\"robots\" content=\"noindex\"><title>お手続きを続けられませんでした | {_esc(label)}</title></head>"
             "<body style=\"font-family:system-ui,sans-serif;background:#F8F9FB;color:#1A1A1A;line-height:1.8;margin:0;\">"
-            "<div style=\"background:#0B2545;color:#fff;text-align:center;padding:1.2rem;\">トリリオン英語塾　冬期講習2026</div>"
+            f"<div style=\"background:#0B2545;color:#fff;text-align:center;padding:1.2rem;\">トリリオン英語塾　{_esc(label)}</div>"
             "<div style=\"max-width:600px;margin:1.5rem auto;padding:1.2rem;background:#fff;border:1px solid #E5E7EB;border-radius:6px;\">"
             "<h1 style=\"font-size:1.1rem;color:#991B1B;\">お支払いの画面へ進めませんでした</h1>"
             f"<p>{_esc(message)}</p>"
@@ -58852,17 +58908,19 @@ def _winter_error_page(message: str, page: str = "winter", status: int = 400):
     return HTMLResponse(content=html, status_code=status)
 
 
-def _winter_dup_page(names: list, fields: dict, page: str):
-    """同じ講座をすでに支払い済みのときの確認画面 (このまま進む = 同じ内容を confirm_dup=1 で送り直す)。"""
+def _winter_dup_page(names: list, fields: dict, page: str, label: str = "", back_url: str = ""):
+    """同じ講座をすでに支払い済みのときの確認画面 (このまま進む = 同じ内容を confirm_dup=1 で送り直す)。
+    label / back_url は共通テスト過去問 (kt) が使う (冬期講習は既定のまま)。"""
     from fastapi.responses import HTMLResponse
     def _esc(s):
         return (str(s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;"))
-    back = f"{WINTER_SITE_URL}/{page if page in _WINTER_PAGES else 'winter'}.html"
+    back = back_url or f"{WINTER_SITE_URL}/{page if page in _WINTER_PAGES else 'winter'}.html"
+    label = label or WINTER_LABEL
     hidden = "".join(f'<input type="hidden" name="{_esc(k)}" value="{_esc(v)}">' for k, v in fields.items())
     html = ("<!DOCTYPE html><html lang=\"ja\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
-            "<meta name=\"robots\" content=\"noindex\"><title>お支払い済みの講座があります | 冬期講習2026</title></head>"
+            f"<meta name=\"robots\" content=\"noindex\"><title>お支払い済みの講座があります | {_esc(label)}</title></head>"
             "<body style=\"font-family:system-ui,sans-serif;background:#F8F9FB;color:#1A1A1A;line-height:1.8;margin:0;\">"
-            "<div style=\"background:#0B2545;color:#fff;text-align:center;padding:1.2rem;\">トリリオン英語塾　冬期講習2026</div>"
+            f"<div style=\"background:#0B2545;color:#fff;text-align:center;padding:1.2rem;\">トリリオン英語塾　{_esc(label)}</div>"
             "<div style=\"max-width:600px;margin:1.5rem auto;padding:1.2rem;background:#fff;border:1px solid #E5E7EB;border-radius:6px;\">"
             "<h1 style=\"font-size:1.1rem;color:#92400E;\">このメールアドレスで、すでにお支払い済みの講座があります</h1><ul>"
             + "".join(f"<li>{_esc(n)}</li>" for n in names) +
@@ -59034,13 +59092,14 @@ def _course_member_with_access(member: Optional[dict]) -> Optional[dict]:
     if not member:
         return None
     member["winter"] = _winter_keys_for_email(member["email"])
-    if (member["status"] == "active" and member["courses"]) or member["winter"]:
+    member["kt"] = _kt_keys_for_email(member["email"])   # 📝 共通テスト過去問
+    if (member["status"] == "active" and member["courses"]) or member["winter"] or member["kt"]:
         return member
     return None
 
 
 def _course_member_all_keys(member: dict) -> list:
-    return list(member.get("courses") or []) + list(member.get("winter") or [])
+    return list(member.get("courses") or []) + list(member.get("winter") or []) + list(member.get("kt") or [])
 
 
 def _winter_buyers() -> dict:
@@ -59548,7 +59607,8 @@ def admin_winter_pageviews(days: int = 14, authorization: Optional[str] = Header
     if not _admin_or_cron_authed(authorization, x_cron_secret):
         raise HTTPException(status_code=401, detail="未認証")
     rows = _winter_pageviews(days)
-    return {"rows": rows, "total": sum(r["n"] for r in rows), "bonus_left": _winter_bonus_left(), "bonus_cap": WINTER_BONUS_CAP}
+    return {"rows": rows, "total": sum(r["n"] for r in rows if r["page"] != KT_PAGE),   # total は冬期講習のページだけ
+            "kt_total": sum(r["n"] for r in rows if r["page"] == KT_PAGE), "bonus_left": _winter_bonus_left(), "bonus_cap": WINTER_BONUS_CAP}
 
 
 @app.get("/api/admin/winter/purchases")
@@ -59633,6 +59693,708 @@ def admin_winter_purchase_status(purchase_id: int, payload: WinterPurchaseStatus
     finally:
         conn.close()
     return {"ok": True, "id": int(purchase_id), "status": new_st, "items": items}
+
+
+# ==========================================================================
+# 📝 共通テスト過去問 解説動画 (単発の買い切り・2026-11-18 塾長「その案でOK」= 冬期講習と同じ仕組みに足す)
+# ==========================================================================
+#   流れは冬期講習と同じ: 申込ページ (Netlify の kakomon.html・生成元は塾長のデスクトップの build_kakomon_form.py)
+#   → POST /api/kt/checkout (ふつうのフォーム送信) → Stripe Checkout (mode=payment・1 回)
+#   → 本体 webhook が kt_purchases に記録して視聴ページのログインリンクを送る → 視聴ページ (course-videos.html)。
+#   ★金額の正はここ (KT_PRODUCTS)。申込ページの表示は同じ値 (値を変えるときは両方)。
+#   ★記録の表は冬期講習と分ける (kt_purchases)。冬期講習の先着特典・定員の数に混ぜない。
+#   ★買った人の course_members 行は、講習と同じく status='canceled'・courses=[] のまま (_winter_ensure_member を使う。
+#     _course_upsert_member に [] を渡すと月額講座が解約扱いになる)。
+#   - 講座のキー (= course_videos.course_key) は "kt-<科目>-<年度>"。直前セット (kt-<科目>-set6) は 6 年度のキーに展開して記録する
+#     (第2弾 2024〜2021 も、その配信日から見られる)。
+#   - 公開日 (publish_date) = 配信日。配信日の朝 8 時に購入者へまとめて知らせる (冬期講習と同じ台帳・同じ「知らせない」の印)。
+#   - 申込の締切は KT_SALES_UNTIL (視聴期限の少し前)。それまでは第3弾以降も通年で売る。視聴は KT_VIEW_UNTIL まで。
+#   - metadata.system = juku-payment-kakomon。月謝アプリの Stripe 取込はこのタグも除外する (payment/app.js)。
+KT_SYSTEM_TAG = "juku-payment-kakomon"
+KT_LABEL = "共通テスト過去問 解説動画"
+KT_VIEW_UNTIL = os.getenv("KT_VIEW_UNTIL", "2028-03-31")
+KT_SALES_UNTIL = os.getenv("KT_SALES_UNTIL", "2028-01-31")   # 11-18 塾長が確定。これを過ぎたら決済の入口を閉じる (期限の直前に買って数日しか見られない・期限後に払って見られない、を防ぐ)
+KT_SITE_URL = os.getenv("KT_SITE_URL", WINTER_SITE_URL).rstrip("/")
+KT_PAGE = "kakomon"
+KT_DELIVERY_1 = "2026-12-05"   # 第1弾 (2026・2025)。11-18 塾長が確定 (申込ページも同じ値。ページは「予定」と書く)
+KT_DELIVERY_2 = "2026-12-26"   # 第2弾 (2024〜2021)。11-18 確定
+KT_SUBJECTS = {"kokugo": "国語", "r": "英語リーディング"}   # 並び = 視聴ページ・決済画面の並び (アンケートの順)
+KT_YEARS = [2026, 2025, 2024, 2023, 2022, 2021]
+KT_ON_SALE_YEARS = (2026, 2025)   # 1 年分をバラで売る年度 (第2弾の年度は配信のときに足す)
+KT_PRICE_YEAR = 1980
+KT_PRICE_SET6 = 8800
+# 視聴できる講座 (course_key) → {name, subject, year, delivery}
+KT_COURSES = {}
+for _subj, _sname in KT_SUBJECTS.items():
+    for _y in KT_YEARS:
+        KT_COURSES[f"kt-{_subj}-{_y}"] = {"name": f"共通テスト過去問 {_sname} {_y}年度 本試験" + ("（第1日程）" if _y == 2021 else ""), "subject": _subj, "year": _y,
+                                          "delivery": KT_DELIVERY_1 if _y >= 2025 else KT_DELIVERY_2}
+# 売るもの (sku) → {name, price, keys (見られる講座), subject}。並び = 決済画面の並び
+KT_PRODUCTS = {}
+for _subj, _sname in KT_SUBJECTS.items():
+    for _y in KT_ON_SALE_YEARS:
+        KT_PRODUCTS[f"kt-{_subj}-{_y}"] = {"name": f"{_sname} {_y}年度（1年分）", "price": KT_PRICE_YEAR,
+                                           "keys": [f"kt-{_subj}-{_y}"], "subject": _subj}
+    KT_PRODUCTS[f"kt-{_subj}-set6"] = {"name": f"{_sname} 直前セット（2026〜2021年度の6年分）", "price": KT_PRICE_SET6,
+                                       "keys": [f"kt-{_subj}-{_y}" for _y in KT_YEARS], "subject": _subj}
+
+
+def _kt_priced_parts(parts: list, owned) -> list:
+    """決済の明細 [{sku, name, price}]。以前に買った同じ科目の 1 年分がある人が直前セットを買うときは、
+    持っている年度の数 × 1 年分の料金を引く (二重に払わせない)。下限は 1 年分の料金。全部持っている場合は確認画面の側で扱う。"""
+    out = []
+    for p in parts:
+        prod = KT_PRODUCTS[p]
+        price, name = int(prod["price"]), prod["name"]
+        if _kt_is_set(p):
+            have = [k for k in prod["keys"] if k in (owned or ())]
+            if have and len(have) < len(prod["keys"]):
+                price = max(price - KT_PRICE_YEAR * len(have), KT_PRICE_YEAR)
+                yrs = "・".join(str(KT_COURSES[k]["year"]) for k in have)
+                name = f"{name}（購入済みの{yrs}年度分を差し引き）"
+        out.append({"sku": p, "name": name, "price": price})
+    return out
+
+
+def _kt_forget_event(event_id):
+    """webhook を 500 で返す前に processed_events の印を消す (Stripe の再送で、もう一度処理させる)。"""
+    if not event_id:
+        return
+    try:
+        _c = db()
+        try:
+            _c.cursor().execute("DELETE FROM processed_events WHERE event_id = ?", (event_id,))
+            _c.commit()
+        finally:
+            _c.close()
+    except Exception as _e:
+        log.error(f"[kt] processed_events cleanup failed: {type(_e).__name__}")
+
+
+def _kt_is_set(sku: str) -> bool:
+    return sku.endswith("-set6")
+
+
+def _kt_plan(skus: list) -> dict:
+    """選んだ商品 → {parts (決済の明細・sku), keys (見られる講座), total, unknown}。
+    同じ科目の直前セットを選んだら、その科目の 1 年分は外す (セットに含まれるので二重に払わせない)。"""
+    seen, picked, unknown = set(), [], []
+    for k in skus or []:
+        k = (k or "").strip()
+        if not k or k in seen:
+            continue
+        seen.add(k)
+        (picked if k in KT_PRODUCTS else unknown).append(k)
+    set_subj = {KT_PRODUCTS[k]["subject"] for k in picked if _kt_is_set(k)}
+    parts = [k for k in picked if _kt_is_set(k) or KT_PRODUCTS[k]["subject"] not in set_subj]
+    order = list(KT_PRODUCTS)
+    parts.sort(key=order.index)
+    keys = set()
+    for p in parts:
+        keys.update(KT_PRODUCTS[p]["keys"])
+    corder = list(KT_COURSES)
+    return {"parts": parts, "keys": sorted(keys, key=corder.index),
+            "total": sum(KT_PRODUCTS[p]["price"] for p in parts), "unknown": unknown}
+
+
+def _kt_fmt_until() -> str:
+    """視聴期限は年をまたぐので年も書く (例: 2028年3月31日（金）)。"""
+    return f"{KT_VIEW_UNTIL[:4]}年{_winter_fmt_date(KT_VIEW_UNTIL)}"
+
+
+def _kt_back_url() -> str:
+    return f"{KT_SITE_URL}/{KT_PAGE}.html"
+
+
+def _kt_error_page(message: str, status: int = 400):
+    return _winter_error_page(message, status=status, label=KT_LABEL, back_url=_kt_back_url())
+
+
+def _kt_keys_for_email(email: str, today: Optional[str] = None) -> list:
+    """そのメールが見られる共通テスト過去問の講座キー (kt-…)。視聴期間 (KT_VIEW_UNTIL) を過ぎたら []。"""
+    email = _course_norm_email(email)
+    if not email or (today or _winter_today()) > KT_VIEW_UNTIL:
+        return []
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT item_keys FROM kt_purchases WHERE email = ? AND status = 'paid'", (email,))
+        rows = c.fetchall()
+    except Exception as e:
+        log.warning(f"[kt] keys lookup failed: {type(e).__name__}")
+        return []
+    finally:
+        conn.close()
+    keys = set()
+    for r in rows:
+        try:
+            keys.update(k for k in json.loads(r["item_keys"] or "[]") if k in KT_COURSES)
+        except Exception:
+            pass
+    order = list(KT_COURSES)
+    return sorted(keys, key=order.index)
+
+
+def _kt_buyers() -> dict:
+    """{email: {name, keys:set("kt-…")}} — 視聴期間中の paid の購入者 (お知らせの宛先)。"""
+    if _winter_today() > KT_VIEW_UNTIL:
+        return {}
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT email, name, item_keys FROM kt_purchases WHERE status = 'paid' ORDER BY id")
+        rows = c.fetchall()
+    finally:
+        conn.close()
+    out = {}
+    for r in rows:
+        ent = out.setdefault(r["email"], {"name": "", "keys": set()})
+        ent["name"] = ent["name"] or (r["name"] or "")
+        try:
+            ent["keys"].update(k for k in json.loads(r["item_keys"] or "[]") if k in KT_COURSES)
+        except Exception:
+            pass
+    return out
+
+
+def _kt_published_videos(keys, today: Optional[str] = None) -> list:
+    """keys の講座で、今日までに公開された動画 (course_videos の行 dict・公開日→登録順)。"""
+    keys = set(keys or [])
+    if not keys:
+        return []
+    today = today or _winter_today()
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM course_videos WHERE is_published = 1 AND course_key LIKE ? ORDER BY publish_date, id", ("kt-%",))
+        rows = c.fetchall()
+    finally:
+        conn.close()
+    return [_course_video_row(r) for r in rows
+            if r["course_key"] in keys and not (r["publish_date"] and str(r["publish_date"])[:10] > today)]
+
+
+@app.post("/api/kt/checkout")
+def kt_checkout(request: Request, body: bytes = Depends(_raw_body_dep)):
+    """📝 共通テスト過去問の申込ページの「カードでお支払いへ進む」(フォーム送信) → Stripe Checkout へ 303。だめなときは日本語の HTML。"""
+    try:
+        form = urllib.parse.parse_qs((body or b"")[:8192].decode("utf-8", "replace"), keep_blank_values=True)
+    except Exception:
+        form = {}
+    def _f(name):
+        v = form.get(name) or [""]
+        return (v[0] or "").strip()
+    try:
+        # ★Netlify のページから Vercel の rewrite 経由で届くので IP は共有される → 上限は緩め。本当の歯止めはメール単位
+        _check_rate_limit_ip(request, bucket="kt_checkout", limit=60, window=60)
+    except HTTPException:
+        return _kt_error_page("混み合っています。1 分ほど待ってから、申込ページの「カードでお支払いへ進む」をもう一度押してください。", 429)
+    if os.getenv("KT_CHECKOUT_ENABLED", "1").strip().lower() in ("0", "false", "off", "no"):
+        return _kt_error_page("ただいまお支払いの受付を止めています。公式 LINE またはメールでお問い合わせください。", 503)
+    if not STRIPE_SECRET_KEY:
+        return _kt_error_page("お支払いの準備ができていません（設定の不足）。お手数ですが公式 LINE またはメールでご連絡ください。", 503)
+    email = _course_norm_email(_f("email"))
+    if not email or not _WINTER_EMAIL_RE.match(email):
+        return _kt_error_page("メールアドレスの形が正しくありません。申込ページに戻って入力し直してください。")
+    try:
+        _check_rate_limit_value(email, bucket="kt_checkout", limit=10, window=600)
+    except HTTPException:
+        return _kt_error_page("短い時間に何度もお手続きがありました。10 分ほど待ってからもう一度お試しください。", 429)
+    raw_items = []
+    for v in form.get("items") or []:
+        raw_items.extend((v or "").split(","))
+    plan = _kt_plan(raw_items[:30])
+    if plan["unknown"]:
+        return _kt_error_page("講座の指定が正しくありません。申込ページを開き直して、もう一度お選びください。")
+    if not plan["parts"]:
+        return _kt_error_page("講座が選ばれていません。申込ページに戻って講座を選んでください。")
+    app_id = _f("app_id")
+    if not _WINTER_APP_ID_RE.match(app_id):
+        app_id = ""
+    if _winter_today() > KT_SALES_UNTIL:
+        return _kt_error_page("共通テスト過去問の解説動画のお申し込みの受付は終了しました。", 410)
+    owned = set(_kt_keys_for_email(email))
+    # 二重払いの歯止め: 中身がすべて支払い済みの商品が含まれていたら、一度確かめてもらう (「このまま進む」で confirm_dup=1)
+    if _f("confirm_dup") != "1":
+        dup = [p for p in plan["parts"] if set(KT_PRODUCTS[p]["keys"]) <= owned]
+        if dup:
+            return _winter_dup_page([KT_PRODUCTS[p]["name"] for p in dup],
+                                    {"items": ",".join(plan["parts"]), "email": email, "app_id": app_id},
+                                    KT_PAGE, label=KT_LABEL, back_url=_kt_back_url())
+    priced = _kt_priced_parts(plan["parts"], owned)
+    total = sum(x["price"] for x in priced)
+    meta = {"system": KT_SYSTEM_TAG, "items": ",".join(plan["parts"]), "total": str(total), "app_id": app_id, "page": KT_PAGE}
+    line_items = [{"price_data": {"currency": "jpy", "unit_amount": int(x["price"]),
+                                  "product_data": {"name": f"{KT_LABEL} {x['name']}"[:250]}},
+                   "quantity": 1} for x in priced]
+    import time as _t
+    params = {
+        "mode": "payment",
+        "line_items": line_items,
+        "customer_email": email,
+        "locale": "ja",
+        "payment_method_types": ["card"],
+        "success_url": f"{KT_SITE_URL}/{KT_PAGE}-thanks.html?session_id={{CHECKOUT_SESSION_ID}}",
+        "cancel_url": f"{KT_SITE_URL}/{KT_PAGE}.html?canceled=1",
+        "expires_at": int(_t.time()) + 23 * 3600,   # 締切が無いので Stripe の上限 (24 時間) の少し手前
+        "metadata": meta,
+        "payment_intent_data": {"metadata": meta, "description": KT_LABEL},
+    }
+    if app_id:
+        params["client_reference_id"] = f"kt-{app_id}"
+    try:
+        sess = get_stripe().checkout.Session.create(**params)
+        url = sess.get("url") if isinstance(sess, dict) else getattr(sess, "url", None)
+    except Exception as e:
+        log.error(f"[kt] checkout create failed: {type(e).__name__}: {str(e)[:200]}")
+        return _kt_error_page("お支払いの画面を用意できませんでした。少し時間をおいて、もう一度お試しください。", 502)
+    if not url:
+        return _kt_error_page("お支払いの画面を用意できませんでした。少し時間をおいて、もう一度お試しください。", 502)
+    log.info(f"[kt] checkout created parts={plan['parts']} total={total}")
+    return RedirectResponse(url=url, status_code=303)
+
+
+def _kt_keys_text(keys: list) -> str:
+    return "".join(f"・{KT_COURSES[k]['name']}（配信 {_winter_fmt_date(KT_COURSES[k]['delivery'])}〜）\n" for k in keys if k in KT_COURSES)
+
+
+def _kt_alert_owner(session, email: str, keys, reason: str):
+    """購入は記録できたのに案内メール (ログインリンク) が届かなかったとき、塾長に知らせる (冬期講習と同じ)。"""
+    try:
+        _record_ai_critical_event("kt_welcome_mail_failed", {"session_id": (session or {}).get("id"), "reason": str(reason)[:200]})
+    except Exception:
+        pass
+    try:
+        names = "・".join(_course_key_name(k) for k in (keys or []))
+        _course_send_email(COURSE_CONTACT_EMAIL, "[共通テスト過去問] ★視聴の案内メールが送れませんでした",
+                           f"共通テスト過去問の解説動画の支払いは記録しましたが、購入者への視聴ページの案内メールが送れませんでした（理由: {str(reason)[:200]}）。\n\n"
+                           f"購入者のメール: {email}\n講座: {names}\nStripe の決済: {(session or {}).get('id')}\n\n"
+                           "購入者に、視聴ページ https://trillion-ai-juku.com/course-videos.html を開いて、お支払いに使ったメールアドレスで"
+                           "ログインリンクを取り直すよう伝えてください。")
+    except Exception as e:
+        log.warning(f"[kt] owner alert failed: {type(e).__name__}")
+
+
+def _kt_alert_unknown_items(session, email: str, unknown: list):
+    """決済の明細に、いまは売っていない商品 (sku) があった (決済画面を作った後に売り方を変えた等)。視聴を付けられないので塾長に知らせる。"""
+    try:
+        _record_ai_critical_event("kt_unknown_items", {"session_id": (session or {}).get("id"), "items": ",".join(unknown)[:200]})
+    except Exception:
+        pass
+    try:
+        _course_send_email(COURSE_CONTACT_EMAIL, "[共通テスト過去問] ★視聴を付けられない商品の支払いがありました",
+                           f"共通テスト過去問の決済に、いまのサーバの商品表 (KT_PRODUCTS) に無い商品が含まれていました: {', '.join(unknown)[:200]}\n"
+                           "その分の視聴は付いていません。視聴を付けるか返金するかを決めてください（Claude に頼めます）。\n\n"
+                           f"購入者のメール: {email}\nStripe の決済: {(session or {}).get('id')}")
+    except Exception as e:
+        log.warning(f"[kt] owner alert failed: {type(e).__name__}")
+
+
+def _kt_webhook_record(session: dict) -> bool:
+    """本体 webhook から呼ぶ: 共通テスト過去問の決済完了を kt_purchases に記録し、視聴ページのログインリンクを送る。
+    同じ Checkout が 2 回届いても session_id の一意制約で 1 行・1 通。戻り値の意味は _winter_webhook_record と同じ
+    (False = 記録そのものに失敗 → 呼び出し側が Stripe に再送させる)。"""
+    try:
+        meta = session.get("metadata") or {}
+        sid = (session.get("id") or "").strip()
+        cd = session.get("customer_details") or {}
+        email = _course_norm_email(cd.get("email") or session.get("customer_email") or "")
+        raw_parts = [p for p in (meta.get("items") or "").split(",") if p]
+        parts = [p for p in raw_parts if p in KT_PRODUCTS]
+        keys = _kt_plan(parts)["keys"]
+        if session.get("livemode") is False and os.getenv("KT_RECORD_TEST", "0").strip().lower() not in ("1", "true", "on", "yes"):
+            log.info("[kt] test-mode checkout ignored (KT_RECORD_TEST が無い)")
+            return True   # 月額講座・冬期講習と同じく、テストモードの決済で本物の受講者を作らない
+        if sid and email and len(parts) != len(raw_parts):
+            # 決済画面を作った後に売る商品を変えた等。黙って捨てずに塾長へ (記録できる分は記録する)
+            _kt_alert_unknown_items(session, email, [p for p in raw_parts if p not in KT_PRODUCTS])
+        if not sid or not email or not keys:
+            log.warning(f"[kt] webhook missing fields (sid={bool(sid)} email={bool(email)} keys={len(keys)})")
+            return True
+        # 記録より先に返金が済んでいた (記録の失敗 → 再送待ちの間に返金) なら、視聴を付けない
+        status = "refunded" if _winter_session_refunded(session) else "paid"
+        name = (cd.get("name") or "").strip()[:100]
+        try:
+            amount = int(session.get("amount_total") or 0)
+        except Exception:
+            amount = 0
+        app_id = (meta.get("app_id") or "")[:40]
+        try:
+            conn = db()
+            try:
+                c = conn.cursor()
+                c.execute("INSERT INTO kt_purchases (session_id, email, name, plan, item_keys, amount, status, app_id, livemode, paid_at, created_at) "
+                          "VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT (session_id) DO NOTHING RETURNING id",
+                          (sid, email, name, json.dumps(parts), json.dumps(keys), amount, status, app_id,
+                           0 if session.get("livemode") is False else 1, _utc_naive_iso(), _utc_naive_iso()))
+                row = c.fetchone()
+                conn.commit()
+            finally:
+                conn.close()
+        except Exception as e:
+            log.error(f"[kt] purchase record FAILED: {type(e).__name__}: {str(e)[:200]}")
+            try:
+                _record_ai_critical_event("kt_purchase_record_failed", {"session_id": sid, "error": f"{type(e).__name__}"[:100]})
+            except Exception:
+                pass
+            return False
+        if not row:
+            log.info("[kt] purchase already recorded (duplicate webhook)")
+            return True
+        log.info(f"[kt] purchase recorded id={row['id']} parts={parts} amount={amount} status={status}")
+        if status != "paid":
+            return True
+        try:
+            member = _winter_ensure_member(email, name)
+        except Exception as e:
+            log.warning(f"[kt] ensure member failed: {type(e).__name__}")
+            member = None
+        if os.getenv("KT_WELCOME_ENABLED", "1").strip().lower() in ("0", "false", "off", "no"):
+            return True
+        if not member:
+            _kt_alert_owner(session, email, keys, "受講者の行を作れなかった")
+            return True
+        ready = _kt_published_videos(keys)
+        lines = [f"{KT_LABEL}のお申し込みとお支払い（合計 {amount:,}円・税込）を確認しました。ありがとうございます。", "",
+                 "■ お申し込みの講座", _kt_keys_text(keys).rstrip("\n"), ""]
+        if ready:
+            lines.append(f"すでに配信している動画（{len(ready)}本）は、下のリンクから視聴ページを開くとすぐにご覧いただけます。"
+                         "まだの年度は、配信日の朝にメールでお知らせします。")
+        else:
+            lines.append("動画は配信日から視聴ページに並びます。配信日の朝にメールでお知らせします。")
+        lines.append(f"視聴は {_kt_fmt_until()} までです。")
+        res = _course_send_login_link(member, intro="\n".join(lines),
+                                      subject=f"【トリリオン英語塾】{KT_LABEL} お支払いの確認と視聴ページのご案内")
+        if res.get("sent") and ready:
+            _winter_mark_noticed(email, [v["id"] for v in ready])
+        log.info(f"[kt] welcome mail sent={res.get('sent')}")
+        if not res.get("sent"):
+            _kt_alert_owner(session, email, keys, res.get("error") or "send failed")
+        return True
+    except Exception as e:
+        # 記録の後 (会員行・メール) の失敗。記録はできているので再送させない (ログインリンクは視聴ページから取り直せる)
+        log.warning(f"[kt] after-record step failed: {type(e).__name__}: {str(e)[:200]}")
+        return True
+
+
+def _kt_sync_from_stripe(days: int = 3, dry_run: bool = True) -> dict:
+    """Stripe の Checkout Session (直近 days 日・支払い済み・metadata.system=juku-payment-kakomon) のうち、
+    kt_purchases に無いものを補って記録する (webhook の取りこぼし対策・毎朝の自動でも走る)。返金・異議申し立てのあるものは記録しない。"""
+    import time as _t
+    if not STRIPE_SECRET_KEY:
+        return {"skipped": "no stripe key"}
+    since = int(_t.time()) - max(1, min(int(days), 60)) * 86400
+    found, missing = 0, []
+    for s_ in get_stripe().checkout.Session.list(created={"gte": since}, limit=100).auto_paging_iter():
+        s_ = s_.to_dict() if hasattr(s_, "to_dict") else dict(s_)
+        if ((s_.get("metadata") or {}).get("system") or "") != KT_SYSTEM_TAG:
+            continue
+        if s_.get("payment_status") not in ("paid", "no_payment_required"):
+            continue
+        found += 1
+        conn = db()
+        try:
+            c = conn.cursor()
+            c.execute("SELECT id FROM kt_purchases WHERE session_id = ?", (s_.get("id") or "",))
+            exists = c.fetchone() is not None
+        finally:
+            conn.close()
+        if not exists:
+            missing.append(s_)
+    refunded_skip = [s_ for s_ in missing if _winter_session_refunded(s_)]
+    missing = [s_ for s_ in missing if s_ not in refunded_skip]
+    recorded = 0
+    if not dry_run:
+        for s_ in missing:
+            if _kt_webhook_record(s_):
+                recorded += 1
+        for s_ in refunded_skip:
+            log.warning(f"[kt] stripe sync: refunded/disputed checkout not recorded: {s_.get('id')}")
+    if missing:
+        log.warning(f"[kt] stripe sync: {len(missing)} paid checkout(s) were not recorded (dry_run={dry_run})")
+    return {"paid_sessions": found, "missing": len(missing), "recorded": recorded, "skipped_refunded": len(refunded_skip), "dry_run": dry_run}
+
+
+def _kt_on_refund(charge: dict) -> dict:
+    """本体 webhook の charge.refunded から呼ぶ: 全額返金 → その決済の講座をまとめて refunded (視聴ページから消える)。
+    一部返金 → どの年度を止めるかは決められないので塾長に知らせる。"""
+    pi = charge.get("payment_intent")
+    if isinstance(pi, dict):
+        pi = pi.get("id")
+    amount = int(charge.get("amount") or 0)
+    refunded_amt = int(charge.get("amount_refunded") or 0)
+    full = bool(charge.get("refunded")) or (amount > 0 and refunded_amt >= amount)
+    if not pi or refunded_amt <= 0:
+        return {"skipped": "no refund"}
+    sid = ""
+    # ★照会の失敗は握りつぶさない (呼び出し側が 500 → Stripe が再送)。握ると「記録が無い」と誤って知らせ、視聴も止まらない
+    lst = get_stripe().checkout.Session.list(payment_intent=pi, limit=1)
+    data = list(lst.get("data") if hasattr(lst, "get") else lst)
+    if data:
+        d0 = data[0].to_dict() if hasattr(data[0], "to_dict") else dict(data[0])
+        sid = d0.get("id") or ""
+    row = None
+    if sid:
+        conn = db()
+        try:
+            c = conn.cursor()
+            c.execute("SELECT id, email, item_keys, status FROM kt_purchases WHERE session_id = ?", (sid,))
+            row = c.fetchone()
+            if row and full and row["status"] == "paid":
+                c.execute("UPDATE kt_purchases SET status = 'refunded' WHERE id = ?", (row["id"],))
+                conn.commit()
+        finally:
+            conn.close()
+    try:
+        keys = json.loads(row["item_keys"] or "[]") if row else []
+    except Exception:
+        keys = []
+    names = "・".join(_course_key_name(k) for k in keys) or "（記録が見つかりません）"
+    if full and row:
+        msg = "全額返金を確認したので、この決済の講座の視聴を止めました（視聴ページから消えます）。"
+    elif full:
+        msg = "全額返金を確認しましたが、購入の記録が見つからず、視聴の停止はしていません（記録が無ければ視聴もできない状態です）。"
+    else:
+        msg = (f"一部返金（{refunded_amt:,}円 / {amount:,}円）を確認しました。どの年度の視聴を止めるかは自動では決めていません。"
+               f"止める年度があれば、POST /api/admin/kt/purchases/{row['id'] if row else '?'}/status に remove_items（kt-…）で外してください（Claude に頼めます）。")
+    log.info(f"[kt] refund handled: full={full} purchase={row['id'] if row else None}")
+    try:
+        _course_send_email(COURSE_CONTACT_EMAIL, "[共通テスト過去問] 返金を確認しました",
+                           f"{msg}\n\n購入者のメール: {row['email'] if row else '-'}\n講座: {names}\nStripe の決済: {sid or pi}")
+    except Exception:
+        pass
+    return {"full": full, "purchase_id": row["id"] if row else None, "updated": bool(full and row)}
+
+
+_KT_NOTIFY_LOCK = threading.Lock()
+
+
+def _kt_notice_mail(member: dict, videos: list) -> tuple:
+    greeting = f"{member['name']} 様" if member.get("name") else "受講者の皆さま"
+    by_course = {}
+    for v in videos:
+        by_course.setdefault(v["course_key"], []).append(v)
+    listing = ""
+    for key, vs in by_course.items():
+        listing += f"【{_course_key_name(key)}】\n" + "".join(f"・{v['title']}\n" for v in vs)
+    subject = f"【{KT_LABEL}】動画を配信しました（{len(videos)}本）"
+    if member.get("id"):
+        token = _sign_session_token(member["id"], ttl_seconds=COURSE_MAGIC_TTL_SEC, token_type="coursemagic")
+        how = (f"■ 視聴はこちら（このリンクを開くとそのままログインできます・7 日間有効）\n{_course_portal_url()}?t={token}\n"
+               f"（リンクの期限が切れたら {_course_portal_url()} でお支払い時のメールアドレスを入力すると、新しいリンクが届きます）\n")
+    else:
+        how = (f"■ 視聴はこちら\n{_course_portal_url()}\n（お支払い時のメールアドレスを入力すると、ログイン用のリンクが届きます。"
+               f"一度ログインすると、同じブラウザでは 30 日間そのまま開けます）\n")
+    body = (f"{greeting}\n\nトリリオン英語塾です。\n{KT_LABEL}の動画を配信しました。\n\n■ 今回の動画\n{listing}\n" + how +
+            f"視聴は {_kt_fmt_until()} までです。\n\n"
+            f"ご不明な点は 公式 LINE（{COURSE_LINE_URL}）またはメール（{COURSE_CONTACT_EMAIL}）までご連絡ください。\n\n"
+            f"トリリオン英語塾（Trillion English Academy）")
+    return subject, body
+
+
+def _kt_notify_due(dry_run: bool = False) -> dict:
+    """今日までに公開された共通テスト過去問の動画のうち、購入者にまだ知らせていないものを 1 人 1 通にまとめて送る
+    (冬期講習の _winter_notify_due と同じ規則: 錠で二重に走らない・台帳で同じ動画を 2 回知らせない・「知らせない」の印は飛ばす)。"""
+    if not _KT_NOTIFY_LOCK.acquire(blocking=False):
+        return {"in_progress": True}
+    try:
+        buyers = _kt_buyers()
+        all_keys = set().union(*[b["keys"] for b in buyers.values()]) if buyers else set()
+        videos = _kt_published_videos(all_keys)
+        if not videos:
+            return {"recipients": 0, "videos": 0, "sent": 0, "failed": 0, "dry_run": dry_run}
+        conn = db()
+        try:
+            c = conn.cursor()
+            c.execute("SELECT video_id, email FROM course_video_notices WHERE video_id IN (" + ",".join("?" * len(videos)) + ")",
+                      tuple(int(v["id"]) for v in videos))
+            done = {(int(r["video_id"]), r["email"]) for r in c.fetchall()}
+        finally:
+            conn.close()
+        noauto = {vid for vid, e in done if e == _WINTER_NOAUTO}
+        videos = [v for v in videos if int(v["id"]) not in noauto]
+        jobs = []
+        for email, b in buyers.items():
+            vids = [v for v in videos if v["course_key"] in b["keys"] and (int(v["id"]), email) not in done]
+            if vids:
+                jobs.append(({"email": email, "name": b["name"]}, vids))
+        result = {"recipients": len(jobs), "videos": len({v["id"] for _, vs in jobs for v in vs}), "sent": 0, "failed": 0, "dry_run": dry_run}
+        if dry_run:
+            return result
+        per_video = {}
+        for m, vids in jobs:
+            try:
+                _mm = _course_member_by_email(m["email"]) or _winter_ensure_member(m["email"], m.get("name") or "")
+                if _mm:
+                    m["id"] = _mm["id"]
+            except Exception:
+                pass
+            subject, body = _kt_notice_mail(m, vids)
+            try:
+                res = _course_send_email(m["email"], subject, body)
+            except Exception as e:
+                res = {"sent": False, "error": str(e)[:100]}
+            if res.get("sent"):
+                result["sent"] += 1
+                try:
+                    _winter_mark_noticed(m["email"], [v["id"] for v in vids])
+                except Exception as e:
+                    log.warning(f"[kt] notice record failed: {e}")
+                for v in vids:
+                    per_video[int(v["id"])] = per_video.get(int(v["id"]), 0) + 1
+            else:
+                result["failed"] += 1
+            try:
+                _email_rate_limit()
+            except Exception:
+                pass
+        if per_video:
+            conn = db()
+            try:
+                c = conn.cursor()
+                for vid, n in per_video.items():
+                    c.execute("UPDATE course_videos SET notified_at = ?, notified_count = COALESCE(notified_count, 0) + ? WHERE id = ?",
+                              (_utc_naive_iso(), n, vid))
+                conn.commit()
+            finally:
+                conn.close()
+        log.info(f"[kt] notify due recipients={result['recipients']} sent={result['sent']} failed={result['failed']}")
+        return result
+    finally:
+        _KT_NOTIFY_LOCK.release()
+
+
+async def _kt_notify_scheduler():
+    """📝 毎日 JST 8:00 に Stripe の取りこぼしを補ってから _kt_notify_due (視聴期間が終わったら止まる)。
+    8 時を過ぎて起動したらすぐ 1 回 (台帳があるので二重にならない)。冬期講習の scheduler より 3 分遅らせる。"""
+    log.info(f"[Kt] notify scheduler started (JST {WINTER_NOTIFY_HOUR_JST}:03 daily until {KT_VIEW_UNTIL})")
+    await asyncio.sleep(330)
+    while True:
+        try:
+            now_jst = datetime.now(JST)
+            if now_jst.strftime("%Y-%m-%d") > KT_VIEW_UNTIL:
+                log.info("[Kt] view period ended — scheduler stops")
+                return
+            target = now_jst.replace(hour=WINTER_NOTIFY_HOUR_JST, minute=3, second=0, microsecond=0)
+            if now_jst >= target:
+                try:
+                    sres = await asyncio.to_thread(_kt_sync_from_stripe, 3, False)
+                    log.info(f"[Kt] stripe sync: {sres}")
+                except Exception as _e:
+                    log.warning(f"[Kt] stripe sync failed: {type(_e).__name__}")
+                res = await asyncio.to_thread(_kt_notify_due)
+                log.info(f"[Kt] notify due: {res}")
+                target += timedelta(days=1)
+            await asyncio.sleep(max(60.0, (target - datetime.now(JST)).total_seconds()))
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            log.error(f"[Kt] scheduler loop error: {type(e).__name__}", exc_info=True)
+            await asyncio.sleep(3600)
+
+
+@app.post("/api/admin/kt/sync")
+def admin_kt_sync(request: Request, payload: Optional[WinterSyncIn] = None,
+                  authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """塾長/Claude: Stripe の支払い済みの共通テスト過去問で、記録が漏れているものを補う (既定は dry_run=true で数だけ)。"""
+    _check_rate_limit_ip(request, bucket="kt_admin", limit=20, window=60)
+    if not _admin_or_cron_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    p = payload or WinterSyncIn()
+    try:
+        return {"ok": True, **_kt_sync_from_stripe(days=p.days or 7, dry_run=bool(p.dry_run is None or p.dry_run))}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Stripe の取得に失敗しました: {type(e).__name__}")
+
+
+@app.post("/api/admin/kt/notify-due")
+def admin_kt_notify_due(request: Request, payload: Optional[WinterNotifyDueIn] = None,
+                        authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """塾長/Claude: 共通テスト過去問の配信お知らせをいま送る (既定は dry_run=true で数だけ)。毎朝 8 時の自動と同じ処理。"""
+    _check_rate_limit_ip(request, bucket="kt_admin", limit=20, window=60)
+    if not _admin_or_cron_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    if payload is None or payload.dry_run:
+        return {"ok": True, **_kt_notify_due(dry_run=True)}
+    preview = _kt_notify_due(dry_run=True)
+    threading.Thread(target=_kt_notify_due, daemon=True, name="kt-notify-due").start()
+    return {"ok": True, "background": True, **preview}
+
+
+@app.get("/api/admin/kt/purchases")
+def admin_kt_purchases(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """塾長: 共通テスト過去問の購入一覧と講座ごとの人数。"""
+    if not _admin_or_cron_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM kt_purchases ORDER BY id DESC")
+        rows = c.fetchall()
+    finally:
+        conn.close()
+    out, counts, total = [], {k: 0 for k in KT_COURSES}, 0
+    for r in rows:
+        try:
+            keys = [k for k in json.loads(r["item_keys"] or "[]") if k in KT_COURSES]
+            plan = json.loads(r["plan"] or "[]")
+        except Exception:
+            keys, plan = [], []
+        if r["status"] == "paid":
+            total += int(r["amount"] or 0)
+            for k in keys:
+                counts[k] += 1
+        out.append({"id": r["id"], "email": r["email"], "name": r["name"] or "", "keys": keys, "plan": plan,
+                    "plan_names": [(KT_PRODUCTS.get(p) or {}).get("name") or p for p in plan], "amount": int(r["amount"] or 0),
+                    "status": r["status"], "app_id": r["app_id"] or "", "livemode": bool(r["livemode"]),
+                    "session_id": r["session_id"], "paid_at": r["paid_at"]})
+    return {"purchases": out, "paid_total": total, "view_until": KT_VIEW_UNTIL,
+            "products": [{"sku": k, "name": v["name"], "price": v["price"], "keys": v["keys"]} for k, v in KT_PRODUCTS.items()],
+            "courses": [{"key": k, "name": v["name"], "delivery": v["delivery"], "buyers": counts[k]} for k, v in KT_COURSES.items()]}
+
+
+@app.post("/api/admin/kt/purchases/{purchase_id}/status")
+def admin_kt_purchase_status(purchase_id: int, payload: WinterPurchaseStatusIn, request: Request, authorization: Optional[str] = Header(None)):
+    """塾長: Stripe で返金したあとに視聴を止める。status=refunded は決済まるごと・remove_items=[kt-…] はその年度だけ外す
+    (外した年度は plan に removed: で残す・残りが無くなれば refunded)。"""
+    _check_rate_limit_ip(request, bucket="kt_admin", limit=20, window=60)
+    _verify_admin_required(authorization)
+    st = (payload.status or "").strip()
+    rm = [k for k in (payload.remove_items or []) if isinstance(k, str)]
+    if not st and not rm:
+        raise HTTPException(status_code=400, detail="status か remove_items を指定してください")
+    if st and st not in ("paid", "refunded"):
+        raise HTTPException(status_code=400, detail="status は paid か refunded です")
+    if any(k not in KT_COURSES for k in rm):
+        raise HTTPException(status_code=400, detail="remove_items に知らない講座があります")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM kt_purchases WHERE id = ?", (int(purchase_id),))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="購入記録が見つかりません")
+        keys = [k for k in json.loads(row["item_keys"] or "[]") if k in KT_COURSES]
+        if rm:
+            missing = [k for k in rm if k not in keys]
+            if missing:
+                raise HTTPException(status_code=400, detail=f"この購入に含まれない講座です: {', '.join(missing)}")
+            keys = [k for k in keys if k not in rm]
+            try:
+                plan = json.loads(row["plan"] or "[]")
+            except Exception:
+                plan = []
+            plan = plan + [f"removed:{k}" for k in rm]
+            new_st = st or ("refunded" if not keys else row["status"])
+            c.execute("UPDATE kt_purchases SET item_keys = ?, plan = ?, status = ? WHERE id = ?",
+                      (json.dumps(keys), json.dumps(plan), new_st, int(purchase_id)))
+        else:
+            new_st = st
+            c.execute("UPDATE kt_purchases SET status = ? WHERE id = ?", (st, int(purchase_id)))
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True, "id": int(purchase_id), "status": new_st, "keys": keys}
 
 
 # ==========================================================================

@@ -67,7 +67,7 @@
     <!-- ログイン -->
     <section id="loginView" class="card" hidden>
       <h2>ログイン</h2>
-      <p class="muted">月額講座（英文解釈／英文法／共通テスト対策）・冬期講習2026をお申し込みの方専用のページです。</p>
+      <p class="muted">月額講座（英文解釈／英文法／共通テスト対策）・冬期講習2026・共通テスト過去問の解説動画をお申し込みの方専用のページです。</p>
       <p class="muted" style="margin-top:0.4rem;">お支払い時（決済画面）のメールアドレスを入力してください。ログイン用のリンクをメールでお送りします（パスワードは不要です）。</p>
       <form id="loginForm" style="margin-top:0.9rem;">
         <label for="email">メールアドレス</label>
@@ -93,6 +93,7 @@
         <div class="courses-bar" id="coursesBar"></div>
         <p class="muted" id="portalNote">各講座とも毎週月曜に 2 本ずつ動画を追加します（月 8 本）。追加したときは、お支払い時のメールアドレスへお知らせします。新しい動画が上に並びます。はじめての方は一番下の第1回からご覧ください。</p>
         <p class="muted" id="winterNote" hidden style="margin-top:0.4rem;"></p>
+        <p class="muted" id="ktNote" hidden style="margin-top:0.4rem;"></p>
         <p class="muted" style="margin-top:0.4rem;">このページはブックマークかホーム画面への追加をおすすめします（同じブラウザなら 30 日間、次回からメールなしで開けます）。</p>
       </div>
       <div id="videoList"></div>
@@ -154,6 +155,10 @@
         clearToken(); show('loginView');
       });
       function netMsg(err, fallback) { return err && err.status ? (err.message || fallback) : '通信できませんでした。電波の良い場所でもう一度お試しください。'; }
+      function fmtDateJpY(s) {   // 年をまたぐ期限 (共通テスト過去問の視聴期限) は年も出す
+        var m = /^(\d{4})-/.exec(String(s || ''));
+        return m ? (+m[1]) + '年' + fmtDateJp(s) : fmtDateJp(s);
+      }
       function fmtDateJp(s) {
         if (!s) return '';
         var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s));
@@ -171,12 +176,18 @@
         // ❄️ 冬期講習 (me.winter): 配信日・視聴期限を出し、動画は第1回から順 (古い順) に並べる
         var winter = {};
         (me.winter || []).forEach(function (w) { winter[w.key] = w; });
+        // 📝 共通テスト過去問 (me.kt): 講習と同じく配信日を出し、大問の順 (古い順) に並べる
+        (me.kt || []).forEach(function (w) { winter[w.key] = w; });
         var hasMonthly = (me.courses || []).some(function (c) { return !winter[c.key]; });
         $('portalNote').hidden = !hasMonthly;
         $('monthlyFoot').hidden = !hasMonthly;
         $('winterNote').hidden = !(me.winter || []).length;
         if ((me.winter || []).length) {
           $('winterNote').textContent = '冬期講習2026の動画は、配信日から順に並びます（上から第1回）。配信した日の朝にメールでお知らせします。視聴は ' + fmtDateJp(me.winter_view_until) + ' までです。';
+        }
+        $('ktNote').hidden = !(me.kt || []).length;
+        if ((me.kt || []).length) {
+          $('ktNote').textContent = '共通テスト過去問の解説動画は、年度ごとに大問の順で並びます（上から第1問）。配信した日の朝にメールでお知らせします。視聴は ' + fmtDateJpY(me.kt_view_until) + ' までです。';
         }
         var byCourse = {};
         (me.courses || []).forEach(function (c) { byCourse[c.key] = { name: c.name, videos: [] }; });

@@ -14556,12 +14556,21 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       list.forEach(function (c) { var o = document.createElement('option'); o.value = c.key; o.textContent = '❄️ ' + c.name + '（配信 ' + c.delivery + '・購入 ' + c.active_members + ' 名）'; g.appendChild(o); });
       sel.appendChild(g);
     }
+    // 📝 共通テスト過去問の講座 (kt-<科目>-<年度>) を講座の選択肢に足す (1 回だけ)。公開日は配信日にしておくと、その日の朝 8 時に購入者へまとめて知らせる
+    function addKtOptions(list) {
+      var sel = document.getElementById('cvCourse');
+      if (!list.length || sel.querySelector('optgroup[data-kt]')) return;
+      var g = document.createElement('optgroup'); g.label = '共通テスト過去問'; g.setAttribute('data-kt', '1');
+      list.forEach(function (c) { var o = document.createElement('option'); o.value = c.key; o.textContent = '📝 ' + c.name + '（配信 ' + c.delivery + '・購入 ' + c.active_members + ' 名）'; g.appendChild(o); });
+      sel.appendChild(g);
+    }
     async function loadVideos() {
       var list = document.getElementById('cvList'); var counts = document.getElementById('cvCounts');
       try {
         var d = await cvJson('/api/admin/course/videos');
-        _memberCounts = {}; (d.courses || []).concat(d.winter_courses || []).forEach(function (c) { _memberCounts[c.key] = c.active_members; COURSE_NAMES[c.key] = c.name; });
+        _memberCounts = {}; (d.courses || []).concat(d.winter_courses || [], d.kt_courses || []).forEach(function (c) { _memberCounts[c.key] = c.active_members; COURSE_NAMES[c.key] = c.name; });
         addWinterOptions(d.winter_courses || []);
+        addKtOptions(d.kt_courses || []);
         counts.innerHTML = (d.courses || []).map(function (c) { return '<span style="padding:0.2rem 0.6rem; border-radius:999px; background:rgba(201,169,97,0.18); border:1px solid rgba(201,169,97,0.4);">' + esc(c.name) + ' <b>' + c.active_members + '</b> 名</span>'; }).join('');
         if (!d.videos || !d.videos.length) { list.innerHTML = '<div>まだ動画はありません。</div>'; return; }
         list.innerHTML = d.videos.map(function (v) {
@@ -14587,7 +14596,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     // 解約予定 (Stripe の期間末解約) は期間末まで「有効」のまま視聴できる。お知らせメールは自動で止まる (2026-11-02)
     function endDay(iso) { if (!iso) return '日付不明'; var d = new Date(String(iso).replace(' ', 'T') + (String(iso).endsWith('Z') ? '' : 'Z')); return isNaN(d) ? '日付不明' : d.toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' }); }
     function memberState(m) {
-      if (m.status !== 'active') return (m.winter_names || []).length ? '<span style="color:#93c5fd;">冬期講習のみ</span>' : '解約';
+      if (m.status !== 'active') return (m.winter_names || []).length || (m.kt_names || []).length
+        ? '<span style="color:#93c5fd;">' + ((m.winter_names || []).length ? '冬期講習' : '') + ((m.winter_names || []).length && (m.kt_names || []).length ? '・' : '') + ((m.kt_names || []).length ? '過去問' : '') + 'のみ</span>' : '解約';
       var el = m.ending_list || [];
       if (!el.length) return '<span style="color:#6ee7b7;">有効</span>';
       var all = el.length === (m.course_names || []).length;
@@ -14611,7 +14621,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         if (!ms.length) { box.innerHTML = '<div>受講者はまだいません。</div>'; return; }
         box.innerHTML = '<table style="width:100%; min-width:720px; border-collapse:collapse; font-size:0.8rem;"><thead><tr style="color:#71717a; text-align:left;"><th style="padding:0.3rem;">メール</th><th style="padding:0.3rem;">氏名</th><th style="padding:0.3rem;">講座</th><th style="padding:0.3rem;">状態</th><th style="padding:0.3rem;">お知らせメール</th><th style="padding:0.3rem;">Stripe 確認</th></tr></thead><tbody>'
           + ms.map(function (m) {
-            return '<tr style="border-top:1px solid rgba(255,255,255,0.08);' + (m.status !== 'active' ? ' color:#71717a;' : '') + '"><td style="padding:0.3rem;">' + esc(m.email) + '</td><td style="padding:0.3rem;">' + esc(m.name) + '</td><td style="padding:0.3rem;">' + esc((m.course_names || []).join('・')) + ((m.winter_names || []).length ? '<div style="color:#93c5fd;">❄️ ' + esc(m.winter_names.join('・')) + '</div>' : '') + '</td><td style="padding:0.3rem;">' + memberState(m) + '</td><td style="padding:0.3rem;">' + memberNotify(m, d.notify_toggle) + '</td><td style="padding:0.3rem; color:#71717a;">' + esc(fmtTs(m.verified_at)) + '</td></tr>';
+            return '<tr style="border-top:1px solid rgba(255,255,255,0.08);' + (m.status !== 'active' ? ' color:#71717a;' : '') + '"><td style="padding:0.3rem;">' + esc(m.email) + '</td><td style="padding:0.3rem;">' + esc(m.name) + '</td><td style="padding:0.3rem;">' + esc((m.course_names || []).join('・')) + ((m.winter_names || []).length ? '<div style="color:#93c5fd;">❄️ ' + esc(m.winter_names.join('・')) + '</div>' : '') + ((m.kt_names || []).length ? '<div style="color:#93c5fd;">📝 ' + esc(m.kt_names.join('・')) + '</div>' : '') + '</td><td style="padding:0.3rem;">' + memberState(m) + '</td><td style="padding:0.3rem;">' + memberNotify(m, d.notify_toggle) + '</td><td style="padding:0.3rem; color:#71717a;">' + esc(fmtTs(m.verified_at)) + '</td></tr>';
           }).join('') + '</tbody></table>';
       } catch (e) { box.innerHTML = '<div style="color:#fca5a5;">読み込めませんでした: ' + esc(e.message) + '</div>'; }
     }
