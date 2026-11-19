@@ -30,7 +30,7 @@ jobs:
   status:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # deploy_freshness が本番の静的ファイルと HEAD の md5 を比べるので
           # 浅いクローンではなく実ファイルが要る (checkout 既定で足りる)。
