@@ -501,13 +501,26 @@ function syncIncludedOptions() {
   }
 }
 
+// group が同じコース (taisaku = 志望大学・学部別 対策クラス) は 1つ目が price・2つ目からは addPrice。
+// サーバ (api/register-subscribe.py の _course_prices) と同じ決まり (2026-11-19 塾長決定)
+function coursePrices(ids) {
+  const seen = new Set(); const out = [];
+  for (const id of ids) {
+    const c = STATE.courses.find(x => x.id === id);
+    if (!c) continue;
+    const extra = !!(c.group && seen.has(c.group) && c.addPrice != null);
+    if (c.group) seen.add(c.group);
+    out.push({ c, price: extra ? Number(c.addPrice) : c.price, name: extra ? (c.label || c.name).replace('志望大学・学部別 ', '').replace('（動画配信）', '') + '（2クラス目以降）' : (c.label || c.name) });
+  }
+  return out;
+}
+
 function updateTotal() {
   syncIncludedOptions();
   let total = 0;
   const breakdown = [];
-  for (const id of STATE.selected) {
-    const c = STATE.courses.find(x => x.id === id);
-    if (c) { total += c.price; breakdown.push(`${c.label || c.name} ¥${c.price.toLocaleString()}`); }
+  for (const { price, name } of coursePrices([...STATE.selected])) {
+    total += price; breakdown.push(`${name} ¥${price.toLocaleString()}`);
   }
   for (const id of STATE.selectedOpts) {
     const o = STATE.options.find(x => x.id === id);
@@ -551,9 +564,8 @@ function showConfirmModal() {
   const p = STATE.pendingPayload;
   let total = 0;
   let courseRows = '';
-  for (const id of p.courses) {
-    const c = STATE.courses.find(x => x.id === id);
-    if (c) { total += c.price; courseRows += `<div class="scrow"><div class="scn">${escapeHtml(c.label || c.name)}</div><div class="scp">¥${c.price.toLocaleString()}</div></div>`; }
+  for (const { price, name } of coursePrices(p.courses)) {
+    total += price; courseRows += `<div class="scrow"><div class="scn">${escapeHtml(name)}</div><div class="scp">¥${price.toLocaleString()}</div></div>`;
   }
   for (const id of p.options) {
     const o = STATE.options.find(x => x.id === id);

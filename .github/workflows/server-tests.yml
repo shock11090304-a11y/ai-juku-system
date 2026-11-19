@@ -327,6 +327,7 @@ jobs:
         run: |
           python3 scripts/health_check/test_enroll_first_charge.py
           python3 scripts/check_course_price_sync.py
+          python3 scripts/health_check/test_taisaku_second_class_fee.py
 
       # 💴 外部向け月額プランの価格照合 (2026-11-12): server/main.py の PRICE_MAP・PLAN_QUOTAS ⇄ plans.js ⇄ light.html ⇄ legal.html。
       #   light.html の受付スイッチが開いているのに legal.html に表記が無ければ落とす。Stripe は見ない (--stripe は手で実行)。

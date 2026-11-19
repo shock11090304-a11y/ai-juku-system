@@ -105,10 +105,10 @@ COURSES = {
     "gmarch":        {"name": "GMARCH",     "price": 12500, "label": "GMARCHコース（大学別演習）"},
     "soukei":        {"name": "早慶クラス",     "price": 12500, "label": "早慶クラス（大学別演習）"},
     # 2026-11-17 塾長決定: アーカイブ専用の大学別クラス3つ (塾生専用・毎週2本・各12,500円・12月開講)
-    "archive-kankan":    {"name": "志望大学・学部別 対策クラス【関関同立】",           "price": 12500, "label": "志望大学・学部別 対策クラス【関関同立】（動画配信）"},
-    "archive-kyutei": {"name": "志望大学・学部別 対策クラス【旧帝大・神戸大】",       "price": 12500, "label": "志望大学・学部別 対策クラス【旧帝大・神戸大】（動画配信）"},
-    "archive-ninki": {"name": "志望大学・学部別 対策クラス【人気国公立】",           "price": 12500, "label": "志望大学・学部別 対策クラス【人気国公立】（動画配信）"},
-    "archive-chuken":    {"name": "志望大学・学部別 対策クラス【日東駒専・産近甲龍】", "price": 12500, "label": "志望大学・学部別 対策クラス【日東駒専・産近甲龍】（動画配信）"},
+    "archive-kankan":    {"name": "志望大学・学部別 対策クラス【関関同立】",           "price": 12500, "group": "taisaku", "addPrice": 6000, "label": "志望大学・学部別 対策クラス【関関同立】（動画配信）"},
+    "archive-kyutei": {"name": "志望大学・学部別 対策クラス【旧帝大・神戸大】",       "price": 12500, "group": "taisaku", "addPrice": 6000, "label": "志望大学・学部別 対策クラス【旧帝大・神戸大】（動画配信）"},
+    "archive-ninki": {"name": "志望大学・学部別 対策クラス【人気国公立】",           "price": 12500, "group": "taisaku", "addPrice": 6000, "label": "志望大学・学部別 対策クラス【人気国公立】（動画配信）"},
+    "archive-chuken":    {"name": "志望大学・学部別 対策クラス【日東駒専・産近甲龍】", "price": 12500, "group": "taisaku", "addPrice": 6000, "label": "志望大学・学部別 対策クラス【日東駒専・産近甲龍】（動画配信）"},
     "eiken-jun1":    {"name": "英検準１級",     "price": 8500, "label": "英検準1級対策"},
     "chu2":          {"name": "中学2年",       "price": 7500, "label": "中学2年 英語"},
     "chu1":          {"name": "中学基礎（中1・中2）", "price": 7500, "label": "中学基礎（定期テスト・中1/2）"},
@@ -300,14 +300,38 @@ def _validate(payload):
     }
 
 
+def _course_prices(courses):
+    """[(コースid, 情報, 実際の月額, 2つ目以降か)]。group が同じコース (taisaku = 志望大学・学部別 対策クラス) は
+    1つ目が price・2つ目からは addPrice (2026-11-19 塾長決定: 1クラス目 12,500・2クラス目から1クラスにつき 6,000)。
+    payment/courses.json・register.html・app.js・入塾申込書 (Netlify) も同じ決まりで計算する。"""
+    seen = set()
+    out = []
+    for c in courses:
+        info = COURSES.get(c)
+        if not info:
+            continue
+        g = info.get("group")
+        extra = bool(g and g in seen and info.get("addPrice") is not None)
+        if g:
+            seen.add(g)
+        out.append((c, info, int(info["addPrice"]) if extra else info["price"], extra))
+    return out
+
+
+def _course_display(info, extra):
+    # 2つ目以降は短い名前にする (内訳 fee_breakdown は metadata で 240 字に切られるため。例「対策クラス【関関同立】（2クラス目以降）」)
+    name = info.get('label') or info['name']
+    if extra:
+        name = name.replace("志望大学・学部別 ", "").replace("（動画配信）", "") + "（2クラス目以降）"
+    return name
+
+
 def _calculate_fee(courses, options):
     total = 0
     breakdown = []
-    for c in courses:
-        info = COURSES.get(c)
-        if info:
-            total += info["price"]
-            breakdown.append(f"{info.get('label') or info['name']} ¥{info['price']:,}")   # 保護者に見せる内訳は申込書と同じ表示名
+    for c, info, price, extra in _course_prices(courses):
+        total += price
+        breakdown.append(f"{_course_display(info, extra)} ¥{price:,}")   # 保護者に見せる内訳は申込書と同じ表示名
     for o in options:
         info = OPTIONS.get(o)
         if info:
@@ -569,10 +593,8 @@ def _create_first_charge_session(secret_key, payload, fee, breakdown, registrati
     ]
     # 明細: 入塾金 → 各コース (初月) → 設備費。金額はすべてサーバ側カタログ (クライアントの金額は使わない)
     items = [(ENTRY_FEE_NAME + "（初回のみ）", ENTRY_FEE)]
-    for c in payload["courses"]:
-        info = COURSES.get(c)
-        if info:
-            items.append((f"{info.get('label') or info['name']} 受講料（{start_label}分）", info["price"]))   # 明細も申込書と同じ表示名・開始月の分
+    for c, info, price, extra in _course_prices(payload["courses"]):
+        items.append((f"{_course_display(info, extra)} 受講料（{start_label}分）", price))   # 明細も申込書と同じ表示名・開始月の分
     for o in payload["options"]:
         info = OPTIONS.get(o)
         if info:

@@ -1,6 +1,6 @@
 {
-  "_comment": "AI学習コーチ塾 コース単価カタログ。register.html (表示) と api/register-subscribe.py の COURSES/OPTIONS (実課金額) の両方で参照される。label = 入塾申込書と同じ保護者向け表示名 (Stripe 明細・メール用。name は名簿の正規名なので変えない)。価格改定時は両ファイルを必ず同じ値に更新し、`python3 scripts/check_course_price_sync.py` で一致を検証すること (ズレると表示価格と請求額が食い違う)。",
-  "version": "2026-11-18a",
+  "_comment": "AI学習コーチ塾 コース単価カタログ。register.html (表示) と api/register-subscribe.py の COURSES/OPTIONS (実課金額) の両方で参照される。label = 入塾申込書と同じ保護者向け表示名 (Stripe 明細・メール用。name は名簿の正規名なので変えない)。group が同じコース (taisaku = 志望大学・学部別 対策クラス) は、1つ目が price・2つ目からは addPrice (2026-11-19 塾長決定: 1クラス目 12,500・2クラス目から 1クラスにつき 6,000)。価格改定時は両ファイルを必ず同じ値に更新し、`python3 scripts/check_course_price_sync.py` で一致を検証すること (ズレると表示価格と請求額が食い違う)。",
+  "version": "2026-11-19a",
   "currency": "JPY",
   "courses": [
     { "id": "kobetsu",      "name": "個別指導",          "price": 25000, "tier": "kobetsu" },
@@ -10,10 +10,10 @@
     { "id": "kanri-monitor","name": "学習管理モニター",     "price": 16500, "tier": "high" },
     { "id": "gmarch",       "name": "GMARCH",         "price": 12500, "tier": "mid", "label": "GMARCHコース（大学別演習）" },
     { "id": "soukei",       "name": "早慶クラス",         "price": 12500, "tier": "mid", "label": "早慶クラス（大学別演習）" },
-    { "id": "archive-kankan",    "name": "志望大学・学部別 対策クラス【関関同立】",           "price": 12500, "tier": "mid", "label": "志望大学・学部別 対策クラス【関関同立】（動画配信）" },
-    { "id": "archive-kyutei", "name": "志望大学・学部別 対策クラス【旧帝大・神戸大】",       "price": 12500, "tier": "mid", "label": "志望大学・学部別 対策クラス【旧帝大・神戸大】（動画配信）" },
-    { "id": "archive-ninki", "name": "志望大学・学部別 対策クラス【人気国公立】",           "price": 12500, "tier": "mid", "label": "志望大学・学部別 対策クラス【人気国公立】（動画配信）" },
-    { "id": "archive-chuken",    "name": "志望大学・学部別 対策クラス【日東駒専・産近甲龍】", "price": 12500, "tier": "mid", "label": "志望大学・学部別 対策クラス【日東駒専・産近甲龍】（動画配信）" },
+    { "id": "archive-kankan",    "name": "志望大学・学部別 対策クラス【関関同立】",           "price": 12500, "tier": "mid", "group": "taisaku", "addPrice": 6000, "label": "志望大学・学部別 対策クラス【関関同立】（動画配信）" },
+    { "id": "archive-kyutei", "name": "志望大学・学部別 対策クラス【旧帝大・神戸大】",       "price": 12500, "tier": "mid", "group": "taisaku", "addPrice": 6000, "label": "志望大学・学部別 対策クラス【旧帝大・神戸大】（動画配信）" },
+    { "id": "archive-ninki", "name": "志望大学・学部別 対策クラス【人気国公立】",           "price": 12500, "tier": "mid", "group": "taisaku", "addPrice": 6000, "label": "志望大学・学部別 対策クラス【人気国公立】（動画配信）" },
+    { "id": "archive-chuken",    "name": "志望大学・学部別 対策クラス【日東駒専・産近甲龍】", "price": 12500, "tier": "mid", "group": "taisaku", "addPrice": 6000, "label": "志望大学・学部別 対策クラス【日東駒専・産近甲龍】（動画配信）" },
     { "id": "eiken-jun1",   "name": "英検準１級",         "price": 8500,  "tier": "standard", "label": "英検準1級対策" },
     { "id": "chu2",         "name": "中学2年",           "price": 7500,  "tier": "standard", "label": "中学2年 英語" },
     { "id": "chu1",         "name": "中学基礎（中1・中2）",   "price": 7500,  "tier": "standard", "label": "中学基礎（定期テスト・中1/2）" },

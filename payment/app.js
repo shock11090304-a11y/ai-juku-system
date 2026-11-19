@@ -780,12 +780,28 @@ async function loadCoursePriceList() {
     const res = await fetch('courses.json?t=' + Date.now());
     if (res.ok) {
       const json = await res.json();
-      for (const c of (json.courses || [])) if (c && c.name) list.push({ name: c.name, price: Number(c.price) || 0 });
+      for (const c of (json.courses || [])) if (c && c.name) list.push({ name: c.name, price: Number(c.price) || 0, group: c.group || null, addPrice: c.addPrice != null ? Number(c.addPrice) : null });
       for (const o of (json.options || [])) if (o && o.name) list.push({ name: o.name, price: Number(o.price) || 0 });
     }
   } catch (e) { console.warn('[coursePriceList] load failed:', e); }
   COURSE_PRICE_LIST = list;
   return COURSE_PRICE_LIST;
+}
+
+// コース名の配列 → カタログでの月額の合計。group が同じコース (taisaku = 志望大学・学部別 対策クラス) は
+// 1つ目が price・2つ目からは addPrice (2026-11-19 塾長決定。api/register-subscribe.py の _course_prices と同じ決まり)。
+// カタログに無い名前は unknown に入れて ¥0 換算。
+function catalogSum(names, list) {
+  const byName = {}; for (const c of list) if (!(c.name in byName)) byName[c.name] = c;
+  const seen = new Set(); let sum = 0; const unknown = [];
+  for (const n of names) {
+    const c = byName[n];
+    if (!c) { unknown.push(n); continue; }
+    const extra = !!(c.group && seen.has(c.group) && c.addPrice != null);
+    if (c.group) seen.add(c.group);
+    sum += extra ? c.addPrice : c.price;
+  }
+  return { sum, unknown };
 }
 
 // textarea のコース文字列 → 配列 (改行区切り・1行=1コース・重複除去)。
@@ -872,13 +888,8 @@ function syncEditChipActive() {
 // 月謝を一度カタログ合計にリセットしたい時のためのボタン。
 async function recalcEditFeeFromCourses() {
   const list = await loadCoursePriceList();
-  const priceMap = {}; for (const c of list) priceMap[c.name] = c.price;
   const courses = parseCoursesText(document.getElementById('editStudentCourses').value);
-  let sum = 0; const missing = [];
-  for (const cn of courses) {
-    if (priceMap[cn] != null) sum += priceMap[cn];
-    else missing.push(cn);
-  }
+  const { sum, unknown: missing } = catalogSum(courses, list);
   // 上書きは設備費・割引・個別指導などの上乗せ分を消すため、現在額と差があれば確認
   const curFee = parseInt(document.getElementById('editStudentFee').value, 10);
   if (!isNaN(curFee) && curFee !== sum) {
@@ -918,9 +929,9 @@ async function autoAdjustFeeForCourseChange() {
   const added = newCourses.filter(c => !baseSet.has(c));
   const removed = editFeeBaseCourses.filter(c => !newSet.has(c));
   if (!added.length && !removed.length) return;   // コース変化なし
-  let delta = 0; const unknown = [];
-  for (const c of added)   { if (priceMap[c] != null) delta += priceMap[c]; else unknown.push(c); }
-  for (const c of removed) { if (priceMap[c] != null) delta -= priceMap[c]; else unknown.push(c); }
+  // 差額は「新しいコース一式のカタログ合計 − 前のコース一式のカタログ合計」(対策クラスの2クラス目からの単価も反映される)
+  const delta = catalogSum(newCourses, list).sum - catalogSum(editFeeBaseCourses, list).sum;
+  const unknown = [...added, ...removed].filter(c => priceMap[c] == null);
   editFeeBaseCourses = newCourses;   // 基準を更新 (二重カウント防止)
   if (delta !== 0) {
     const feeEl = document.getElementById('editStudentFee');
@@ -934,8 +945,9 @@ async function autoAdjustFeeForCourseChange() {
       setEditNote('⚠ 月謝欄を ¥0 にしました（差額で計算するとマイナスになります）。割引・設備費を含む実額を手動でご入力ください。', true);
     } else {
       const parts = [];
-      for (const c of added)   if (priceMap[c] != null) parts.push(`${c} +¥${priceMap[c].toLocaleString()}`);
-      for (const c of removed) if (priceMap[c] != null) parts.push(`${c} −¥${priceMap[c].toLocaleString()}`);
+      for (const c of added)   if (priceMap[c] != null) parts.push(`${c} を追加`);
+      for (const c of removed) if (priceMap[c] != null) parts.push(`${c} を削除`);
+      parts.push(`差額 ${delta > 0 ? '+' : '−'}¥${Math.abs(delta).toLocaleString()}`);
       if (unknown.length) setEditNote(`月謝欄を ¥${next.toLocaleString()} に更新（${parts.join(' / ')}）。ただし ${unknown.join('・')} は単価カタログに無いため未調整 → 手動でご確認を`, true);
       else setEditNote(`月謝欄を ¥${next.toLocaleString()} に更新（${parts.join(' / ')}）`, false);
     }
