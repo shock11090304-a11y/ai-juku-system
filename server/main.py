@@ -2257,6 +2257,25 @@ def init_db():
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_kt_purchases_session ON kt_purchases(session_id);
     CREATE INDEX IF NOT EXISTS idx_kt_purchases_email ON kt_purchases(email);
+    -- 📗 英検準2級 ステップアップ講座 (単発の買い切り・/api/ep2/checkout・2026-11-19) の購入記録。
+    --   plan = ep2-std / ep2-plus / ep2-upgrade (通常→質問つきの差額)。view_until = 視聴期限 (JST の日付・支払い日+5か月)。
+    --   student_id 列なし (_ORPHAN_SWEEP_TABLES 対象外)。
+    CREATE TABLE IF NOT EXISTS ep2_purchases (
+        id {pk},
+        session_id TEXT NOT NULL,
+        email TEXT NOT NULL,
+        name TEXT DEFAULT '',
+        plan TEXT DEFAULT '',
+        amount INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'paid',
+        app_id TEXT DEFAULT '',
+        livemode INTEGER DEFAULT 1,
+        paid_at TIMESTAMP,
+        view_until TEXT DEFAULT '',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_ep2_purchases_session ON ep2_purchases(session_id);
+    CREATE INDEX IF NOT EXISTS idx_ep2_purchases_email ON ep2_purchases(email);
     -- ❄️ 冬期講習の申込ページの閲覧数 (2026-11-18)。日付 (JST)・ページ・来た元ごとの件数だけ。IP・端末・個人は残さない。
     CREATE TABLE IF NOT EXISTS winter_pageviews (
         day TEXT NOT NULL,
@@ -4064,6 +4083,11 @@ async def _start_background_tasks():
         task = asyncio.create_task(_kt_notify_scheduler())
         _BACKGROUND_TASKS.append(task)
         log.info("[Startup] Kyotsu kakomon notify scheduler launched")
+    # 📗 英検準2級講座のお知らせ (毎日 JST 8:06・販売前は何もしない)。EP2_NOTIFY_ENABLED=0 で止める
+    if os.getenv("EP2_NOTIFY_ENABLED", "1").strip().lower() not in ("0", "false", "off", "no"):
+        task = asyncio.create_task(_ep2_notify_scheduler())
+        _BACKGROUND_TASKS.append(task)
+        log.info("[Startup] Eiken pre-2 course notify scheduler launched")
     if CRON_SECRET and CLASS_REC_AUTO_ASSIGN_ENABLED:
         task = asyncio.create_task(_class_rec_auto_assign_scheduler())
         _BACKGROUND_TASKS.append(task)
@@ -34099,6 +34123,10 @@ def stripe_webhook(
             if not _kt_webhook_record(session):   # 📝 共通テスト過去問 (students に触れない)。記録できなければ 500 で再送させる
                 _stripe_event_forget(event_id)
                 raise HTTPException(status_code=500, detail="kt purchase record failed (Stripe will retry)")
+        if _meta_system == EP2_SYSTEM_TAG and session.get("payment_status") in ("paid", "no_payment_required"):
+            if not _ep2_webhook_record(session):   # 📗 英検準2級講座
+                _stripe_event_forget(event_id)
+                raise HTTPException(status_code=500, detail="ep2 record failed")
         if _meta_system.startswith("juku-payment"):
             log.info(f"[Stripe webhook] Skipping juku-payment event (system={_meta_system}) - handled by Vercel /payment/api/stripe-webhook")
             return JSONResponse({"received": True, "skipped_reason": "juku-payment system tag"}, status_code=200)
@@ -34788,6 +34816,15 @@ def stripe_webhook(
                 _refund_fail_alert("共通テスト過去問", event_id, charge, _kr_e)
                 _stripe_event_forget(event_id)
                 raise HTTPException(status_code=500, detail="kt refund handling failed (Stripe will retry)")
+        if ((charge.get("metadata") or {}).get("system") or "").strip() == EP2_SYSTEM_TAG:
+            # 📗 英検準2級講座の返金 → 視聴を止める (失敗は 500 で再送)
+            try:
+                _ep2_on_refund(charge)
+            except Exception as _er_e:
+                log.error(f"[ep2] refund handling failed: {type(_er_e).__name__}: {str(_er_e)[:200]}")
+                _refund_fail_alert("英検準2級講座", event_id, charge, _er_e)
+                _stripe_event_forget(event_id)
+                raise HTTPException(status_code=500, detail="ep2 refund handling failed (Stripe will retry)")
         _ch_inv = charge.get("invoice")
         if isinstance(_ch_inv, dict):
             _ch_inv = _ch_inv.get("id")
@@ -58019,8 +58056,9 @@ COURSE_NOTIFY_INLINE_MAX = 15   # これを超える宛先はバックグラウ�
 def _course_notify_targets(video_id: int, course_key: str, resend_all: bool = False) -> list:
     """お知らせの宛先 = その講座の有効受講者。resend_all=False なら、この動画をまだ受け取っていない人だけ。
     ❄️ 冬期講習の講座 (w26-…) は、その講座を買った人 (paid・視聴期間内) が宛先。"""
-    if _winter_is_video_key(course_key) or course_key in KT_COURSES:
-        buyers = _winter_buyers() if _winter_is_video_key(course_key) else _kt_buyers()   # 📝 過去問は kt_purchases の購入者
+    if _winter_is_video_key(course_key) or course_key in KT_COURSES or course_key == EP2_COURSE_KEY:
+        buyers = (_winter_buyers() if _winter_is_video_key(course_key) else _ep2_buyers() if course_key == EP2_COURSE_KEY
+                  else _kt_buyers())   # 📝 過去問は kt_purchases・📗 英検準2級は ep2_purchases の購入者
         done = set()
         if not resend_all:
             conn = db()
@@ -58322,7 +58360,7 @@ def course_login_request(payload: CourseLoginRequest, request: Request):
             log.warning("[course] login lookup budget exceeded (no Stripe call)")
             return generic
     member = _course_member_refresh(email)
-    if not member and (_winter_keys_for_email(email) or _kt_keys_for_email(email)):
+    if not member and (_winter_keys_for_email(email) or _kt_keys_for_email(email) or _ep2_keys_for_email(email)):
         member = _winter_ensure_member(email)   # ❄️📝 講習・過去問の購入はあるのに行が無い (記録の途中で落ちた等) → ここで用意
     member = _course_member_with_access(member)
     if not member:
@@ -58385,7 +58423,10 @@ def course_me(authorization: Optional[str] = Header(None)):
             "winter_view_until": WINTER_VIEW_UNTIL if member.get("winter") else None,
             # 📝 共通テスト過去問: 買った講座 (年度) と配信日・視聴期限 (配信前の年度は「○月○日配信」と出す)
             "kt": [{"key": k, "name": _course_key_name(k), "delivery": KT_COURSES[k]["delivery"]} for k in (member.get("kt") or [])],
-            "kt_view_until": KT_VIEW_UNTIL if member.get("kt") else None}
+            "kt_view_until": KT_VIEW_UNTIL if member.get("kt") else None,
+            # 📗 英検準2級講座: 視聴期限は人ごと (一番遅い期限)
+            "ep2": [{"key": k, "name": _course_key_name(k)} for k in (member.get("ep2") or [])],
+            "ep2_view_until": (member.get("ep2_until") or None) if member.get("ep2") else None}
 
 
 @app.post("/api/admin/course/videos")
@@ -58394,7 +58435,7 @@ def admin_course_video_create(payload: CourseVideoCreateRequest, request: Reques
     _check_rate_limit_ip(request, bucket="course_admin", limit=60, window=60)
     _verify_admin_required(authorization)
     key = (payload.course_key or "").strip()
-    if key not in COURSE_KEYS and not _winter_is_video_key(key) and key not in KT_COURSES:
+    if key not in COURSE_KEYS and not _winter_is_video_key(key) and key not in KT_COURSES and key != EP2_COURSE_KEY:
         raise HTTPException(status_code=400, detail="講座の指定が不正です")
     title = _sanitize_text(payload.title, 200)
     if not title:
@@ -58423,7 +58464,7 @@ def admin_course_video_create(payload: CourseVideoCreateRequest, request: Reques
     finally:
         conn.close()
     result = {"ok": True, "id": vid, "youtube_id": yid, "publish_date": pub, "notified": None}
-    if (_winter_is_video_key(key) or key in KT_COURSES) and payload.notify is False:
+    if (_winter_is_video_key(key) or key in KT_COURSES or key == EP2_COURSE_KEY) and payload.notify is False:
         # ❄️📝 「知らせる」を外して登録した講習・過去問の動画は、配信日の朝のまとめでも知らせない (印を台帳に残す)
         try:
             _winter_mark_noticed(_WINTER_NOAUTO, [vid])
@@ -58468,8 +58509,14 @@ def admin_course_video_list(authorization: Optional[str] = Header(None)):
     # 📝 共通テスト過去問の講座 (CEO の講座の選択肢に「共通テスト過去問」として足す。active_members = 視聴期間内の購入者)
     kt_courses = [{"key": k, "name": v["name"], "delivery": v["delivery"],
                    "active_members": sum(1 for b in _kb.values() if k in b["keys"])} for k, v in KT_COURSES.items()]
+    try:
+        _eb = _ep2_buyers()
+    except Exception:
+        _eb = {}
+    # 📗 英検準2級講座 (CEO の講座の選択肢に足す。active_members = 視聴期間内の購入者)
+    ep2_courses = [{"key": EP2_COURSE_KEY, "name": EP2_COURSE_NAME, "active_members": len(_eb)}]
     return {"videos": videos, "courses": [{"key": k, "name": v, "active_members": counts[k]} for k, v in COURSE_KEYS.items()],
-            "winter_courses": winter_courses, "kt_courses": kt_courses}
+            "winter_courses": winter_courses, "kt_courses": kt_courses, "ep2_courses": ep2_courses}
 
 
 @app.patch("/api/admin/course/videos/{video_id}")
@@ -58573,12 +58620,18 @@ def admin_course_members(authorization: Optional[str] = Header(None)):
         _kb = _kt_buyers()
     except Exception:
         _kb = {}
+    try:
+        _eb = _ep2_buyers()
+    except Exception:
+        _eb = {}
     for m in members:
         m["course_names"] = [COURSE_KEYS[k] for k in m["courses"]]
         _wk = (_wb.get(m["email"]) or {}).get("keys") or set()
         m["winter_names"] = [_course_key_name(WINTER_VIDEO_PREFIX + k) for k in WINTER_ITEMS if WINTER_VIDEO_PREFIX + k in _wk]
         _kk = (_kb.get(m["email"]) or {}).get("keys") or set()
         m["kt_names"] = [KT_COURSES[k]["name"] for k in KT_COURSES if k in _kk]
+        _eu = (_eb.get(m["email"]) or {}).get("until") or ""
+        m["ep2_names"] = [f"{EP2_COURSE_NAME}（{_eu}まで）"] if _eu else []
         m["ending_list"] = [{"key": k, "name": COURSE_KEYS[k], "end": m["ending"][k]} for k in m["courses"] if k in m["ending"]]
     return {"members": members, "notify_toggle": _table_has_column("course_members", "notify_off")}
 
@@ -58810,6 +58863,8 @@ def _course_key_name(key: str) -> str:
         return WINTER_ITEMS[key[len(WINTER_VIDEO_PREFIX):]]["name"]
     if key in KT_COURSES:
         return KT_COURSES[key]["name"]
+    if key == EP2_COURSE_KEY:
+        return EP2_COURSE_NAME
     return key
 
 
@@ -59210,13 +59265,16 @@ def _course_member_with_access(member: Optional[dict]) -> Optional[dict]:
         return None
     member["winter"] = _winter_keys_for_email(member["email"])
     member["kt"] = _kt_keys_for_email(member["email"])   # 📝 共通テスト過去問
-    if (member["status"] == "active" and member["courses"]) or member["winter"] or member["kt"]:
+    _ea = _ep2_access(member["email"])   # 📗 英検準2級講座 (期限は人ごと)
+    member["ep2"] = [EP2_COURSE_KEY] if _ea["until"] else []
+    member["ep2_until"] = _ea["until"]
+    if (member["status"] == "active" and member["courses"]) or member["winter"] or member["kt"] or member["ep2"]:
         return member
     return None
 
 
 def _course_member_all_keys(member: dict) -> list:
-    return list(member.get("courses") or []) + list(member.get("winter") or []) + list(member.get("kt") or [])
+    return list(member.get("courses") or []) + list(member.get("winter") or []) + list(member.get("kt") or []) + list(member.get("ep2") or [])
 
 
 def _winter_buyers() -> dict:
@@ -60566,6 +60624,706 @@ def admin_kt_purchase_status(purchase_id: int, payload: WinterPurchaseStatusIn, 
     finally:
         conn.close()
     return {"ok": True, "id": int(purchase_id), "status": new_st, "keys": keys}
+
+
+# ==========================================================================
+# 📗 英検準2級 ステップアップ講座 (動画・単発の買い切り・2026-11-19 塾長が選択式で決定)
+# ==========================================================================
+#   流れは共通テスト過去問 (kt) と同じ: 申込ページ (Netlify の eiken-p2.html・生成元は塾長のデスクトップの build_eikenp2_form.py)
+#   → POST /api/ep2/checkout (ふつうのフォーム送信) → Stripe Checkout (mode=payment・1 回)
+#   → 本体 webhook が ep2_purchases に記録して視聴ページのログインリンクを送る → 視聴ページ (course-videos.html)。
+#   ★金額の正はここ (EP2_PRODUCTS)。申込ページ・特商法の表示は同じ値 (値を変えるときは全部)。
+#   ★視聴期限は人ごと: 支払った日 (JST) + EP2_VIEW_MONTHS か月 (塾長「申込から5か月」= 4 か月の講座＋二次の面接まで)。
+#     期限は記録の行 (view_until) に持つ。延ばすときは管理 API で行の view_until を書き換える。
+#   ★販売は「動画が全部そろって塾長が確認してから」(塾長 11-19)。EP2_SALES_FROM (JST の日付) が空なら決済の入口は閉じたまま。
+#   - コースは 2 つ: 通常 (ep2-std) と 質問つき (ep2-plus: 作文の添削4回・LINE で質問)。見られる動画は同じ講座キー ep2-step。
+#   - 通常コースの視聴期間中に質問つきを選んだら、差額だけ払う (期限は今の期限のまま)。
+#   - 質問つきを買った人は塾長にメール (LINE で申込のメールアドレスが届いたら、この一覧と照らす)。
+#   - 返金: 原則なし・二重決済などは Stripe で返金 → charge.refunded で視聴を止める (kt と同じ)。
+#   - 買った人の course_members 行は status='canceled'・courses=[] のまま (_winter_ensure_member。月額講座を解約にしない)。
+#   - metadata.system = juku-payment-eikenp2。月謝アプリの Stripe 取込はこのタグも除外する (payment/app.js)。
+EP2_SYSTEM_TAG = "juku-payment-eikenp2"
+EP2_LABEL = "英検準2級 ステップアップ講座"
+EP2_COURSE_KEY = "ep2-step"
+EP2_COURSE_NAME = "英検準2級 ステップアップ講座（全17週）"
+EP2_VIEW_MONTHS = 5
+EP2_SALES_FROM = os.getenv("EP2_SALES_FROM", "").strip()   # 例 "2027-01-10"。空 = 販売前 (決済画面を作らない)
+EP2_SITE_URL = os.getenv("EP2_SITE_URL", WINTER_SITE_URL).rstrip("/")
+EP2_PAGE = "eiken-p2"
+EP2_PRICE_STD = 19800
+EP2_PRICE_PLUS = 29800
+# 売るもの (sku) → {name, price, plus}。並び = 申込ページの並び
+EP2_PRODUCTS = {
+    "ep2-std": {"name": "通常コース（動画＋テキストPDF3冊＋リスニング放送音声）", "price": EP2_PRICE_STD, "plus": False},
+    "ep2-plus": {"name": "質問つきコース（通常コースの全部＋作文の添削4回＋LINEで質問）", "price": EP2_PRICE_PLUS, "plus": True},
+}
+EP2_UPGRADE_NAME = "質問つきコースへの切りかえ（通常コースとの差額）"
+
+
+def _ep2_add_months(day: str, months: int) -> str:
+    """'YYYY-MM-DD' + months か月 (月末は丸める: 1/31 + 1 か月 = 2/28)。"""
+    import calendar
+    y, m, d = (int(x) for x in day[:10].split("-"))
+    m0 = m - 1 + int(months)
+    y, m = y + m0 // 12, m0 % 12 + 1
+    return f"{y:04d}-{m:02d}-{min(d, calendar.monthrange(y, m)[1]):02d}"
+
+
+_EP2_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+if EP2_SALES_FROM and not _EP2_DATE_RE.match(EP2_SALES_FROM):
+    log.error(f"[ep2] EP2_SALES_FROM の形が違います (YYYY-MM-DD): {EP2_SALES_FROM!r} — 販売の入口は閉じたまま")
+
+
+def _ep2_on_sale(today: Optional[str] = None) -> bool:
+    return bool(EP2_SALES_FROM) and bool(_EP2_DATE_RE.match(EP2_SALES_FROM)) and (today or _winter_today()) >= EP2_SALES_FROM
+
+
+def _ep2_fmt_date(day: str) -> str:
+    return f"{day[:4]}年{_winter_fmt_date(day)}" if day else ""
+
+
+def _ep2_back_url() -> str:
+    return f"{EP2_SITE_URL}/{EP2_PAGE}.html"
+
+
+def _ep2_error_page(message: str, status: int = 400):
+    return _winter_error_page(message, status=status, label=EP2_LABEL, back_url=_ep2_back_url())
+
+
+def _ep2_access(email: str, today: Optional[str] = None, strict: bool = False) -> dict:
+    """そのメールの視聴の権利 {until: 'YYYY-MM-DD' (一番遅い期限) | '', plus: bool (期間中の質問つきがある)}。
+    paid の行のうち view_until が今日以降のものだけを見る。"""
+    out = {"until": "", "plus": False}
+    email = _course_norm_email(email)
+    if not email:
+        return out
+    today = today or _winter_today()
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT plan, view_until FROM ep2_purchases WHERE email = ? AND status = 'paid'", (email,))
+        rows = c.fetchall()
+    except Exception as e:
+        log.warning(f"[ep2] access lookup failed: {type(e).__name__}")
+        if strict:
+            raise   # 決済の入口: 読めないまま「購入なし」として全額の画面を作らない
+        return out
+    finally:
+        conn.close()
+    for r in rows:
+        vu = str(r["view_until"] or "")[:10]
+        if not vu or vu < today:
+            continue
+        if vu > out["until"]:
+            out["until"] = vu
+        if (r["plan"] or "") in ("ep2-plus", "ep2-upgrade"):
+            out["plus"] = True
+    return out
+
+
+def _ep2_keys_for_email(email: str, today: Optional[str] = None) -> list:
+    """視聴ページ用: 期間中なら [ep2-step]、でなければ []。"""
+    return [EP2_COURSE_KEY] if _ep2_access(email, today)["until"] else []
+
+
+def _ep2_buyers(today: Optional[str] = None) -> dict:
+    """{email: {name, keys:set, until}} — 視聴期間中の paid の購入者 (お知らせの宛先)。"""
+    today = today or _winter_today()
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT email, name, view_until FROM ep2_purchases WHERE status = 'paid' ORDER BY id")
+        rows = c.fetchall()
+    finally:
+        conn.close()
+    out = {}
+    for r in rows:
+        vu = str(r["view_until"] or "")[:10]
+        if not vu or vu < today:
+            continue
+        ent = out.setdefault(r["email"], {"name": "", "keys": {EP2_COURSE_KEY}, "until": ""})
+        ent["name"] = ent["name"] or (r["name"] or "")
+        ent["until"] = max(ent["until"], vu)
+    return out
+
+
+def _ep2_published_videos(today: Optional[str] = None) -> list:
+    """講座 ep2-step の、今日までに公開された動画 (公開日→登録順)。"""
+    today = today or _winter_today()
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM course_videos WHERE is_published = 1 AND course_key = ? ORDER BY publish_date, id", (EP2_COURSE_KEY,))
+        rows = c.fetchall()
+    finally:
+        conn.close()
+    return [_course_video_row(r) for r in rows if not (r["publish_date"] and str(r["publish_date"])[:10] > today)]
+
+
+def _ep2_price_for(sku: str, access: dict) -> tuple:
+    """(明細の名前, 金額, 'ep2-upgrade' or sku)。通常コースの期間中に質問つきを選んだら差額。"""
+    prod = EP2_PRODUCTS[sku]
+    if sku == "ep2-plus" and access.get("until") and not access.get("plus"):
+        return EP2_UPGRADE_NAME, EP2_PRICE_PLUS - EP2_PRICE_STD, "ep2-upgrade"
+    return prod["name"], int(prod["price"]), sku
+
+
+def _ep2_dup_page(access: dict, fields: dict):
+    """視聴期間中の人が同じ (か下の) コースを選んだときの確認画面。英検準2級は、もう一度払うと期限が今日から 5 か月に延びる。"""
+    from fastapi.responses import HTMLResponse
+    def _esc(s):
+        return (str(s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;"))
+    hidden = "".join(f'<input type="hidden" name="{_esc(k)}" value="{_esc(v)}">' for k, v in fields.items())
+    course = "質問つきコース" if access.get("plus") else "通常コース"
+    html = ("<!DOCTYPE html><html lang=\"ja\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
+            f"<meta name=\"robots\" content=\"noindex\"><title>すでにお支払い済みです | {_esc(EP2_LABEL)}</title></head>"
+            "<body style=\"font-family:system-ui,sans-serif;background:#F8F9FB;color:#1A1A1A;line-height:1.8;margin:0;\">"
+            f"<div style=\"background:#0B2545;color:#fff;text-align:center;padding:1.2rem;\">トリリオン英語塾　{_esc(EP2_LABEL)}</div>"
+            "<div style=\"max-width:600px;margin:1.5rem auto;padding:1.2rem;background:#fff;border:1px solid #E5E7EB;border-radius:6px;\">"
+            "<h1 style=\"font-size:1.1rem;color:#92400E;\">このメールアドレスで、すでにお支払い済みです</h1>"
+            f"<p>{_esc(course)}を <b>{_esc(_ep2_fmt_date(access.get('until') or ''))}まで</b>ご覧いただけます。視聴ページ（ご案内メールのリンク）からご覧ください。</p>"
+            "<p>もう一度お支払いいただくと、視聴期限が<b>今日から5か月</b>に延びます（期限を延ばしたいとき以外はお支払いは不要です）。"
+            "この画面で進んでお支払いいただいた分は、二重決済としての返金の対象になりません。ごきょうだいの分は、別のメールアドレスでお申し込みください。</p>"
+            f"<form method=\"POST\" action=\"\" style=\"margin-top:1rem;\">{hidden}<input type=\"hidden\" name=\"confirm_dup\" value=\"1\">"
+            "<button type=\"submit\" style=\"padding:0.45rem 0.9rem;border:1px solid #9CA3AF;border-radius:4px;background:#fff;color:#4B5563;font:inherit;font-size:0.85rem;cursor:pointer;\">期限を延ばすために支払いへ進む</button></form>"
+            f"<p style=\"margin-top:1rem;\"><a href=\"{_esc(_ep2_back_url())}\">申込ページへ戻る</a></p>"
+            f"<p style=\"font-size:0.85rem;color:#6B7280;\">ご不明な点は 公式 LINE（{_esc(COURSE_LINE_URL)}）またはメール（{_esc(COURSE_CONTACT_EMAIL)}）までご連絡ください。</p>"
+            "</div></body></html>")
+    return HTMLResponse(content=html, status_code=200)
+
+
+@app.post("/api/ep2/checkout")
+def ep2_checkout(request: Request, body: bytes = Depends(_raw_body_dep)):
+    """📗 英検準2級講座の申込ページの「カードでお支払いへ進む」(フォーム送信) → Stripe Checkout へ 303。だめなときは日本語の HTML。"""
+    try:
+        form = urllib.parse.parse_qs((body or b"")[:8192].decode("utf-8", "replace"), keep_blank_values=True)
+    except Exception:
+        form = {}
+    def _f(name):
+        v = form.get(name) or [""]
+        return (v[0] or "").strip()
+    try:
+        _check_rate_limit_ip(request, bucket="ep2_checkout", limit=60, window=60)
+    except HTTPException:
+        return _ep2_error_page("混み合っています。1 分ほど待ってから、申込ページの「カードでお支払いへ進む」をもう一度押してください。", 429)
+    if os.getenv("EP2_CHECKOUT_ENABLED", "1").strip().lower() in ("0", "false", "off", "no"):
+        return _ep2_error_page("ただいまお支払いの受付を止めています。公式 LINE またはメールでお問い合わせください。", 503)
+    if not _ep2_on_sale():
+        return _ep2_error_page("英検準2級 ステップアップ講座は、まだお申し込みの受付を始めていません。受付の開始は申込ページでお知らせします。", 403)
+    if not STRIPE_SECRET_KEY:
+        return _ep2_error_page("お支払いの準備ができていません（設定の不足）。お手数ですが公式 LINE またはメールでご連絡ください。", 503)
+    email = _course_norm_email(_f("email"))
+    if not email or not _WINTER_EMAIL_RE.match(email):
+        return _ep2_error_page("メールアドレスの形が正しくありません。申込ページに戻って入力し直してください。")
+    try:
+        _check_rate_limit_value(email, bucket="ep2_checkout", limit=10, window=600)
+    except HTTPException:
+        return _ep2_error_page("短い時間に何度もお手続きがありました。10 分ほど待ってからもう一度お試しください。", 429)
+    sku = _f("course")
+    if sku not in EP2_PRODUCTS:
+        return _ep2_error_page("コースが選ばれていません。申込ページに戻って、通常コースか質問つきコースを選んでください。")
+    app_id = _f("app_id")
+    if not _WINTER_APP_ID_RE.match(app_id):
+        app_id = ""
+    try:
+        access = _ep2_access(email, strict=True)
+        n_videos = len(_ep2_published_videos())
+    except Exception:
+        return _ep2_error_page("ただいまお手続きを受け付けられません。少し時間をおいて、もう一度お試しください。", 503)
+    if not n_videos:
+        # 「お支払い後すぐ全部見られる」と書いて売るので、動画が 1 本も公開されていなければ売らない (登録漏れ・公開日の誤り)
+        return _ep2_error_page("ただいま講座の準備中のため、お申し込みを受け付けていません。公式 LINE またはメールでお問い合わせください。", 503)
+    # 二重払いの歯止め: 期間中の人が同じ (か下の) コースを選んだら一度確かめる (「このまま進む」で confirm_dup=1)
+    if _f("confirm_dup") != "1" and access["until"] and (access["plus"] or sku == "ep2-std"):
+        return _ep2_dup_page(access, {"course": sku, "email": email, "app_id": app_id})
+    name, price, plan = _ep2_price_for(sku, access)
+    meta = {"system": EP2_SYSTEM_TAG, "plan": plan, "total": str(price), "app_id": app_id, "page": EP2_PAGE}
+    import time as _t
+    expires = int(_t.time()) + 23 * 3600
+    if plan == "ep2-upgrade":
+        # 差額の切りかえは「今の期限」を決済画面に持たせる (記録のときに期限が切れていても、新しく 5 か月を付けない)。
+        # 画面の有効期限も今の期限の日の終わり (JST) まで (Stripe の下限 31 分は守る)
+        meta["base_until"] = access["until"]
+        end_ts = int(datetime.strptime(access["until"] + " 23:59:59", "%Y-%m-%d %H:%M:%S").replace(tzinfo=JST).timestamp())
+        expires = max(int(_t.time()) + 31 * 60, min(expires, end_ts))
+    params = {
+        "mode": "payment",
+        "line_items": [{"price_data": {"currency": "jpy", "unit_amount": int(price),
+                                       "product_data": {"name": f"{EP2_LABEL} {name}"[:250]}}, "quantity": 1}],
+        "customer_email": email,
+        "locale": "ja",
+        "payment_method_types": ["card"],
+        "success_url": f"{EP2_SITE_URL}/{EP2_PAGE}-thanks.html?session_id={{CHECKOUT_SESSION_ID}}",
+        "cancel_url": f"{EP2_SITE_URL}/{EP2_PAGE}.html?canceled=1",
+        "expires_at": expires,
+        "metadata": meta,
+        "payment_intent_data": {"metadata": meta, "description": EP2_LABEL},
+    }
+    if app_id:
+        params["client_reference_id"] = f"ep2-{app_id}"
+    try:
+        sess = get_stripe().checkout.Session.create(**params)
+        url = sess.get("url") if isinstance(sess, dict) else getattr(sess, "url", None)
+    except Exception as e:
+        log.error(f"[ep2] checkout create failed: {type(e).__name__}: {str(e)[:200]}")
+        return _ep2_error_page("お支払いの画面を用意できませんでした。少し時間をおいて、もう一度お試しください。", 502)
+    if not url:
+        return _ep2_error_page("お支払いの画面を用意できませんでした。少し時間をおいて、もう一度お試しください。", 502)
+    log.info(f"[ep2] checkout created plan={plan} total={price}")
+    return RedirectResponse(url=url, status_code=303)
+
+
+def _ep2_owner_mail(subject: str, body: str, event: str = "", info: Optional[dict] = None):
+    if event:
+        try:
+            _record_ai_critical_event(event, info or {})
+        except Exception:
+            pass
+    try:
+        _course_send_email(COURSE_CONTACT_EMAIL, f"[英検準2級講座] {subject}", body)
+    except Exception as e:
+        log.warning(f"[ep2] owner mail failed: {type(e).__name__}")
+
+
+def _ep2_plus_text() -> str:
+    return ("■ 質問つきコースの方へ（作文の添削4回・LINE で質問）\n"
+            f"1. トリリオン英語塾の公式 LINE を友だち追加してください: {COURSE_LINE_URL}\n"
+            "2. 最初のメッセージで「英検準2級講座」と、お申し込みのメールアドレスを送ってください（受講の確認に使います）。\n"
+            "3. 作文の添削（Eメール2回・意見2回）は、答案の写真か文を LINE で送ってください。3営業日以内に書き込みをして返します。\n"
+            "4. 質問も同じ LINE で受け付けます（視聴期間中・2営業日以内に返信します）。\n")
+
+
+def _ep2_webhook_record(session: dict) -> bool:
+    """本体 webhook から呼ぶ: 英検準2級講座の決済完了を ep2_purchases に記録し、視聴ページのログインリンクを送る。
+    同じ Checkout が 2 回届いても session_id の一意制約で 1 行・1 通。False = 記録そのものに失敗 (呼び出し側が Stripe に再送させる)。"""
+    try:
+        meta = session.get("metadata") or {}
+        sid = (session.get("id") or "").strip()
+        cd = session.get("customer_details") or {}
+        email = _course_norm_email(cd.get("email") or session.get("customer_email") or "")
+        plan = (meta.get("plan") or "").strip()
+        if session.get("livemode") is False and os.getenv("EP2_RECORD_TEST", "0").strip().lower() not in ("1", "true", "on", "yes"):
+            log.info("[ep2] test-mode checkout ignored (EP2_RECORD_TEST が無い)")
+            return True
+        if not sid or not email:
+            log.warning(f"[ep2] webhook missing fields (sid={bool(sid)} email={bool(email)})")
+            return True
+        if plan not in ("ep2-std", "ep2-plus", "ep2-upgrade"):
+            _ep2_owner_mail("★視聴を付けられない支払いがありました",
+                            f"英検準2級講座の決済のコース ({plan[:40] or '空'}) がサーバの表にありません。視聴は付いていません。"
+                            f"視聴を付けるか返金するかを決めてください（Claude に頼めます）。\n\n購入者のメール: {email}\nStripe の決済: {sid}",
+                            "ep2_unknown_plan", {"session_id": sid, "plan": plan[:40]})
+            return True
+        today = _winter_today()
+        until = _ep2_add_months(today, EP2_VIEW_MONTHS)
+        try:
+            prev = _ep2_access(email, strict=True)
+        except Exception as e:
+            log.error(f"[ep2] access lookup before record FAILED: {type(e).__name__}")
+            return False   # DB が読めない → 記録もできないはず。webhook が 500 で再送させる
+        if plan == "ep2-upgrade":
+            # 差額の切りかえは、決済画面を作ったときの期限のまま (記録のときに期限が切れていても新しく 5 か月を付けない)
+            base = (meta.get("base_until") or "").strip()
+            if _EP2_DATE_RE.match(base):
+                until = base
+            else:
+                until = prev["until"] or today
+                _ep2_owner_mail("★差額の切りかえの期限を確かめてください",
+                                f"差額（質問つきへの切りかえ）の支払いに、もとの期限の記録がありませんでした。期限を {until} にしました。"
+                                f"違っていれば POST /api/admin/ep2/purchases/{{id}}/status の view_until で直してください。\n\n購入者のメール: {email}\nStripe の決済: {sid}",
+                                "ep2_upgrade_no_base", {"session_id": sid})
+        status = "refunded" if _winter_session_fully_refunded(session) else "paid"
+        name = (cd.get("name") or "").strip()[:100]
+        try:
+            amount = int(session.get("amount_total") or 0)
+        except Exception:
+            amount = 0
+        app_id = (meta.get("app_id") or "")[:40]
+        try:
+            conn = db()
+            try:
+                c = conn.cursor()
+                c.execute("INSERT INTO ep2_purchases (session_id, email, name, plan, amount, status, app_id, livemode, paid_at, view_until, created_at) "
+                          "VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT (session_id) DO NOTHING RETURNING id",
+                          (sid, email, name, plan, amount, status, app_id,
+                           0 if session.get("livemode") is False else 1, _utc_naive_iso(), until, _utc_naive_iso()))
+                row = c.fetchone()
+                conn.commit()
+            finally:
+                conn.close()
+        except Exception as e:
+            log.error(f"[ep2] purchase record FAILED: {type(e).__name__}: {str(e)[:200]}")
+            try:
+                _record_ai_critical_event("ep2_purchase_record_failed", {"session_id": sid, "error": f"{type(e).__name__}"[:100]})
+            except Exception:
+                pass
+            return False
+        if not row:
+            log.info("[ep2] purchase already recorded (duplicate webhook)")
+            return True
+        log.info(f"[ep2] purchase recorded id={row['id']} plan={plan} amount={amount} status={status}")
+        if status != "paid":
+            return True
+        plus = plan in ("ep2-plus", "ep2-upgrade")
+        if (plan != "ep2-upgrade" and prev["until"]) or (plan == "ep2-upgrade" and (prev["plus"] or not prev["until"])):
+            # 2 つのタブで両方払った・差額を 2 回払った等 (決済画面を作るときの確認は、画面の有効期限のあいだの二重払いを止められない)
+            _ep2_owner_mail("★二重払いの疑いがあります",
+                            f"英検準2級講座の支払い（{plan}・{amount:,}円・購入 #{row['id']}）の時点で、同じメールアドレスに"
+                            f"{'期間中の購入（' + prev['until'] + 'まで' + ('・質問つき' if prev['plus'] else '') + '）がありました' if prev['until'] else '期間中の通常コースがありませんでした'}。\n"
+                            "確認画面で「期限を延ばすために支払いへ進む」を選んだ買い直しなら問題ありません。そうでなければ購入一覧（GET /api/admin/ep2/purchases）で確かめ、"
+                            "Stripe で返金してください（返金すると視聴の記録も自動で止まります）。\n\n"
+                            f"購入者のメール: {email}\nStripe の決済: {sid}", "ep2_possible_double_pay", {"session_id": sid})
+        if plus:
+            _ep2_owner_mail("質問つきコースの申込がありました",
+                            f"英検準2級 ステップアップ講座の質問つきコース（{'差額の切りかえ' if plan == 'ep2-upgrade' else '新規'}・{amount:,}円）の支払いがありました。\n\n"
+                            f"購入者のメール: {email}\nお名前: {name or '-'}\n視聴期限: {_ep2_fmt_date(until)}\n\n"
+                            "公式 LINE に「英検準2級講座」とこのメールアドレスが届いたら、質問・添削（4回）の相手として扱ってください。"
+                            "添削の回数は CEO の購入一覧（GET /api/admin/ep2/purchases）を見ながら数えます。")
+        try:
+            member = _winter_ensure_member(email, name)
+        except Exception as e:
+            log.warning(f"[ep2] ensure member failed: {type(e).__name__}")
+            member = None
+        if os.getenv("EP2_WELCOME_ENABLED", "1").strip().lower() in ("0", "false", "off", "no"):
+            return True
+        if not member:
+            _ep2_owner_mail("★視聴の案内メールが送れませんでした",
+                            f"支払いは記録しましたが、受講者の行を作れず案内メールを送れませんでした。\n購入者のメール: {email}\nStripe の決済: {sid}\n\n"
+                            "購入者に、視聴ページ https://trillion-ai-juku.com/course-videos.html でお支払いのメールアドレスを入れてログインリンクを取り直すよう伝えてください。",
+                            "ep2_welcome_mail_failed", {"session_id": sid})
+            return True
+        ready = _ep2_published_videos()
+        course_line = "質問つきコース" if plus else "通常コース"
+        lines = [f"{EP2_LABEL}（{course_line}）のお申し込みとお支払い（{amount:,}円・税込）を確認しました。ありがとうございます。", ""]
+        lines.append("授業動画・テキストの PDF・リスニングの放送音声は、下のリンクから視聴ページを開くとすぐにご覧いただけます。"
+                     "はじめての方は、第1週の講義からご覧ください。")
+        if not ready:
+            _ep2_owner_mail("★動画が1本も公開されていないのに支払いがありました",
+                            f"英検準2級講座の支払いがありましたが、視聴ページに公開中の動画がありません（登録漏れ・公開日の誤り）。CEO の 🎥 欄で確かめてください。\n\n"
+                            f"購入者のメール: {email}\nStripe の決済: {sid}", "ep2_sold_without_videos", {"session_id": sid})
+        lines.append(f"視聴は {_ep2_fmt_date(until)} までです。")
+        if plus:
+            lines += ["", _ep2_plus_text().rstrip("\n")]
+        res = _course_send_login_link(member, intro="\n".join(lines),
+                                      subject=f"【トリリオン英語塾】{EP2_LABEL} お支払いの確認と視聴ページのご案内")
+        if res.get("sent") and ready:
+            _winter_mark_noticed(email, [v["id"] for v in ready])
+        log.info(f"[ep2] welcome mail sent={res.get('sent')}")
+        if not res.get("sent"):
+            _ep2_owner_mail("★視聴の案内メールが送れませんでした",
+                            f"支払いは記録しましたが、案内メールが送れませんでした（{str(res.get('error') or 'send failed')[:200]}）。\n"
+                            f"購入者のメール: {email}\nStripe の決済: {sid}\n\n"
+                            "購入者に、視聴ページ https://trillion-ai-juku.com/course-videos.html でお支払いのメールアドレスを入れてログインリンクを取り直すよう伝えてください。"
+                            + ("\n質問つきコースなので、LINE の案内も伝えてください。" if plus else ""),
+                            "ep2_welcome_mail_failed", {"session_id": sid})
+        return True
+    except Exception as e:
+        log.warning(f"[ep2] after-record step failed: {type(e).__name__}: {str(e)[:200]}")
+        return True
+
+
+def _ep2_sync_from_stripe(days: int = 3, dry_run: bool = True) -> dict:
+    """Stripe の支払い済み Checkout (直近 days 日・metadata.system=juku-payment-eikenp2) のうち、ep2_purchases に無いものを補う。
+    返金・異議申し立てのあるものは記録しない (kt と同じ)。"""
+    import time as _t
+    if not STRIPE_SECRET_KEY:
+        return {"skipped": "no stripe key"}
+    since = int(_t.time()) - max(1, min(int(days), 60)) * 86400
+    found, missing = 0, []
+    for s_ in get_stripe().checkout.Session.list(created={"gte": since}, limit=100).auto_paging_iter():
+        s_ = s_.to_dict() if hasattr(s_, "to_dict") else dict(s_)
+        if ((s_.get("metadata") or {}).get("system") or "") != EP2_SYSTEM_TAG:
+            continue
+        if s_.get("payment_status") not in ("paid", "no_payment_required"):
+            continue
+        if ((s_.get("metadata") or {}).get("plan") or "") not in ("ep2-std", "ep2-plus", "ep2-upgrade"):
+            continue   # 表に無いコースは webhook のときに塾長へ 1 回知らせている (毎朝くり返さない)
+        found += 1
+        conn = db()
+        try:
+            c = conn.cursor()
+            c.execute("SELECT id FROM ep2_purchases WHERE session_id = ?", (s_.get("id") or "",))
+            exists = c.fetchone() is not None
+        finally:
+            conn.close()
+        if not exists:
+            missing.append(s_)
+    refunded_skip = [s_ for s_ in missing if _winter_session_refunded(s_)]
+    missing = [s_ for s_ in missing if s_ not in refunded_skip]
+    recorded = 0
+    if not dry_run:
+        for s_ in missing:
+            if _ep2_webhook_record(s_):
+                recorded += 1
+        for s_ in refunded_skip:
+            log.warning(f"[ep2] stripe sync: refunded/disputed checkout not recorded: {s_.get('id')}")
+    if missing:
+        log.warning(f"[ep2] stripe sync: {len(missing)} paid checkout(s) were not recorded (dry_run={dry_run})")
+    return {"paid_sessions": found, "missing": len(missing), "recorded": recorded, "skipped_refunded": len(refunded_skip), "dry_run": dry_run}
+
+
+def _ep2_on_refund(charge: dict) -> dict:
+    """本体 webhook の charge.refunded から呼ぶ: 全額返金 → その決済を refunded (視聴が止まる)。一部返金は塾長に知らせるだけ。
+    照会・DB の失敗は握りつぶさない (呼び出し側が 500 → Stripe が再送)。"""
+    pi = charge.get("payment_intent")
+    if isinstance(pi, dict):
+        pi = pi.get("id")
+    amount = int(charge.get("amount") or 0)
+    refunded_amt = int(charge.get("amount_refunded") or 0)
+    full = bool(charge.get("refunded")) or (amount > 0 and refunded_amt >= amount)
+    if not pi or refunded_amt <= 0:
+        return {"skipped": "no refund"}
+    sid = ""
+    lst = get_stripe().checkout.Session.list(payment_intent=pi, limit=1)
+    data = list(lst.get("data") if hasattr(lst, "get") else lst)
+    if data:
+        d0 = data[0].to_dict() if hasattr(data[0], "to_dict") else dict(data[0])
+        sid = d0.get("id") or ""
+    row = None
+    upgrade_ids = []
+    if sid:
+        conn = db()
+        try:
+            c = conn.cursor()
+            c.execute("SELECT id, email, plan, status, view_until FROM ep2_purchases WHERE session_id = ?", (sid,))
+            row = c.fetchone()
+            if row and full and row["status"] == "paid":
+                c.execute("UPDATE ep2_purchases SET status = 'refunded' WHERE id = ?", (row["id"],))
+                if row["plan"] == "ep2-std":
+                    # もとの通常コースが無くなったら、その上に乗せた差額 (同じ期限) も止める (差額 10,000 円だけで見られるのを防ぐ)
+                    c.execute("SELECT id FROM ep2_purchases WHERE email = ? AND plan = 'ep2-upgrade' AND status = 'paid' AND view_until = ?",
+                              (row["email"], row["view_until"]))
+                    upgrade_ids = [r["id"] for r in c.fetchall()]
+                    for uid in upgrade_ids:
+                        c.execute("UPDATE ep2_purchases SET status = 'refunded' WHERE id = ?", (uid,))
+                conn.commit()
+        finally:
+            conn.close()
+    if full and row:
+        msg = "全額返金を確認したので、この決済の視聴を止めました（同じメールで期間中の別の購入があれば、そちらは見られます）。"
+        if upgrade_ids:
+            msg += (f"\nこの通常コースの上に乗せた差額（質問つきへの切りかえ・購入 #{', #'.join(str(i) for i in upgrade_ids)}）の視聴も止めました。"
+                    "差額の 10,000 円も返金するときは、Stripe で別に返金してください。")
+    elif full:
+        msg = "全額返金を確認しましたが、購入の記録が見つからず、視聴の停止はしていません（記録が無ければ視聴もできない状態です）。"
+    else:
+        msg = (f"一部返金（{refunded_amt:,}円 / {amount:,}円）を確認しました。視聴は止めていません。"
+               f"止めるときは POST /api/admin/ep2/purchases/{row['id'] if row else '?'}/status に status=refunded（Claude に頼めます）。")
+    log.info(f"[ep2] refund handled: full={full} purchase={row['id'] if row else None}")
+    try:
+        _course_send_email(COURSE_CONTACT_EMAIL, "[英検準2級講座] 返金を確認しました",
+                           f"{msg}\n\n購入者のメール: {row['email'] if row else '-'}\nコース: {row['plan'] if row else '-'}\nStripe の決済: {sid or pi}")
+    except Exception:
+        pass
+    return {"full": full, "purchase_id": row["id"] if row else None, "updated": bool(full and row)}
+
+
+_EP2_NOTIFY_LOCK = threading.Lock()
+
+
+def _ep2_notify_due(dry_run: bool = False) -> dict:
+    """今日までに公開された講座の動画のうち、期間中の購入者にまだ知らせていないものを 1 人 1 通にまとめて送る
+    (冬期講習・kt と同じ台帳 course_video_notices・「知らせない」の印は飛ばす)。"""
+    if not _EP2_NOTIFY_LOCK.acquire(blocking=False):
+        return {"in_progress": True}
+    try:
+        buyers = _ep2_buyers()
+        videos = _ep2_published_videos() if buyers else []
+        if not videos:
+            return {"recipients": 0, "videos": 0, "sent": 0, "failed": 0, "dry_run": dry_run}
+        conn = db()
+        try:
+            c = conn.cursor()
+            c.execute("SELECT video_id, email FROM course_video_notices WHERE video_id IN (" + ",".join("?" * len(videos)) + ")",
+                      tuple(int(v["id"]) for v in videos))
+            done = {(int(r["video_id"]), r["email"]) for r in c.fetchall()}
+        finally:
+            conn.close()
+        noauto = {vid for vid, e in done if e == _WINTER_NOAUTO}
+        videos = [v for v in videos if int(v["id"]) not in noauto]
+        jobs = []
+        for email, b in buyers.items():
+            vids = [v for v in videos if (int(v["id"]), email) not in done]
+            if vids:
+                jobs.append(({"email": email, "name": b["name"], "until": b["until"]}, vids))
+        result = {"recipients": len(jobs), "videos": len({v["id"] for _, vs in jobs for v in vs}), "sent": 0, "failed": 0, "dry_run": dry_run}
+        if dry_run:
+            return result
+        per_video = {}
+        for m, vids in jobs:
+            try:
+                _mm = _course_member_by_email(m["email"]) or _winter_ensure_member(m["email"], m.get("name") or "")
+            except Exception:
+                _mm = None
+            greeting = f"{m['name']} 様" if m.get("name") else "受講者の皆さま"
+            if _mm and _mm.get("id"):
+                token = _sign_session_token(_mm["id"], ttl_seconds=COURSE_MAGIC_TTL_SEC, token_type="coursemagic")
+                how = (f"■ 視聴はこちら（このリンクを開くとそのままログインできます・7 日間有効）\n{_course_portal_url()}?t={token}\n"
+                       f"（リンクの期限が切れたら {_course_portal_url()} でお支払い時のメールアドレスを入力すると、新しいリンクが届きます）\n")
+            else:
+                how = f"■ 視聴はこちら\n{_course_portal_url()}\n（お支払い時のメールアドレスを入力すると、ログイン用のリンクが届きます）\n"
+            body = (f"{greeting}\n\nトリリオン英語塾です。\n{EP2_LABEL}の動画を視聴ページに追加しました。\n\n■ 今回の動画\n"
+                    + "".join(f"・{v['title']}\n" for v in vids) + "\n" + how +
+                    f"視聴は {_ep2_fmt_date(m['until'])} までです。\n\n"
+                    f"ご不明な点は 公式 LINE（{COURSE_LINE_URL}）またはメール（{COURSE_CONTACT_EMAIL}）までご連絡ください。\n\n"
+                    f"トリリオン英語塾（Trillion English Academy）")
+            try:
+                res = _course_send_email(m["email"], f"【{EP2_LABEL}】動画を追加しました（{len(vids)}本）", body)
+            except Exception as e:
+                res = {"sent": False, "error": str(e)[:100]}
+            if res.get("sent"):
+                result["sent"] += 1
+                try:
+                    _winter_mark_noticed(m["email"], [v["id"] for v in vids])
+                except Exception as e:
+                    log.warning(f"[ep2] notice record failed: {e}")
+                for v in vids:
+                    per_video[int(v["id"])] = per_video.get(int(v["id"]), 0) + 1
+            else:
+                result["failed"] += 1
+            try:
+                _email_rate_limit()
+            except Exception:
+                pass
+        if per_video:
+            conn = db()
+            try:
+                c = conn.cursor()
+                for vid, n in per_video.items():
+                    c.execute("UPDATE course_videos SET notified_at = ?, notified_count = COALESCE(notified_count, 0) + ? WHERE id = ?",
+                              (_utc_naive_iso(), n, vid))
+                conn.commit()
+            finally:
+                conn.close()
+        log.info(f"[ep2] notify due recipients={result['recipients']} sent={result['sent']} failed={result['failed']}")
+        return result
+    finally:
+        _EP2_NOTIFY_LOCK.release()
+
+
+async def _ep2_notify_scheduler():
+    """📗 毎日 JST 8:06 に Stripe の取りこぼしを補ってから _ep2_notify_due (購入者がいなければ何も送らない)。"""
+    log.info(f"[Ep2] notify scheduler started (JST {WINTER_NOTIFY_HOUR_JST}:06 daily)")
+    await asyncio.sleep(390)
+    while True:
+        try:
+            now_jst = datetime.now(JST)
+            target = now_jst.replace(hour=WINTER_NOTIFY_HOUR_JST, minute=6, second=0, microsecond=0)
+            if now_jst >= target:
+                # 販売を止めても (EP2_SALES_FROM を空に戻しても)、期間中の購入者への取りこぼしの補いとお知らせは続ける
+                if EP2_SALES_FROM:
+                    try:
+                        sres = await asyncio.to_thread(_ep2_sync_from_stripe, 3, False)
+                        log.info(f"[Ep2] stripe sync: {sres}")
+                    except Exception as _e:
+                        log.warning(f"[Ep2] stripe sync failed: {type(_e).__name__}")
+                res = await asyncio.to_thread(_ep2_notify_due)
+                log.info(f"[Ep2] notify due: {res}")
+                target += timedelta(days=1)
+            await asyncio.sleep(max(60.0, (target - datetime.now(JST)).total_seconds()))
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            log.error(f"[Ep2] scheduler loop error: {type(e).__name__}", exc_info=True)
+            await asyncio.sleep(3600)
+
+
+@app.post("/api/admin/ep2/sync")
+def admin_ep2_sync(request: Request, payload: Optional[WinterSyncIn] = None,
+                   authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """塾長/Claude: Stripe の支払い済みの英検準2級講座で、記録が漏れているものを補う (既定は dry_run=true で数だけ)。"""
+    _check_rate_limit_ip(request, bucket="ep2_admin", limit=20, window=60)
+    if not _admin_or_cron_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    p = payload or WinterSyncIn()
+    try:
+        return {"ok": True, **_ep2_sync_from_stripe(days=p.days or 7, dry_run=bool(p.dry_run is None or p.dry_run))}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Stripe の取得に失敗しました: {type(e).__name__}")
+
+
+@app.post("/api/admin/ep2/notify-due")
+def admin_ep2_notify_due(request: Request, payload: Optional[WinterNotifyDueIn] = None,
+                         authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """塾長/Claude: 英検準2級講座の動画のお知らせをいま送る (既定は dry_run=true で数だけ)。"""
+    _check_rate_limit_ip(request, bucket="ep2_admin", limit=20, window=60)
+    if not _admin_or_cron_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    if payload is None or payload.dry_run:
+        return {"ok": True, **_ep2_notify_due(dry_run=True)}
+    preview = _ep2_notify_due(dry_run=True)
+    threading.Thread(target=_ep2_notify_due, daemon=True, name="ep2-notify-due").start()
+    return {"ok": True, "background": True, **preview}
+
+
+@app.get("/api/admin/ep2/purchases")
+def admin_ep2_purchases(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """塾長: 英検準2級講座の購入一覧 (コース・期限・状態)。"""
+    if not _admin_or_cron_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM ep2_purchases ORDER BY id DESC")
+        rows = c.fetchall()
+    finally:
+        conn.close()
+    today = _winter_today()
+    out, total = [], 0
+    for r in rows:
+        vu = str(r["view_until"] or "")[:10]
+        if r["status"] == "paid":
+            total += int(r["amount"] or 0)
+        out.append({"id": r["id"], "email": r["email"], "name": r["name"] or "", "plan": r["plan"] or "",
+                    "plan_name": (EP2_PRODUCTS.get(r["plan"] or "") or {}).get("name") or (EP2_UPGRADE_NAME if r["plan"] == "ep2-upgrade" else r["plan"]),
+                    "amount": int(r["amount"] or 0), "status": r["status"], "view_until": vu,
+                    "active": r["status"] == "paid" and bool(vu) and vu >= today,
+                    "app_id": r["app_id"] or "", "livemode": bool(r["livemode"]), "session_id": r["session_id"], "paid_at": r["paid_at"]})
+    return {"purchases": out, "paid_total": total, "on_sale": _ep2_on_sale(), "sales_from": EP2_SALES_FROM,
+            "view_months": EP2_VIEW_MONTHS,
+            "products": [{"sku": k, "name": v["name"], "price": v["price"]} for k, v in EP2_PRODUCTS.items()]}
+
+
+class Ep2PurchaseStatusIn(BaseModel):
+    status: Optional[str] = None
+    view_until: Optional[str] = None   # 'YYYY-MM-DD' (期限を延ばす・縮める)
+
+
+@app.post("/api/admin/ep2/purchases/{purchase_id}/status")
+def admin_ep2_purchase_status(purchase_id: int, payload: Ep2PurchaseStatusIn, request: Request, authorization: Optional[str] = Header(None)):
+    """塾長: Stripe で返金したあとに視聴を止める (status=refunded)・期限を変える (view_until)。"""
+    _check_rate_limit_ip(request, bucket="ep2_admin", limit=20, window=60)
+    _verify_admin_required(authorization)
+    st = (payload.status or "").strip()
+    vu = (payload.view_until or "").strip()
+    if not st and not vu:
+        raise HTTPException(status_code=400, detail="status か view_until を指定してください")
+    if st and st not in ("paid", "refunded"):
+        raise HTTPException(status_code=400, detail="status は paid か refunded です")
+    if vu:
+        try:
+            datetime.strptime(vu, "%Y-%m-%d")
+        except Exception:
+            raise HTTPException(status_code=400, detail="view_until は YYYY-MM-DD です")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM ep2_purchases WHERE id = ?", (int(purchase_id),))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="購入記録が見つかりません")
+        new_st = st or row["status"]
+        old_vu = str(row["view_until"] or "")[:10]
+        new_vu = vu or old_vu
+        c.execute("UPDATE ep2_purchases SET status = ?, view_until = ? WHERE id = ?", (new_st, new_vu, int(purchase_id)))
+        if vu and old_vu:
+            # 通常コースと差額の行は同じ期限で 1 組 → 期限を変えるときはそろえて動かす (片方だけずれると「質問つき」だけ先に消える等)
+            c.execute("UPDATE ep2_purchases SET view_until = ? WHERE email = ? AND status = 'paid' AND view_until = ? AND id <> ?",
+                      (new_vu, row["email"], old_vu, int(purchase_id)))
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True, "id": int(purchase_id), "status": new_st, "view_until": new_vu}
 
 
 # ==========================================================================

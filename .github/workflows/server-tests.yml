@@ -300,6 +300,13 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_kt_kakomon_course.py
 
+      # 📗 英検準2級 ステップアップ講座 (/api/ep2/checkout・ep2_purchases・人ごとの視聴期限 (支払い日+5か月)・切りかえの差額・返金) (2026-11-19)。Stripe とメールは偽物。
+      - name: 英検準2級講座 決済と視聴 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_ep2_eikenp2_course.py
+
       # 📺 月額講座「再生リストから取り込む」(2026-10-05)。YouTube (class_recording_assign.http_get) とメールは偽物。
       - name: 月額講座 再生リスト取り込み 回帰テスト
         if: ${{ !cancelled() }}

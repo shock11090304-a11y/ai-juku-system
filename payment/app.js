@@ -5402,6 +5402,10 @@ function chargesToRows(charges) {
   const kakomon = charges.filter(c => ((c.metadata || {}).system === 'juku-payment-kakomon'));
   if (kakomon.length) console.info(`stripe import: 共通テスト過去問の決済 ${kakomon.length} 件は除外 (月謝ではない)`);
   charges = charges.filter(c => !((c.metadata || {}).system === 'juku-payment-kakomon'));
+  // 📗 英検準2級 ステップアップ講座の買い切り (metadata.system=juku-payment-eikenp2) も月謝ではない (2026-11-19)
+  const eikenp2 = charges.filter(c => ((c.metadata || {}).system === 'juku-payment-eikenp2'));
+  if (eikenp2.length) console.info(`stripe import: 英検準2級講座の決済 ${eikenp2.length} 件は除外 (月謝ではない)`);
+  charges = charges.filter(c => !((c.metadata || {}).system === 'juku-payment-eikenp2'));
   return charges.map(c => {
     const d = new Date((c.created || 0) * 1000);
     const yyyy = d.getFullYear();

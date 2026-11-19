@@ -67,7 +67,7 @@
     <!-- ログイン -->
     <section id="loginView" class="card" hidden>
       <h2>ログイン</h2>
-      <p class="muted">月額講座（英文解釈／英文法／共通テスト対策）・冬期講習2026・共通テスト過去問の解説動画をお申し込みの方専用のページです。</p>
+      <p class="muted">月額講座（英文解釈／英文法／共通テスト対策）・冬期講習2026・共通テスト過去問の解説動画・英検準2級 ステップアップ講座をお申し込みの方専用のページです。</p>
       <p class="muted" style="margin-top:0.4rem;">お支払い時（決済画面）のメールアドレスを入力してください。ログイン用のリンクをメールでお送りします（パスワードは不要です）。</p>
       <form id="loginForm" style="margin-top:0.9rem;">
         <label for="email">メールアドレス</label>
@@ -94,6 +94,7 @@
         <p class="muted" id="portalNote">各講座とも毎週月曜に 2 本ずつ動画を追加します（月 8 本）。追加したときは、お支払い時のメールアドレスへお知らせします。新しい動画が上に並びます。はじめての方は一番下の第1回からご覧ください。</p>
         <p class="muted" id="winterNote" hidden style="margin-top:0.4rem;"></p>
         <p class="muted" id="ktNote" hidden style="margin-top:0.4rem;"></p>
+        <p class="muted" id="ep2Note" hidden style="margin-top:0.4rem;"></p>
         <p class="muted" style="margin-top:0.4rem;">このページはブックマークかホーム画面への追加をおすすめします（同じブラウザなら 30 日間、次回からメールなしで開けます）。</p>
       </div>
       <div id="videoList"></div>
@@ -178,6 +179,8 @@
         (me.winter || []).forEach(function (w) { winter[w.key] = w; });
         // 📝 共通テスト過去問 (me.kt): 講習と同じく配信日を出し、大問の順 (古い順) に並べる
         (me.kt || []).forEach(function (w) { winter[w.key] = w; });
+        // 📗 英検準2級講座 (me.ep2): 第1週から順 (古い順) に並べる。配信日は無い (買った日から全部見られる)
+        (me.ep2 || []).forEach(function (w) { winter[w.key] = w; });
         var hasMonthly = (me.courses || []).some(function (c) { return !winter[c.key]; });
         $('portalNote').hidden = !hasMonthly;
         $('monthlyFoot').hidden = !hasMonthly;
@@ -189,6 +192,10 @@
         if ((me.kt || []).length) {
           $('ktNote').textContent = '共通テスト過去問の解説動画は、年度ごとに大問の順で並びます（上から第1問）。配信した日の朝にメールでお知らせします。視聴は ' + fmtDateJpY(me.kt_view_until) + ' までです。';
         }
+        $('ep2Note').hidden = !(me.ep2 || []).length;
+        if ((me.ep2 || []).length) {
+          $('ep2Note').textContent = '英検準2級 ステップアップ講座の動画は、第1週から順に並びます（上から第1週）。各動画の「📄 教材（PDF）」から、テキストの PDF とリスニングの放送音声のフォルダを開けます。視聴は ' + fmtDateJpY(me.ep2_view_until) + ' までです。';
+        }
         var byCourse = {};
         (me.courses || []).forEach(function (c) { byCourse[c.key] = { name: c.name, videos: [] }; });
         (me.videos || []).forEach(function (v) { if (byCourse[v.course_key]) byCourse[v.course_key].videos.push(v); });
@@ -197,7 +204,9 @@
         Object.keys(byCourse).forEach(function (k) {
           var b = byCourse[k];
           html += '<div class="course-block"><h3>' + esc(b.name) + '</h3>';
-          if (!b.videos.length && winter[k]) {
+          if (!b.videos.length && winter[k] && !winter[k].delivery) {   // 📗 英検準2級講座 (配信日なし)
+            html += '<div class="empty">動画の準備ができしだい、ここに並びます。お手数ですが、公式 LINE またはメールでお問い合わせください。</div>';
+          } else if (!b.videos.length && winter[k]) {
             html += '<div class="empty">' + esc(fmtDateJp(winter[k].delivery)) + ' に配信します。配信した日の朝にメールでお知らせします。</div>';
           } else if (!b.videos.length) {
             html += '<div class="empty">まだ動画はありません。初回の動画は ' + esc(me.first_delivery ? fmtDateJp(me.first_delivery) : 'お支払いの翌週の月曜') + ' に追加する予定です。追加したときはメールでお知らせします。</div>';
