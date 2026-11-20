@@ -105,13 +105,13 @@ def main():
     # ---- A. 料金 ----
     P = lambda skus, today="2026-11-20": mod._winter_plan(skus, today)
     a1 = P(["h3-k", "h3-r", "h3-l"])
-    check("A1. R＋L＋古文漢文 → 英語セット＋古文漢文 = 21,300円", a1["parts"] == ["h3-set-ei", "h3-k"] and a1["total"] == 21300, a1)
+    check("A1. R＋L＋古文漢文 → 英語セット＋古文漢文 = 7,300円", a1["parts"] == ["h3-set-ei", "h3-k"] and a1["total"] == 7300, a1)
     a2 = P(["h3-r", "h3-l", "h3-k", "h3-m", "h3-b"])
-    check("A2. 5 講座 → 全5講座セット 29,800円", a2["parts"] == ["h3-set-all5"] and a2["total"] == 29800, a2)
+    check("A2. 5 講座 → 全5講座セット 9,800円", a2["parts"] == ["h3-set-all5"] and a2["total"] == 9800, a2)
     a3 = P(["h3-r", "h3-k", "h3-m", "h3-b"])
-    check("A3. セットを含まない 4 講座はバラ 30,000円 (切り替えはページの提案)", a3["parts"] == ["h3-r", "h3-k", "h3-m", "h3-b"] and a3["total"] == 30000, a3)
+    check("A3. セットを含まない 4 講座はバラ 10,000円 (全5講座セット 9,800円への切り替えはページの提案)", a3["parts"] == ["h3-r", "h3-k", "h3-m", "h3-b"] and a3["total"] == 10000, a3)
     a4 = P(["u-kansai", "h3-r", "h3-l", "pack-c3", "u-kansai"])
-    check("A4. 重複は 1 つに・高3セット＋パックは並び順どおり", a4["parts"] == ["h3-set-ei", "pack-c3", "u-kansai"] and a4["total"] == 13800 + 15000 + 14500, a4)
+    check("A4. 重複は 1 つに・高3セット＋パックは並び順どおり", a4["parts"] == ["h3-set-ei", "pack-c3", "u-kansai"] and a4["total"] == 4800 + 9800 + 4800, a4)
     check("A5. 知らない sku は unknown", P(["h3-r", "zzz"])["unknown"] == ["zzz"])
     # 総当たり: 高3 の 31 通りすべてで「重ならないセットの組＋バラ」の最安と一致
     h3 = ["h3-r", "h3-l", "h3-k", "h3-m", "h3-b"]
@@ -134,7 +134,7 @@ def main():
     check("A8. 1/13 は共通テストの講座が締切・私大文法は買える", a8["closed"] == ["h3-r"], a8)
     check("A9. 大学別の締切 (関西大 1/25 まで・1/26 から締切)", not P(["u-kansai"], "2027-01-25")["closed"] and P(["u-kansai"], "2027-01-26")["closed"] == ["u-kansai"])
     check("A10. 17 大学・高3 5・パック 4 (高1・高2・中3・中2) = 26 講座 (11-18 早稲田 商・慶應 商を外した)", len(mod.WINTER_ITEMS) == 26 and sum(1 for k in mod.WINTER_ITEMS if k.startswith("u-")) == 17)
-    check("A10b. 明治 政治経済は 2/4 まで買える・2/5 から締切・定員20・14,500円", not P(["u-meiji-seikei"], "2027-02-04")["closed"] and P(["u-meiji-seikei"], "2027-02-05")["closed"] == ["u-meiji-seikei"] and mod.WINTER_ITEMS["u-meiji-seikei"]["cap"] == 20 and mod.WINTER_ITEMS["u-meiji-seikei"]["price"] == 14500)
+    check("A10b. 明治 政治経済は 2/4 まで買える・2/5 から締切・定員20・4,800円", not P(["u-meiji-seikei"], "2027-02-04")["closed"] and P(["u-meiji-seikei"], "2027-02-05")["closed"] == ["u-meiji-seikei"] and mod.WINTER_ITEMS["u-meiji-seikei"]["cap"] == 20 and mod.WINTER_ITEMS["u-meiji-seikei"]["price"] == 4800)
     # 有効期限: 23 時間を上限に、締切の 23:59:59 JST を越えない・最低 31 分
     now = int(datetime.datetime(2027, 1, 12, 23, 50, tzinfo=mod.JST).timestamp())
     check("A11. 締切 10 分前の決済画面は 31 分 (Stripe の下限)", mod._winter_expires_at(["h3-set-ei"], now) == now + 31 * 60)
@@ -153,11 +153,11 @@ def main():
     check("B1. 303 で Stripe の決済画面へ", r.status_code == 303 and r.headers.get("location", "").startswith("https://checkout.stripe.com/"), (r.status_code, r.text[:200]))
     amts = [li["price_data"]["unit_amount"] for li in kw.get("line_items", [])]
     names = [li["price_data"]["product_data"]["name"] for li in kw.get("line_items", [])]
-    check("B2. 明細 = 英語セット 13,800＋関西大 14,500 (円・1 個ずつ)", amts == [13800, 14500] and all(li["quantity"] == 1 and li["price_data"]["currency"] == "jpy" for li in kw.get("line_items", [])), (amts, names))
+    check("B2. 明細 = 英語セット 4,800＋関西大 4,800 (円・1 個ずつ)", amts == [4800, 4800] and all(li["quantity"] == 1 and li["price_data"]["currency"] == "jpy" for li in kw.get("line_items", [])), (amts, names))
     meta = kw.get("metadata") or {}
     check("B3. metadata (session と payment_intent の両方に system=juku-payment-winter・items・plan・total・app_id)",
           meta.get("system") == "juku-payment-winter" and meta.get("items") == "h3-r,h3-l,u-kansai" and meta.get("plan") == "h3-set-ei,u-kansai"
-          and meta.get("total") == "28300" and meta.get("app_id") == "W26-abc123" and (kw.get("payment_intent_data") or {}).get("metadata") == meta, kw)
+          and meta.get("total") == "9600" and meta.get("app_id") == "W26-abc123" and (kw.get("payment_intent_data") or {}).get("metadata") == meta, kw)
     check("B4. メールは小文字・カードのみ・日本語・戻り先は Netlify のページ",
           kw.get("customer_email") == "buyer@example.invalid" and kw.get("payment_method_types") == ["card"] and kw.get("locale") == "ja"
           and kw.get("mode") == "payment"
@@ -177,7 +177,7 @@ def main():
     rr = post_form({"items": "h3-r,h3-b", "email": "late@example.invalid"})
     check("B8. 締切を過ぎた講座を含むと 400 (講座名つき)・決済画面は作らない", rr.status_code == 400 and "締切" in rr.text and "共通テスト英語リーディング" in rr.text and len(fake.created) == n_before, rr.text[:300])
     rr = post_form({"items": "h3-b", "email": "late@example.invalid"})
-    check("B9. 1/13 でも私大文法だけなら作れる (7,500円)", rr.status_code == 303 and [li["price_data"]["unit_amount"] for li in fake.created[-1]["line_items"]] == [7500])
+    check("B9. 1/13 でも私大文法だけなら作れる (2,500円)", rr.status_code == 303 and [li["price_data"]["unit_amount"] for li in fake.created[-1]["line_items"]] == [2500])
     set_today("2026-11-20")
     fake.fail = True
     rr = post_form({"items": "h3-r", "email": "x@example.invalid"})

@@ -58799,17 +58799,18 @@ WINTER_NOTIFY_HOUR_JST = 8
 _WINTER_DL_KYOTSU = "2027-01-12"   # 共通テストの4講座とセット
 _WINTER_DL_LATE = "2027-01-31"     # 私大文法・学年別パック
 # sku → {name, price, deadline (この日の 23:59 JST まで), delivery (最初の配信日)}。並び順 = 決済画面の並び順。
+# 2026-11-20 塾長「案Aで切り替えて」：1講座2,500円・2講座もの4,800円・5講座もの9,800円に値下げ（旧 7,500/13,000/14,500/15,000・セット 13,800/24,800/29,800）
 WINTER_ITEMS = {
-    "h3-r": {"name": "共通テスト英語リーディング 本番形式演習", "price": 7500, "deadline": _WINTER_DL_KYOTSU, "delivery": "2026-12-12"},
-    "h3-l": {"name": "共通テスト英語リスニング 直前演習", "price": 7500, "deadline": _WINTER_DL_KYOTSU, "delivery": "2026-12-12"},
-    "h3-k": {"name": "共通テスト国語 古文・漢文 直前演習", "price": 7500, "deadline": _WINTER_DL_KYOTSU, "delivery": "2026-12-12"},
-    "h3-m": {"name": "共通テスト数学ⅠA 直前演習", "price": 7500, "deadline": _WINTER_DL_KYOTSU, "delivery": "2026-12-12"},
-    "h3-b": {"name": "私大英語 文法・語法の頻出総点検", "price": 7500, "deadline": _WINTER_DL_LATE, "delivery": "2026-12-12"},
-    "pack-h1": {"name": "高1パック（英語・数学 2講座10本）", "price": 13000, "deadline": _WINTER_DL_LATE, "delivery": "2026-12-19"},
-    "pack-h2": {"name": "高2パック（英語・数学 2講座10本）", "price": 14500, "deadline": _WINTER_DL_LATE, "delivery": "2026-12-19"},
-    "pack-c3": {"name": "中3パック（英数国理社 5教科25本）", "price": 15000, "deadline": _WINTER_DL_LATE, "delivery": "2026-12-19"},
-    # 中2パック (2026-11-14 塾長「中2から作る」→ 英数各10本・¥13,000 のまま)。申込ページは winter-chugaku.html
-    "pack-c2": {"name": "中2パック（英語・数学 2講座20本）", "price": 13000, "deadline": _WINTER_DL_LATE, "delivery": "2026-12-19"},
+    "h3-r": {"name": "共通テスト英語リーディング 本番形式演習", "price": 2500, "deadline": _WINTER_DL_KYOTSU, "delivery": "2026-12-12"},
+    "h3-l": {"name": "共通テスト英語リスニング 直前演習", "price": 2500, "deadline": _WINTER_DL_KYOTSU, "delivery": "2026-12-12"},
+    "h3-k": {"name": "共通テスト国語 古文・漢文 直前演習", "price": 2500, "deadline": _WINTER_DL_KYOTSU, "delivery": "2026-12-12"},
+    "h3-m": {"name": "共通テスト数学ⅠA 直前演習", "price": 2500, "deadline": _WINTER_DL_KYOTSU, "delivery": "2026-12-12"},
+    "h3-b": {"name": "私大英語 文法・語法の頻出総点検", "price": 2500, "deadline": _WINTER_DL_LATE, "delivery": "2026-12-12"},
+    "pack-h1": {"name": "高1パック（英語・数学 2講座10本）", "price": 4800, "deadline": _WINTER_DL_LATE, "delivery": "2026-12-19"},
+    "pack-h2": {"name": "高2パック（英語・数学 2講座10本）", "price": 4800, "deadline": _WINTER_DL_LATE, "delivery": "2026-12-19"},
+    "pack-c3": {"name": "中3パック（英数国理社 5教科25本）", "price": 9800, "deadline": _WINTER_DL_LATE, "delivery": "2026-12-19"},
+    # 中2パック (2026-11-14 塾長「中2から作る」→ 英数各10本。2026-11-20 の値下げで ¥4,800)。申込ページは winter-chugaku.html
+    "pack-c2": {"name": "中2パック（英語・数学 2講座20本）", "price": 4800, "deadline": _WINTER_DL_LATE, "delivery": "2026-12-19"},
 }
 # 大学別パック (締切 = その大学のいちばん早い試験日の 1 週間前・塾長決定 2026-11-10)
 # 定員: 各パック先着 20 名 (塾長決定 2026-11-11)。★「限定」と告知しているので、満員後に枠を足さない (景品表示法の有利誤認)。
@@ -58834,13 +58835,13 @@ for _sku, _name, _dl, _dv in [
     # 2026-11-18 塾長「申込から外す」：早稲田 商・慶應 商は動画を作らないので外した（申込0件を /api/winter/seats で確認）
     ("u-keio-kei", "慶應義塾大学 経済学部", "2027-02-06", "2027-01-18"),
 ]:
-    WINTER_ITEMS[_sku] = {"name": "大学別パック " + _name, "price": 14500, "deadline": _dl, "delivery": _dv,
+    WINTER_ITEMS[_sku] = {"name": "大学別パック " + _name, "price": 4800, "deadline": _dl, "delivery": _dv,
                           "cap": WINTER_UNIV_CAP}
 # 高3のセット割 (中身はすべて h3-*)。締切は中の講座でいちばん早い日 (どれも共通テストを含むので 1/12)
 WINTER_BUNDLES = {
-    "h3-set-ei": {"name": "共テ英語セット（リーディング＋リスニング）", "items": ["h3-r", "h3-l"], "price": 13800, "deadline": _WINTER_DL_KYOTSU},
-    "h3-set-kt4": {"name": "共テ4講座セット（英語R・英語L・古文漢文・数学ⅠA）", "items": ["h3-r", "h3-l", "h3-k", "h3-m"], "price": 24800, "deadline": _WINTER_DL_KYOTSU},
-    "h3-set-all5": {"name": "全5講座セット", "items": ["h3-r", "h3-l", "h3-k", "h3-m", "h3-b"], "price": 29800, "deadline": _WINTER_DL_KYOTSU},
+    "h3-set-ei": {"name": "共テ英語セット（リーディング＋リスニング）", "items": ["h3-r", "h3-l"], "price": 4800, "deadline": _WINTER_DL_KYOTSU},
+    "h3-set-kt4": {"name": "共テ4講座セット（英語R・英語L・古文漢文・数学ⅠA）", "items": ["h3-r", "h3-l", "h3-k", "h3-m"], "price": 8800, "deadline": _WINTER_DL_KYOTSU},
+    "h3-set-all5": {"name": "全5講座セット", "items": ["h3-r", "h3-l", "h3-k", "h3-m", "h3-b"], "price": 9800, "deadline": _WINTER_DL_KYOTSU},
 }
 _WINTER_PAGES = ("winter", "winter-chugaku")
 _WINTER_APP_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
