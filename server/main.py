@@ -59068,8 +59068,10 @@ def _winter_part_price(part: str) -> int:
     return int((WINTER_BUNDLES.get(part) or WINTER_ITEMS.get(part) or {}).get("price") or 0)
 
 
-def _winter_error_page(message: str, page: str = "winter", status: int = 400, label: str = "", back_url: str = "", next_step: str = ""):
-    """label / back_url は共通テスト過去問 (kt)・英検準2級 (ep2) が使う (新しいタブで決済を開くので「このタブを閉じて」の文のまま)。
+def _winter_error_page(message: str, page: str = "winter", status: int = 400, label: str = "", back_url: str = "", next_step: str = "",
+                       same_tab: bool = False):
+    """label / back_url は共通テスト過去問 (kt)・英検準2級 (ep2) が使う。決済を新しいタブで開く ep2 は「このタブを閉じて」の文のまま。
+    kt も 2026-11-20 から同じ画面で開くので same_tab=True で「ブラウザの戻る」の文。
     冬期講習は 2026-11-20 から決済を同じ画面で開くので「ブラウザの戻る」の文。next_step を渡すとその段落を差し替える。"""
     from fastapi.responses import HTMLResponse
     def _esc(s):
@@ -59085,7 +59087,7 @@ def _winter_error_page(message: str, page: str = "winter", status: int = 400, la
             f"<p>{_esc(message)}</p>"
             + (f"<p style=\"margin-top:1rem;\">{_esc(next_step)} <a href=\"{_esc(back)}\">申込ページ</a></p>" if next_step else
                f"<p style=\"margin-top:1rem;\">このタブを閉じて、元の画面（お申し込み完了の画面）の「カードでお支払いへ進む」からもう一度お進みください。"
-               f"元の画面を閉じてしまった場合は、<a href=\"{_esc(back)}\">申込ページ</a>からもう一度ご入力ください。</p>" if back_url else
+               f"元の画面を閉じてしまった場合は、<a href=\"{_esc(back)}\">申込ページ</a>からもう一度ご入力ください。</p>" if (back_url and not same_tab) else
                "<p style=\"margin-top:1rem;\">ブラウザの「戻る」で元の画面（お申し込み完了の画面）に戻り、「カードでお支払いへ進む」からもう一度お進みください。"
                f"戻れない場合は、<a href=\"{_esc(back)}\">申込ページ</a>からもう一度ご入力ください（同じ内容の申し込みが2回届いても問題ありません）。</p>") +
             f"<p style=\"font-size:0.85rem;color:#6B7280;\">解決しない場合は、公式 LINE（{_esc(COURSE_LINE_URL)}）またはメール（{_esc(COURSE_CONTACT_EMAIL)}）までご連絡ください。</p>"
@@ -60058,8 +60060,8 @@ def _kt_back_url() -> str:
     return f"{KT_SITE_URL}/{KT_PAGE}.html"
 
 
-def _kt_error_page(message: str, status: int = 400):
-    return _winter_error_page(message, status=status, label=KT_LABEL, back_url=_kt_back_url())
+def _kt_error_page(message: str, status: int = 400, next_step: str = ""):
+    return _winter_error_page(message, status=status, label=KT_LABEL, back_url=_kt_back_url(), next_step=next_step, same_tab=True)
 
 
 def _kt_keys_for_email(email: str, today: Optional[str] = None) -> list:
@@ -60124,6 +60126,14 @@ def _kt_published_videos(keys, today: Optional[str] = None) -> list:
         conn.close()
     return [_course_video_row(r) for r in rows
             if r["course_key"] in keys and not (r["publish_date"] and str(r["publish_date"])[:10] > today)]
+
+
+@app.get("/api/kt/checkout")
+def kt_checkout_get():
+    """決済の入口を GET で開いた (送った中身が無い) ときの案内 (冬期講習の winter_checkout_get と同じ・2026-11-20)。"""
+    return _kt_error_page("お支払いの画面を開けませんでした（お手続きの内容が届きませんでした）。", 400,
+                          next_step="お手数ですが、申込ページでもう一度ご入力のうえお進みください（同じ内容の申し込みが2回届いても問題ありません）。"
+                                    "アプリの中のブラウザ（Threads・Instagram など）でうまくいかない場合は、右上のメニューの「ブラウザで開く」か、Safari / Chrome でお試しください。")
 
 
 @app.post("/api/kt/checkout")

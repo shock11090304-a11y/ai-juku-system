@@ -514,6 +514,13 @@ def main():
         check("G3. 返金の照会が落ちたら 500・塾長に1通知らせる・同じイベントの再送で視聴が止まる", rf1.status_code == 500 and len(alert_mails) == 1 and still == ["kt-r-2026"]
               and rf2.status_code == 200 and mod._kt_keys_for_email("wh@example.invalid") == [], (rf1.status_code, rf2.status_code, rf2.text[:200]))
 
+    # ---- 決済を同じ画面で開く (2026-11-20)：GET の入口は日本語の案内・エラー画面は「ブラウザの戻る」の文 ----
+    rg = client.get("/api/kt/checkout")
+    check("Z1. GET の決済入口は日本語の案内 (Not Found にしない)・戻り先は kakomon",
+          rg.status_code == 400 and "申込ページでもう一度" in rg.text and "Not Found" not in rg.text and "kakomon" in rg.text, (rg.status_code, rg.text[:200]))
+    eg = mod._kt_error_page("テスト")
+    check("Z2. 共通テスト過去問のエラー画面は「ブラウザの「戻る」」の文 (「このタブを閉じて」は出さない)",
+          "ブラウザの「戻る」" in eg.body.decode() and "このタブを閉じて" not in eg.body.decode())
     print()
     if FAILURES:
         print(f"❌ {len(FAILURES)} 件失敗: {FAILURES}"); sys.exit(1)
