@@ -58815,6 +58815,8 @@ WINTER_ITEMS = {
 # 大学別パック (締切 = その大学のいちばん早い試験日の 1 週間前・塾長決定 2026-11-10)
 # 定員: 各パック先着 20 名 (塾長決定 2026-11-11)。★「限定」と告知しているので、満員後に枠を足さない (景品表示法の有利誤認)。
 WINTER_UNIV_CAP = 20
+# 2026-11-20 塾長「大学別パックも先着人数を消して」「両方止めて」→ 定員をやめた（申込0件の時点）。仕組みは残し、ここで切る
+WINTER_UNIV_CAP_ON = False
 for _sku, _name, _dl, _dv in [
     ("u-kansai", "関西大学（全学部）", "2027-01-25", "2026-12-19"),
     ("u-kwansei", "関西学院大学（全学部日程＋学部個別日程の記述）", "2027-01-25", "2026-12-19"),
@@ -58835,8 +58837,9 @@ for _sku, _name, _dl, _dv in [
     # 2026-11-18 塾長「申込から外す」：早稲田 商・慶應 商は動画を作らないので外した（申込0件を /api/winter/seats で確認）
     ("u-keio-kei", "慶應義塾大学 経済学部", "2027-02-06", "2027-01-18"),
 ]:
-    WINTER_ITEMS[_sku] = {"name": "大学別パック " + _name, "price": 4800, "deadline": _dl, "delivery": _dv,
-                          "cap": WINTER_UNIV_CAP}
+    WINTER_ITEMS[_sku] = {"name": "大学別パック " + _name, "price": 4800, "deadline": _dl, "delivery": _dv}
+    if WINTER_UNIV_CAP_ON:
+        WINTER_ITEMS[_sku]["cap"] = WINTER_UNIV_CAP
 # 高3のセット割 (中身はすべて h3-*)。締切は中の講座でいちばん早い日 (どれも共通テストを含むので 1/12)
 WINTER_BUNDLES = {
     "h3-set-ei": {"name": "共テ英語セット（リーディング＋リスニング）", "items": ["h3-r", "h3-l"], "price": 4800, "deadline": _WINTER_DL_KYOTSU},
@@ -58937,6 +58940,8 @@ def _winter_seats_left(counts: Optional[dict] = None) -> dict:
 # 返金された人も数えたまま (特典も取り消し・繰り上げはしない。申込ページにそう書いている)。
 # ★告知した人数を後から増やさない (景品表示法)。残りは /api/winter/seats の bonus で申込ページに出す。
 WINTER_BONUS_CAP = 5
+# 2026-11-20 塾長「先着特典も消して」「両方止めて」→ 特典をやめた（支払い0件の時点・対象者なし）。仕組みは残し、ここで切る
+WINTER_BONUS_ACTIVE = False
 WINTER_BONUS_NAME = "塾長との学習相談（Zoom・15分）"
 # 特典を始めた時刻 (UTC の naive ISO・paid_at と同じ形)。これより前の支払い (公開日の確認など) は数えない
 WINTER_BONUS_SINCE_UTC = "2026-11-18T00:00:00"
@@ -58967,6 +58972,8 @@ def _winter_bonus_left() -> int:
 
 def _winter_bonus_rank(email: str, purchase_id) -> Optional[int]:
     """この決済で特典の対象になったら順番 (1〜5)。2 回目以降の決済・枠の外は None。"""
+    if not WINTER_BONUS_ACTIVE:
+        return None
     em = (email or "").strip().lower()
     for i, (e, pid) in enumerate(_winter_bonus_order()[:WINTER_BONUS_CAP]):
         if e == em:
@@ -58983,10 +58990,11 @@ def winter_seats():
         log.warning(f"[winter] seats lookup failed: {type(e).__name__}")
         return JSONResponse({"ok": False}, status_code=503, headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "no-store"})
     body = {"ok": True, "cap": WINTER_UNIV_CAP, "left": left}
-    try:
-        body["bonus"] = {"cap": WINTER_BONUS_CAP, "left": _winter_bonus_left()}
-    except Exception as e:
-        log.warning(f"[winter] bonus lookup failed: {type(e).__name__}")
+    if WINTER_BONUS_ACTIVE:
+        try:
+            body["bonus"] = {"cap": WINTER_BONUS_CAP, "left": _winter_bonus_left()}
+        except Exception as e:
+            log.warning(f"[winter] bonus lookup failed: {type(e).__name__}")
     return JSONResponse(body, headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "no-store"})
 
 

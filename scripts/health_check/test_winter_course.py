@@ -134,7 +134,7 @@ def main():
     check("A8. 1/13 は共通テストの講座が締切・私大文法は買える", a8["closed"] == ["h3-r"], a8)
     check("A9. 大学別の締切 (関西大 1/25 まで・1/26 から締切)", not P(["u-kansai"], "2027-01-25")["closed"] and P(["u-kansai"], "2027-01-26")["closed"] == ["u-kansai"])
     check("A10. 17 大学・高3 5・パック 4 (高1・高2・中3・中2) = 26 講座 (11-18 早稲田 商・慶應 商を外した)", len(mod.WINTER_ITEMS) == 26 and sum(1 for k in mod.WINTER_ITEMS if k.startswith("u-")) == 17)
-    check("A10b. 明治 政治経済は 2/4 まで買える・2/5 から締切・定員20・4,800円", not P(["u-meiji-seikei"], "2027-02-04")["closed"] and P(["u-meiji-seikei"], "2027-02-05")["closed"] == ["u-meiji-seikei"] and mod.WINTER_ITEMS["u-meiji-seikei"]["cap"] == 20 and mod.WINTER_ITEMS["u-meiji-seikei"]["price"] == 4800)
+    check("A10b. 明治 政治経済は 2/4 まで買える・2/5 から締切・定員なし（11-20 から）・4,800円", not P(["u-meiji-seikei"], "2027-02-04")["closed"] and P(["u-meiji-seikei"], "2027-02-05")["closed"] == ["u-meiji-seikei"] and mod.WINTER_ITEMS["u-meiji-seikei"].get("cap") is None and mod.WINTER_ITEMS["u-meiji-seikei"]["price"] == 4800)
     # 有効期限: 23 時間を上限に、締切の 23:59:59 JST を越えない・最低 31 分
     now = int(datetime.datetime(2027, 1, 12, 23, 50, tzinfo=mod.JST).timestamp())
     check("A11. 締切 10 分前の決済画面は 31 分 (Stripe の下限)", mod._winter_expires_at(["h3-set-ei"], now) == now + 31 * 60)
@@ -459,6 +459,13 @@ def main():
     # ---- H. 定員 (大学別パック 各先着20名・塾長決定 2026-11-11。満員後に枠を足さない) ----
     set_today("2026-11-20")
     mod.get_stripe = lambda: fake
+    # 2026-11-20 塾長「両方止めて」: 本番は定員なし。下は仕組みの検査のため、ここだけ定員20を付けて確かめる
+    sj0 = client.get("/api/winter/seats").json()
+    check("H0. 本番の設定は定員なし（大学別パックに cap なし・残り席 API の left は空）",
+          mod.WINTER_UNIV_CAP_ON is False and not any(v.get("cap") for v in mod.WINTER_ITEMS.values()) and sj0.get("left") == {}, sj0)
+    for _k in mod.WINTER_ITEMS:
+        if _k.startswith("u-"):
+            mod.WINTER_ITEMS[_k]["cap"] = 20
     check("H1. 大学別 17 パックすべて定員 20・高3/学年パックは定員なし",
           all(mod.WINTER_ITEMS[k].get("cap") == 20 for k in mod.WINTER_ITEMS if k.startswith("u-"))
           and not any(mod.WINTER_ITEMS[k].get("cap") for k in mod.WINTER_ITEMS if not k.startswith("u-")))
@@ -502,6 +509,11 @@ def main():
           and it.get("h3-r", {}).get("cap") is None, ar.text[:200])
 
     # ---- I. 先着特典 (塾長 2026-11-18: 支払った先着5名に学習相談)・申込ページの閲覧数 ----
+    # 2026-11-20 塾長「両方止めて」: 本番は特典なし。下は仕組みの検査のため、ここだけ特典を入れて確かめる
+    sjb = client.get("/api/winter/seats").json()
+    check("I0. 本番の設定は特典なし（残り席 API に bonus を出さない・順番を付けない）",
+          mod.WINTER_BONUS_ACTIVE is False and "bonus" not in sjb and mod._winter_bonus_rank("x@example.invalid", 1) is None, sjb)
+    mod.WINTER_BONUS_ACTIVE = True
     mod.WINTER_BONUS_CAP = 5
     conn = mod.db(); c = conn.cursor(); c.execute("UPDATE winter_purchases SET livemode = 0"); conn.commit()   # ここまでの購入は数えない
     c.execute("INSERT INTO winter_purchases (session_id, email, name, plan, item_keys, amount, status, app_id, livemode, paid_at, created_at) "
