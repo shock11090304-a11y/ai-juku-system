@@ -456,6 +456,10 @@ def main():
     mod.get_stripe = _orig_get_stripe
     os.environ["STRIPE_WEBHOOK_SECRET"] = "whsec_test_winter"
     mod.STRIPE_WEBHOOK_SECRET = "whsec_test_winter"
+    # ---- F9. アプリの中のブラウザが決済の入口を GET で開いたとき (2026-11-20)：Not Found ではなく日本語の案内 ----
+    rg = client.get("/api/winter/checkout?page=winter-chugaku")
+    check("F9. GET の決済入口は日本語の案内 (ブラウザで開く)・決済画面は作らない・戻り先は中学版",
+          rg.status_code == 400 and "ブラウザで開く" in rg.text and "Not Found" not in rg.text and "winter-chugaku.html" in rg.text, (rg.status_code, rg.text[:200]))
     # ---- H. 定員 (大学別パック 各先着20名・塾長決定 2026-11-11。満員後に枠を足さない) ----
     set_today("2026-11-20")
     mod.get_stripe = lambda: fake

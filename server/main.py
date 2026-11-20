@@ -59068,8 +59068,9 @@ def _winter_part_price(part: str) -> int:
     return int((WINTER_BUNDLES.get(part) or WINTER_ITEMS.get(part) or {}).get("price") or 0)
 
 
-def _winter_error_page(message: str, page: str = "winter", status: int = 400, label: str = "", back_url: str = ""):
-    """label / back_url は共通テスト過去問 (kt) が使う (冬期講習は既定のまま = 文面は変わらない)。"""
+def _winter_error_page(message: str, page: str = "winter", status: int = 400, label: str = "", back_url: str = "", next_step: str = ""):
+    """label / back_url は共通テスト過去問 (kt)・英検準2級 (ep2) が使う (新しいタブで決済を開くので「このタブを閉じて」の文のまま)。
+    冬期講習は 2026-11-20 から決済を同じ画面で開くので「ブラウザの戻る」の文。next_step を渡すとその段落を差し替える。"""
     from fastapi.responses import HTMLResponse
     def _esc(s):
         return (str(s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;"))
@@ -59082,8 +59083,11 @@ def _winter_error_page(message: str, page: str = "winter", status: int = 400, la
             "<div style=\"max-width:600px;margin:1.5rem auto;padding:1.2rem;background:#fff;border:1px solid #E5E7EB;border-radius:6px;\">"
             "<h1 style=\"font-size:1.1rem;color:#991B1B;\">お支払いの画面へ進めませんでした</h1>"
             f"<p>{_esc(message)}</p>"
-            "<p style=\"margin-top:1rem;\">このタブを閉じて、元の画面（お申し込み完了の画面）の「カードでお支払いへ進む」からもう一度お進みください。"
-            f"元の画面を閉じてしまった場合は、<a href=\"{_esc(back)}\">申込ページ</a>からもう一度ご入力ください。</p>"
+            + (f"<p style=\"margin-top:1rem;\">{_esc(next_step)} <a href=\"{_esc(back)}\">申込ページ</a></p>" if next_step else
+               f"<p style=\"margin-top:1rem;\">このタブを閉じて、元の画面（お申し込み完了の画面）の「カードでお支払いへ進む」からもう一度お進みください。"
+               f"元の画面を閉じてしまった場合は、<a href=\"{_esc(back)}\">申込ページ</a>からもう一度ご入力ください。</p>" if back_url else
+               "<p style=\"margin-top:1rem;\">ブラウザの「戻る」で元の画面（お申し込み完了の画面）に戻り、「カードでお支払いへ進む」からもう一度お進みください。"
+               f"戻れない場合は、<a href=\"{_esc(back)}\">申込ページ</a>からもう一度ご入力ください（同じ内容の申し込みが2回届いても問題ありません）。</p>") +
             f"<p style=\"font-size:0.85rem;color:#6B7280;\">解決しない場合は、公式 LINE（{_esc(COURSE_LINE_URL)}）またはメール（{_esc(COURSE_CONTACT_EMAIL)}）までご連絡ください。</p>"
             "</div></body></html>")
     return HTMLResponse(content=html, status_code=status)
@@ -59107,7 +59111,7 @@ def _winter_dup_page(names: list, fields: dict, page: str, label: str = "", back
             + "".join(f"<li>{_esc(n)}</li>" for n in names) +
             "</ul><p>同じ講座を2回お支払いいただく必要はありません。視聴ページ（ご案内メールのリンク）からご覧ください。"
             "<b>同じメールアドレスでもう一度お支払いいただいても、見られる内容は変わりません。</b>別のお子さまの分は、別のメールアドレスでお申し込みください。</p>"
-            "<p>まだお支払いが済んでいない講座だけを買う場合は、このタブを閉じて、申込ページでその講座だけを選び直してください。</p>"
+            "<p>まだお支払いが済んでいない講座だけを買う場合は、申込ページに戻り、その講座だけを選び直してください。</p>"
             f"<form method=\"POST\" action=\"\" style=\"margin-top:1rem;\">{hidden}<input type=\"hidden\" name=\"confirm_dup\" value=\"1\">"
             "<button type=\"submit\" style=\"padding:0.45rem 0.9rem;border:1px solid #9CA3AF;border-radius:4px;background:#fff;color:#4B5563;font:inherit;font-size:0.85rem;cursor:pointer;\">それでも同じ内容で支払いへ進む</button></form>"
             f"<p style=\"margin-top:1rem;\"><a href=\"{_esc(back)}\">申込ページへ戻る</a></p>"
@@ -59130,6 +59134,16 @@ def _winter_expires_at(parts: list, now_ts: Optional[int] = None) -> int:
         end = int(datetime.fromisoformat(dl + "T23:59:59").replace(tzinfo=JST).timestamp())
         hi = min(hi, end)
     return max(lo, hi)
+
+
+@app.get("/api/winter/checkout")
+def winter_checkout_get(page: str = "winter"):
+    """決済の入口を GET で開いた (送った中身が無い) ときの案内。アプリの中のブラウザ (Threads・Instagram など) は
+    「新しいタブで POST」を GET に変えて開くことがあり、今までは {"detail":"Not Found"} だけが出ていた (2026-11-20 確認)。"""
+    return _winter_error_page("お支払いの画面を開けませんでした（お手続きの内容が届きませんでした）。",
+                              page if page in _WINTER_PAGES else "winter", 400,
+                              next_step="お手数ですが、申込ページでもう一度ご入力のうえお進みください（同じ内容の申し込みが2回届いても問題ありません）。"
+                                        "アプリの中のブラウザ（Threads・Instagram など）でうまくいかない場合は、右上のメニューの「ブラウザで開く」か、Safari / Chrome でお試しください。")
 
 
 @app.post("/api/winter/checkout")
