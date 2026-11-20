@@ -17,6 +17,7 @@ import hashlib
 import hmac
 import importlib.util
 import json
+import re
 import os
 import sys
 import tempfile
@@ -429,7 +430,7 @@ def main():
     # ---- H. 画面と表記 ----
     app_js = read("payment/app.js")
     check("H1. 月謝アプリの Stripe 取込は juku-payment-eikenp2 を除外・?v= を上げた", "system === 'juku-payment-eikenp2')" in app_js
-          and "app.js?v=20261119a-eikenp2-skip" in read("payment/index.html"))
+          and (re.search(r"app\.js\?v=(\d{8}[a-z]?)", read("payment/index.html")) or [None, ""])[1] >= "20261119a")  # 後の版上げでも通す（11-20）
     cvh = read("course-videos.html")
     check("H2. 視聴ページに講座の説明と期限", "id=\"ep2Note\"" in cvh and "me.ep2_view_until" in cvh and "英検準2級 ステップアップ講座をお申し込みの方" in cvh)
     ceo = read("ceo.html")
