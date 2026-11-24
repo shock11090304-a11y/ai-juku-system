@@ -1853,6 +1853,15 @@
               ? (typeof window.sapuriAllWatchedHtml === 'function' ? window.sapuriAllWatchedHtml(w) : '')
               : ((w.sapuri && typeof window.sapuriRecLineHtml === 'function')
                 ? window.sapuriRecLineHtml(w.sapuri, { fontSize: '0.8rem', marginTop: '0.3rem', requireLesson: true, watchBtn: true, surface: 'top3' }) : '');
+            // 🎬 2026-11-24 正解率の低い英文法の単元に、自前の動画 (サーバが付ける w.unit_videos・URL の入った動画だけ)。
+            //   リンクは youtube_id (英数字 11 字) から組み立てる。無ければ何も出さない。
+            const uvLinks = (Array.isArray(w.unit_videos) ? w.unit_videos : []).map(v => {
+              const id = String((v && v.youtube_id) || '');
+              if (!/^[A-Za-z0-9_-]{11}$/.test(id)) return '';
+              return `<a href="https://youtu.be/${encodeURIComponent(id)}" target="_blank" rel="noopener" style="display:block;padding:0.35rem 0.6rem;margin-top:0.25rem;background:rgba(52,211,153,0.10);border:1px solid rgba(52,211,153,0.35);border-radius:8px;color:#a7f3d0;font-size:0.8rem;font-weight:700;text-decoration:none;line-height:1.45;">${v.kind === 'explain' ? '📘' : '✏️'} ${escapeHTML(v.label || '')}</a>`;
+            }).filter(Boolean);
+            const unitVideoRow = uvLinks.length
+              ? `<div style="margin-top:0.4rem;"><div style="font-size:0.78rem;color:#6ee7b7;font-weight:700;">🎬 正解率が80%に届いていません。この単元の動画で見直しましょう:</div>${uvLinks.join('')}</div>` : '';
 
             // 推薦リンク: ai-tutor-photo.html へ subject/topic プリセット遷移
             // 🎯 Task 1 (2026-05-13): topic LIKE 絞り込み完了 → match_quality でピンポイント表示
@@ -1885,6 +1894,7 @@
                 </div>
                 ${countRow}
                 ${masteryRow}
+                ${unitVideoRow}
                 ${sapuriRow}
                 ${recHtml}
               </div>`;

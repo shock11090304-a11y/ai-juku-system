@@ -509,6 +509,7 @@
             <button type="button" class="tb-btn hub-btn" data-hub-target="classMgmtSection" data-hub-label="🏫 通塾クラス (ファイル/録画/出欠)"><span class="tb-icon">🏫</span><span class="tb-label">通塾クラス</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="courseVideosSection" data-hub-label="🎥 月額講座 (動画配信・受講者)"><span class="tb-icon">🎥</span><span class="tb-label">月額講座</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="sapuriSection" data-hub-label="📺 スタサプ講義データ (停止スイッチ・取込・見え方)"><span class="tb-icon">📺</span><span class="tb-label">スタサプ</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="unitVideosSection" data-hub-label="🎬 単元の動画 (正解率の低い単元に出す動画の URL)"><span class="tb-icon">🎬</span><span class="tb-label">単元の動画</span></button>
           </div>
         </div>
         <div class="tb-group">
@@ -3129,6 +3130,92 @@
       <button id="spCovBtn" type="button" style="background:rgba(56,189,248,0.18); color:#7dd3fc; border:1px solid rgba(56,189,248,0.45); padding:0.4rem 0.9rem; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:pointer;">📊 カバー状況を数える</button>
       <div id="spCovOut" style="margin-top:0.6rem;"></div>
     </section>
+
+    <!-- 🎬 単元の動画 (2026-11-24)。通塾 英文法の説明動画 (第1〜21回) と問題演習の解説動画 (第1〜20回×前半・後半) に YouTube の URL を入れる。
+         URL の入った動画だけが、宿題の英文法ドリルで正解率 80% 未満 (採点 2 問以上) の単元の生徒に出る (class.html の宿題タブ・mypage の弱点 TOP3)。
+         動画の一覧と単元の対応はサーバの TG_VIDEOS / TG_DRILL_UNIT_TO_NOS (コード) が正典。API: GET /api/admin/unit-videos・PUT /api/admin/unit-videos/{key}・POST /api/admin/unit-videos/bulk。 -->
+    <section id="unitVideosSection" style="margin:1.5rem 0; padding:1.2rem; background:rgba(52,211,153,0.06); border:1px solid rgba(52,211,153,0.30); border-radius:14px;">
+      <h2 style="margin:0 0 0.3rem; font-size:1.05rem;">🎬 単元の動画（正解率の低い単元に出す動画）</h2>
+      <p style="font-size:0.8rem; color:#a1a1aa; margin:0 0 0.6rem; line-height:1.6;">YouTube の URL（限定公開でよい）を入れて「保存」を押すと、宿題の英文法ドリルで正解率が80%に届かない単元（採点2問以上）の生徒に、その単元の動画が出ます（通塾生アプリの宿題タブと、マイページの弱点 TOP3）。URL を消して保存すると出なくなります。同じ回の説明動画と問題演習の解説は、同じ単元の生徒に出ます。</p>
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin-bottom:0.5rem;">
+        <button id="uvLoadBtn" type="button" style="background:rgba(52,211,153,0.18); color:#6ee7b7; border:1px solid rgba(52,211,153,0.45); padding:0.4rem 0.9rem; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:pointer;">🔄 読み込む</button>
+        <button id="uvSaveBtn" type="button" style="background:rgba(99,102,241,0.25); color:#c7d2fe; border:1px solid rgba(99,102,241,0.5); padding:0.4rem 0.9rem; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:pointer;">💾 変えた行を保存</button>
+        <span id="uvMsg" style="font-size:0.8rem; color:#a1a1aa;"></span>
+      </div>
+      <div id="uvTable" style="overflow-x:auto;"></div>
+    </section>
+    <script>
+    (function () {
+      // 🎬 単元の動画の登録 (2026-11-24)。値はすべて uvEsc を通す。保存は変えた行だけを POST /api/admin/unit-videos/bulk でまとめて
+      //   (1 つでも不正ならサーバが何も書かない)。
+      var _uvOrig = {};
+      function el(id) { return document.getElementById(id); }
+      function uvEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+      function msg(t, color) { var m = el('uvMsg'); if (m) { m.textContent = t || ''; m.style.color = color || '#a1a1aa'; } }
+      async function uvFetch(path, init) {
+        if (!window.AdminAuth) return { status: 0, ok: false, data: null };
+        var r;
+        try { r = await window.AdminAuth.fetch(path, init); } catch (e) { return { status: 0, ok: false, data: null }; }
+        var data = null;
+        try { data = await r.json(); } catch (_) { data = null; }
+        return { status: r.status, ok: r.ok, data: data };
+      }
+      function render(items) {
+        _uvOrig = {};
+        var filled = 0;
+        var rows = (items || []).map(function (v) {
+          var cur = v.youtube_id ? ('https://youtu.be/' + v.youtube_id) : '';
+          if (cur) filled++;
+          _uvOrig[v.key] = cur;
+          var du = (v.drill_units && v.drill_units.length) ? v.drill_units.join('・') : '（ドリルの単元なし＝出ない）';
+          return '<tr style="border-top:1px solid rgba(255,255,255,0.08);">'
+            + '<td style="padding:0.3rem 0.4rem; white-space:nowrap; font-size:0.8rem;">' + (v.kind === 'explain' ? '📘' : '✏️') + ' ' + uvEsc(v.label) + '</td>'
+            + '<td style="padding:0.3rem 0.4rem; font-size:0.74rem; color:#a1a1aa;">' + uvEsc(du) + '</td>'
+            + '<td style="padding:0.3rem 0.4rem;"><input type="text" data-uv-key="' + uvEsc(v.key) + '" value="' + uvEsc(cur) + '" placeholder="https://youtu.be/…" style="width:16rem; max-width:60vw; padding:0.3rem 0.4rem; background:rgba(0,0,0,0.3); color:#e4e4e7; border:1px solid rgba(255,255,255,0.18); border-radius:6px; font-size:0.78rem;"></td>'
+            + '<td style="padding:0.3rem 0.4rem; font-size:0.74rem;">' + (cur ? '<a href="' + uvEsc(cur) + '" target="_blank" rel="noopener" style="color:#6ee7b7;">開く</a>' : '') + '</td></tr>';
+        }).join('');
+        el('uvTable').innerHTML = '<table style="border-collapse:collapse; width:100%;"><thead><tr style="font-size:0.74rem; color:#a1a1aa; text-align:left;">'
+          + '<th style="padding:0.3rem 0.4rem;">動画</th><th style="padding:0.3rem 0.4rem;">出すドリルの単元</th><th style="padding:0.3rem 0.4rem;">YouTube の URL</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
+        msg('URL の入っている動画: ' + filled + ' / ' + (items || []).length + ' 本');
+      }
+      async function load() {
+        msg('読み込み中…');
+        var r = await uvFetch('/api/admin/unit-videos');
+        if (!r.ok || !r.data) { msg('読み込めませんでした (' + r.status + ')', '#fca5a5'); return; }
+        render(r.data.items);
+        if (!r.data.ready) msg('準備中です（デプロイ直後で表がまだありません）', '#fbbf24');
+      }
+      async function save() {
+        var changed = [];
+        Array.prototype.forEach.call(document.querySelectorAll('#uvTable input[data-uv-key]'), function (i) {
+          var k = i.getAttribute('data-uv-key'), v = String(i.value || '').trim();
+          if (v !== (_uvOrig[k] || '')) changed.push({ key: k, youtube_url: v });
+        });
+        if (!changed.length) { msg('変えた行がありません'); return; }
+        msg('保存中… (' + changed.length + ' 本)');
+        var r = await uvFetch('/api/admin/unit-videos/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: changed }) });
+        if (!r.ok) { var dt = r.data && r.data.detail; msg('保存できませんでした: ' + (typeof dt === 'string' ? dt : (dt ? '入力の形が正しくありません' : (r.status || '通信の失敗'))), '#fca5a5'); return; }
+        var d = r.data || {};
+        var r2 = await uvFetch('/api/admin/unit-videos');
+        if (!r2.ok || !r2.data) { msg('保存しました（入れた ' + (d.set || 0) + ' 本・外した ' + (d.cleared || 0) + ' 本）。表の読み直しに失敗したので「🔄 読み込む」を押してください', '#fbbf24'); return; }
+        render(r2.data.items);
+        msg('保存しました（入れた ' + (d.set || 0) + ' 本・外した ' + (d.cleared || 0) + ' 本）', '#86efac');
+      }
+      document.addEventListener('DOMContentLoaded', function () {
+        var lb = el('uvLoadBtn'), sb = el('uvSaveBtn');
+        if (lb) lb.addEventListener('click', function () {
+          var dirty = Array.prototype.some.call(document.querySelectorAll('#uvTable input[data-uv-key]'), function (i) {
+            return String(i.value || '').trim() !== (_uvOrig[i.getAttribute('data-uv-key')] || '');
+          });
+          if (dirty && !confirm('保存していない URL があります。読み込み直すと消えます。よろしいですか？')) return;
+          load();
+        });
+        if (sb) sb.addEventListener('click', save);
+        var hb = document.querySelector('#ceoHubMenu [data-hub-target="unitVideosSection"]');
+        if (hb) hb.addEventListener('click', function () { if (!el('uvTable').innerHTML) load(); });
+      });
+    })();
+    </script>
 
     <!-- 🎥 月額講座 (英文解釈 ¥1,000/月・英文法 ¥1,500/月・共通テスト対策 ¥1,500/月) の動画配信 (2026-09-16)。
          動画は course_videos に YouTube の ID だけ保存。受講者は course_members (Stripe と同期)。

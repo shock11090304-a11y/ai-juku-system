@@ -1890,6 +1890,13 @@ def init_db():
     );
     CREATE UNIQUE INDEX IF NOT EXISTS uq_sapuri_lesson_progress ON sapuri_lesson_progress(student_id, lesson_key);
     CREATE INDEX IF NOT EXISTS idx_sapuri_lesson_progress_student ON sapuri_lesson_progress(student_id, watched_at);
+    -- 🎬 2026-11-24 単元の動画 (通塾 英文法の説明動画・問題演習の解説動画) の YouTube の動画 ID。
+    --   動画の一覧と単元の対応はコードの定数 TG_VIDEOS が正典。ここは「どの動画に URL が入ったか」だけ (生徒の列は無い)。
+    CREATE TABLE IF NOT EXISTS unit_video_links (
+        video_key TEXT PRIMARY KEY,
+        youtube_id TEXT NOT NULL,
+        updated_at TIMESTAMP
+    );
     -- 📄 過去問 → AI 類題生成パイプライン (塾長指示 2026-05-14・γ 究極最適化方式)
     -- 1 PDF を Gemini Flash で解析 → Claude Sonnet で 18 類題バッチ生成 → 3 人検閲 + AI Self-Critique
     -- ⚠️ 著作権法 30 条の 4 遵守: 元問題のテキスト化結果 (Gemini 解析結果) は DB に保存しない。
@@ -7864,6 +7871,8 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
         # 📺 2026-10-10 スタサプ段階 B: 対象生徒 (query の student_id の生徒で判定) なら各項目に sapuri を付ける。
         #   ★メインのループの後・自分の接続で照合する (この関数の共有カーソル c には触らない)。対象外はキーを足さない。
         _sapuri_el = _sapuri_attach_top3(student_id, weaknesses, pool)
+        # 🎬 2026-11-24 正解率の低い英文法の単元に、自前の動画 (説明動画 → 問題演習の解説動画・ID の入ったものだけ)
+        _tg_attach_top3(weaknesses, pool)
         # 🎯 [review fix #2] 「正答だが遅い単元」は不正確優先ソートの top-N に乗りにくいため、
         #   全単元から別途 1 件 (最も遅い・正答率>=0.6・試行>=3) を time_focus として返す。
         #   mypage が本命の弱点とは別に「明示」表示できる。
@@ -68253,6 +68262,304 @@ def _sapuri_for_worksheet(student_id: int, subject_label: str, topic: str) -> tu
     except Exception as e:
         log.warning(f"[Sapuri] worksheet match failed: {type(e).__name__}")
         return [], []
+
+
+# ---------------------------------------------------------------------------
+# 🎬 単元の動画 (2026-11-24 塾長「宿題：塾生アプリで演習し、正解率を測ります。正解率を見て、必要な動画で抜けをなくします」)
+#   宿題の英文法ドリルで正解率の低い単元に、その単元の自前の動画 (通塾 英文法の説明動画 → 問題演習の解説動画) を出す。
+#   ・動画の一覧と単元の対応 = このコードの定数 (TG_VIDEOS / TG_DRILL_UNIT_TO_NOS) が正典。第N回の単元は説明動画と解説動画で同じ。
+#   ・YouTube の動画 ID だけを表 unit_video_links に入れる (CEO の「🎬 単元の動画」か PUT/POST /api/admin/unit-videos)。
+#     ID の無い動画は生徒に出さない (アップが済んで ID が入った動画から順に出る・デプロイ不要)。
+#   ・出す条件: 科目 english・採点済み 2 問以上・正解率 80% 未満 (= 習得の線 _WEAKNESS_MASTERY_ACCURACY の手前)。
+#     正解率の低い順に最大 3 単元。中学 (chugaku) と英検は対象外。
+#   ・表示する面: 通塾生アプリ class.html (GET /api/student/class/unit-videos) と mypage の弱点 TOP3 (各項目の unit_videos)。
+# ---------------------------------------------------------------------------
+TG_VIDEO_UNITS = ["文型", "時制", "完了形", "助動詞", "受動態", "不定詞", "動名詞", "分詞", "分詞構文", "比較", "関係詞",
+                  "仮定法", "接続詞", "前置詞", "名詞・冠詞", "代名詞", "形容詞・副詞", "疑問文", "否定・倒置・強調・省略",
+                  "話法", "総復習"]   # 説明動画 第1〜21回 (動画完成版/通塾_英文法_説明動画/00_講座の使い方.md の順)
+TG_PRACTICE_LAST = 20                 # 問題演習の解説動画は第1〜20回 × 前半 (4択)・後半 (整序・書き換え)
+
+
+def _tg_build_videos() -> list:
+    out = []
+    for i, u in enumerate(TG_VIDEO_UNITS, start=1):
+        out.append({"key": f"tg-exp-{i:02d}", "kind": "explain", "no": i, "unit": u, "half": None,
+                    "label": f"説明動画 第{i}回 {u}"})
+    for i, u in enumerate(TG_VIDEO_UNITS[:TG_PRACTICE_LAST], start=1):
+        out.append({"key": f"tg-prc-{i:02d}-a", "kind": "practice", "no": i, "unit": u, "half": "前半",
+                    "label": f"問題演習の解説 第{i}回 {u}（前半・4択）"})
+        out.append({"key": f"tg-prc-{i:02d}-b", "kind": "practice", "no": i, "unit": u, "half": "後半",
+                    "label": f"問題演習の解説 第{i}回 {u}（後半・整序・書き換え）"})
+    return out
+
+
+TG_VIDEOS = _tg_build_videos()
+TG_VIDEO_BY_KEY = {v["key"]: v for v in TG_VIDEOS}
+# 英文法ドリルの単元 (GRAMMAR_UNITS) → 動画の回。「語法・イディオム」に合う回は無い。第1回 文型・第21回 総復習はドリルの単元に無い。
+TG_DRILL_UNIT_TO_NOS = {
+    "時制": [2, 3], "助動詞": [4], "受動態": [5], "不定詞": [6], "動名詞": [7], "分詞": [8], "分詞構文": [9],
+    "関係詞": [11], "仮定法": [12], "比較": [10], "接続詞": [13], "前置詞": [14], "疑問詞・間接疑問": [18],
+    "否定・倒置": [19], "強調・省略": [19], "冠詞": [15], "名詞・代名詞": [15, 16], "形容詞・副詞": [17],
+    "話法": [20], "語法・イディオム": [],
+}
+TG_LOW_ACCURACY = 0.8     # これ未満を「正解率が低い」とする (習得の線と同じ値)
+TG_MIN_ATTEMPTS = 2       # 採点済みがこれ以上で「正解率を測れた」とする
+TG_MAX_UNITS = 3
+
+
+def _tg_nos_to_drill_units() -> dict:
+    m: dict = {}
+    for u, nos in TG_DRILL_UNIT_TO_NOS.items():
+        for n in nos:
+            m.setdefault(n, []).append(u)
+    return m
+
+
+def _tg_drill_unit(subject, topic) -> Optional[str]:
+    """弱点の (科目, topic) → 英文法ドリルの単元 / None。英語 (english) だけ。
+    ★宿題の英文法ドリルが記録する topic (= GRAMMAR_UNITS の単元名そのまま) と、「英文法 関係詞」の形だけを当てる。
+    模試・AI チューターなどの自由な topic (「名詞節」「完了形」など) は部分一致でずれた単元に当たるので使わない (2026-11-24 レビュー)。"""
+    if _weakness_subject_key(subject) != "english":
+        return None
+    t = unicodedata.normalize("NFKC", str(topic or "")).strip()
+    if t.startswith("英文法"):
+        t = t[len("英文法"):].strip()
+    return t if t in GRAMMAR_UNITS else None
+
+
+def _tg_links_ready() -> bool:
+    return _table_has_column("unit_video_links", "youtube_id")
+
+
+def _tg_link_map(conn=None) -> dict:
+    """video_key → {youtube_id, updated_at}。表が無い・読めないときは {} (= どの動画も出さない)。"""
+    if not _tg_links_ready():
+        return {}
+    own = conn is None
+    try:
+        if own:
+            conn = db()
+        c = conn.cursor()
+        c.execute("SELECT video_key, youtube_id, updated_at FROM unit_video_links")
+        out = {}
+        for r in (c.fetchall() or []):
+            k = r["video_key"]
+            if k in TG_VIDEO_BY_KEY and r["youtube_id"]:
+                out[k] = {"youtube_id": r["youtube_id"], "updated_at": str(r["updated_at"]) if r["updated_at"] else None}
+        return out
+    except Exception as e:
+        log.warning(f"[UnitVideos] link read failed: {type(e).__name__}")
+        if not own:
+            try: conn.rollback()
+            except Exception: pass
+        return {}
+    finally:
+        if own and conn is not None:
+            try: conn.close()
+            except Exception: pass
+
+
+def _tg_videos_for_unit(drill_unit: str, links: dict) -> list:
+    """ドリルの単元 → 出す動画 (説明動画を先・次に解説動画の前半・後半)。ID の入った動画だけ。"""
+    nos = TG_DRILL_UNIT_TO_NOS.get(drill_unit) or []
+    keys = [f"tg-exp-{n:02d}" for n in nos]
+    for n in nos:
+        if n <= TG_PRACTICE_LAST:
+            keys += [f"tg-prc-{n:02d}-a", f"tg-prc-{n:02d}-b"]
+    out = []
+    for k in keys:
+        ln = links.get(k)
+        if not ln:
+            continue
+        v = TG_VIDEO_BY_KEY[k]
+        out.append({"key": k, "kind": v["kind"], "no": v["no"], "half": v["half"], "label": v["label"],
+                    "youtube_id": ln["youtube_id"], "url": f"https://youtu.be/{ln['youtube_id']}"})
+    return out
+
+
+def _tg_is_low(qa_accuracy, qa_attempts) -> bool:
+    try:
+        # weakness-top3 は qa_accuracy を小数 2 桁に丸めて返すので、ここでも丸めてから比べる (画面ごとに食い違わない)
+        return (qa_accuracy is not None and int(qa_attempts or 0) >= TG_MIN_ATTEMPTS
+                and round(float(qa_accuracy), 2) < TG_LOW_ACCURACY)
+    except (TypeError, ValueError):
+        return False
+
+
+def _tg_items_from_rows(rows: list, links: dict, max_units: int = TG_MAX_UNITS) -> list:
+    """弱点の行 [{subject, topic, qa_accuracy, qa_attempts}] (正解率の低い順) → 単元ごとの動画の項目 (同じ単元は 1 回)。"""
+    items, seen, seen_keys = [], set(), set()
+    for r in rows or []:
+        if not _tg_is_low(r.get("qa_accuracy"), r.get("qa_attempts")):
+            continue
+        u = _tg_drill_unit(r.get("subject"), r.get("topic"))
+        if not u or u in seen:
+            continue
+        # 同じ回に当たる単元 (否定・倒置 と 強調・省略 → 第19回・冠詞 と 名詞・代名詞 → 第15回) は、上に出した動画を繰り返さない
+        vids = [v for v in _tg_videos_for_unit(u, links) if v["key"] not in seen_keys]
+        if not vids:
+            continue
+        seen.add(u)
+        seen_keys.update(v["key"] for v in vids)
+        items.append({"unit": u, "topic": r.get("topic") or "", "accuracy_pct": int(round(round(float(r["qa_accuracy"]), 2) * 100)),
+                      "attempts": int(r.get("qa_attempts") or 0), "videos": vids})
+        if len(items) >= max_units:
+            break
+    return items
+
+
+def _tg_weak_rows(sid: int, limit: int = 200) -> list:
+    """英語の未習得の弱点で、正解率を測れたもの (正解率の低い順)。自分の接続。
+    ★ドリルの単元に絞るのは後 (Python) なので、自由な topic の行が多い生徒でも単元の行がこぼれないよう広めに読む。"""
+    conn = None
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute(
+            "SELECT subject, topic, qa_accuracy, qa_attempts FROM student_weakness WHERE student_id = ? "
+            "AND subject = 'english' AND qa_accuracy IS NOT NULL AND COALESCE(qa_attempts, 0) >= ? AND qa_accuracy < ? "
+            "ORDER BY qa_accuracy ASC, qa_attempts DESC, last_seen_at DESC LIMIT ?",
+            (int(sid), TG_MIN_ATTEMPTS, TG_LOW_ACCURACY, int(limit)))
+        return [{"subject": r["subject"], "topic": r["topic"] or "", "qa_accuracy": r["qa_accuracy"],
+                 "qa_attempts": r["qa_attempts"]} for r in (c.fetchall() or [])]
+    except Exception as e:
+        log.warning(f"[UnitVideos] weak rows failed: {type(e).__name__}")
+        return []
+    finally:
+        if conn is not None:
+            try: conn.close()
+            except Exception: pass
+
+
+def _tg_attach_top3(weaknesses: list, pool: Optional[str]) -> None:
+    """weakness-top3: 正解率の低い英文法の単元に unit_videos (ID の入った動画だけ・無ければ []) を付ける。中学プールは付けない。"""
+    try:
+        if (pool or "").strip().lower() == "chugaku" or not weaknesses:
+            return
+        links = None
+        seen_keys: set = set()
+        for w in weaknesses:
+            if not _tg_is_low(w.get("qa_accuracy"), w.get("qa_attempts")):
+                continue
+            u = _tg_drill_unit(w.get("subject"), w.get("topic"))
+            if not u:
+                continue
+            if links is None:
+                links = _tg_link_map()
+            # 上の項目に付けた動画は繰り返さない (同じ回に当たる単元どうし)
+            vids = [v for v in _tg_videos_for_unit(u, links) if v["key"] not in seen_keys]
+            seen_keys.update(v["key"] for v in vids)
+            w["unit_videos"] = vids
+            w["unit_videos_unit"] = u
+    except Exception as e:
+        log.warning(f"[UnitVideos] top3 attach failed: {type(e).__name__}")
+
+
+@app.get("/api/student/class/unit-videos")
+def student_class_unit_videos(request: Request, authorization: Optional[str] = Header(None)):
+    """🎬 通塾生アプリ (class.html) の「正解率の低い単元の動画」カード。英文法ドリルで正解率 80% 未満 (採点 2 問以上) の単元の
+    上位 3 つに、ID の入った自前の動画 (説明動画 → 問題演習の解説動画)。0 件は items=[] (カードごと出さない)。AI 呼び出しなし。
+    ★prefix /api/student/class/ は AIなし枠でも許可済み。本人のトークンだけ。"""
+    # 生徒ごとに数える (IP 単位だと Vercel の転送で全生徒が 1 つの枠を分け合う)
+    _check_rate_limit_caller(request, authorization, bucket="class_unit_videos", limit=30, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    sid = int(student["id"])
+    rows = _tg_weak_rows(sid)
+    if not rows:
+        return {"ok": True, "items": []}
+    return {"ok": True, "items": _tg_items_from_rows(rows, _tg_link_map())}
+
+
+def _tg_admin_list(links: dict) -> list:
+    n2u = _tg_nos_to_drill_units()
+    out = []
+    for v in TG_VIDEOS:
+        ln = links.get(v["key"]) or {}
+        out.append(dict(v, youtube_id=ln.get("youtube_id"), updated_at=ln.get("updated_at"),
+                        drill_units=n2u.get(v["no"], [])))
+    return out
+
+
+@app.get("/api/admin/unit-videos")
+def admin_unit_videos_list(authorization: Optional[str] = Header(None)):
+    """塾長: 単元の動画の一覧 (61 本・回・単元・ドリルの単元・入っている動画 ID)。"""
+    _verify_admin_required(authorization)
+    ready = _tg_links_ready()
+    links = _tg_link_map() if ready else {}
+    return {"ok": True, "ready": ready, "items": _tg_admin_list(links),
+            "rule": {"low_accuracy": TG_LOW_ACCURACY, "min_attempts": TG_MIN_ATTEMPTS, "max_units": TG_MAX_UNITS}}
+
+
+class UnitVideoSetRequest(BaseModel):
+    youtube_url: Optional[str] = None   # URL か 11 文字の ID。空なら登録を外す
+
+
+class UnitVideoBulkItem(BaseModel):
+    key: str
+    youtube_url: Optional[str] = None
+
+
+class UnitVideoBulkRequest(BaseModel):
+    items: List[UnitVideoBulkItem]
+
+
+def _tg_set_links(pairs: list) -> dict:
+    """[(key, youtube_url)] を検査してまとめて書く (1 つでも不正なら何も書かない)。空の URL は登録を外す。"""
+    if not _tg_links_ready():
+        raise HTTPException(status_code=503, detail="準備中です (デプロイ直後・表がまだありません)")
+    plan = []
+    for key, raw in pairs:
+        k = str(key or "").strip()
+        if k not in TG_VIDEO_BY_KEY:
+            raise HTTPException(status_code=400, detail=f"動画の指定が不正です: {k[:40]}")
+        s = (raw or "").strip()
+        if not s:
+            plan.append((k, None))
+            continue
+        yid = _course_youtube_id(s)
+        if not yid:
+            raise HTTPException(status_code=400, detail=f"YouTube の URL（または 11 文字の動画 ID）を入れてください: {k}")
+        plan.append((k, yid))
+    conn = db()
+    try:
+        c = conn.cursor()
+        now = _utc_naive_iso()
+        set_n = cleared = 0
+        for k, yid in plan:
+            c.execute("DELETE FROM unit_video_links WHERE video_key = ?", (k,))
+            if yid:
+                c.execute("INSERT INTO unit_video_links (video_key, youtube_id, updated_at) VALUES (?, ?, ?) "
+                          "ON CONFLICT (video_key) DO UPDATE SET youtube_id = excluded.youtube_id, updated_at = excluded.updated_at",
+                          (k, yid, now))
+                set_n += 1
+            else:
+                cleared += 1
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True, "set": set_n, "cleared": cleared}
+
+
+@app.put("/api/admin/unit-videos/{video_key}")
+def admin_unit_video_set(video_key: str, payload: UnitVideoSetRequest, request: Request,
+                         authorization: Optional[str] = Header(None)):
+    """塾長: 1 本の動画に YouTube の URL を入れる (空で外す)。"""
+    _check_rate_limit_ip(request, bucket="unit_video_admin", limit=120, window=60)
+    _verify_admin_required(authorization)
+    return _tg_set_links([(video_key, payload.youtube_url)])
+
+
+@app.post("/api/admin/unit-videos/bulk")
+def admin_unit_video_bulk(payload: UnitVideoBulkRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """塾長・動画アップの会話: まとめて入れる {items:[{key, youtube_url}]} (最大 61 件・1 つでも不正なら何も書かない)。"""
+    _check_rate_limit_ip(request, bucket="unit_video_admin", limit=120, window=60)
+    _verify_admin_required(authorization)
+    items = list(payload.items or [])
+    if not items or len(items) > len(TG_VIDEOS):
+        raise HTTPException(status_code=400, detail="items は 1〜61 件です")
+    return _tg_set_links([(it.key, it.youtube_url) for it in items])
 
 
 @app.get("/api/student/class/sapuri")
