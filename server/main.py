@@ -35303,7 +35303,7 @@ def stripe_webhook(
 # ==========================================================================
 LINE_TEMPLATES = {
     # 📝 2026-10-18 塾長「③の週次レポートの1行も作っておいて」: homework_line (省略可・既定 '') = 「📝 今週の宿題: 届いた N 本／提出 M 本／
-    #   〆を過ぎた未提出 K 本（単元）」と homework_url (宿題を開くリンク・&openExternalBrowser=1)。空なら今までと 1 文字も同じ本文。
+    #   まだ出していない P 本（うち〆を過ぎた K 本: 単元）」(2026-11-24 の形) と homework_url (宿題を開くリンク・&openExternalBrowser=1)。空なら今までと 1 文字も同じ本文。
     "weekly_report": lambda p: {
         "type": "text",
         "text": f"📊 {p.get('name', '生徒')}さんの今週のレポート\n\n"
@@ -37197,7 +37197,7 @@ def _weekly_report_homework_url(link_path: str, line: bool = False) -> str:
 
 def _weekly_report_homework_line(hw) -> str:
     """📝 1 行の文 (メール・LINE・「今週は 0 問」で同じ)。hw = _weekly_report_homework_batch の 1 生徒分。出さないときは ''。
-    単元は 〆を過ぎた未提出のもの (K の後ろにそのまま) か、無ければ未提出のもの (「未提出: …」と書く = 〆過ぎと読ませない)。
+    「…／まだ出していない P 本（うち〆を過ぎた K 本: 単元）」か、〆過ぎが無ければ「…／まだ出していない P 本（単元）」(2026-11-24)。
     N・M・K が 0 でも未提出 (pending) が残っていれば出す (前の週に届いた 3日ドリルが残っている家庭にも届ける = 点検 correct-F1)。"""
     if not hw:
         return ""
@@ -37208,10 +37208,17 @@ def _weekly_report_homework_line(hw) -> str:
         return ""
     if not (n or m or k or p):
         return ""
-    s = f"📝 今週の宿題: 届いた {n} 本／提出 {m} 本／〆を過ぎた未提出 {k} 本"
+    # 🧮 2026-11-24 塾長「宿題の行の食い違いも直して」: 前は「届いた 4 本／提出 3 本／〆を過ぎた未提出 0 本（未提出: 接続詞・
+    #   2級 長文空所補充・古文）」の形で、「0 本」のすぐ後に未提出が 3 つ並び、前の週から残っている分 (pending) の本数がどこにも無かった。
+    #   → まだ出していない本数 P (前の週から残っている分も) を書き、〆を過ぎた K はその内訳「うち〆を過ぎた K 本」にする。
+    #   単元は 〆を過ぎたもの (あれば) か、まだ出していないもの。K は P の一部 (P < K のときは K にそろえる)。
+    p = max(p, k)
+    s = f"📝 今週の宿題: 届いた {n} 本／提出 {m} 本／まだ出していない {p} 本"
     units = [str(u) for u in (hw.get("units") or []) if u][:_WEEKLY_HW_UNITS_MAX]
-    if units:
-        s += ("（" if hw.get("units_of") == "overdue" else "（未提出: ") + "・".join(units) + "）"
+    if k:
+        s += f"（うち〆を過ぎた {k} 本" + ((": " + "・".join(units)) if (units and hw.get("units_of") == "overdue") else "") + "）"
+    elif units and p:
+        s += "（" + "・".join(units) + "）"
     return s
 
 

@@ -2,7 +2,7 @@
 """📝 週次レポートの「今週の宿題」の 1 行 (2026-10-18 塾長「③の週次レポートの1行も作っておいて」) の回帰テスト。
 
 日曜 19:00 の週次レポート (保護者 / 生徒のメール・LINE・「今週は 0 問」メール) に生徒ごとに 1 行:
-  「📝 今週の宿題: 届いた N 本／提出 M 本／〆を過ぎた未提出 K 本（単元を 3 つまで）」+ 宿題を開くリンク。
+  「📝 今週の宿題: 届いた N 本／提出 M 本／まだ出していない P 本（うち〆を過ぎた K 本: 単元を 3 つまで）」 (2026-11-24 に「〆を過ぎた未提出 K 本（未提出: …）」から変更)+ 宿題を開くリンク。
 演習の記録が無い・休眠の生徒でも、未提出の宿題があれば「今週は 0 問」メールを送る (WEEKLY_REPORT_HOMEWORK_ZERO_WEEK・既定 1)。
 
 固定する性質 (一時 SQLite・外へは出さない (偽の urlopen が宛先を全部記録・知らない宛先は落とす)・生徒名とメールは架空 = 公開リポジトリ):
@@ -357,11 +357,11 @@ def main():
     check("新しい順 (比較 → 長い名前 → 関係詞)", us[:1] == ["比較"] and us[2:] == ["関係詞"], us)
     check("【クラス名】を外す", "関係詞" in us and not any("【" in x for x in us), us)
     check("20 字まで (… で切る)", any(x.endswith("…") and len(x) == 20 for x in us), us)
-    check("〆過ぎが無ければ「（未提出: …）」", "（未提出: 比較・" in line_of(r) and line_of(r).startswith("📝 今週の宿題: 届いた 5 本／提出 0 本／〆を過ぎた未提出 0 本"),
+    check("〆過ぎが無ければ「（未提出: …）」", "本（比較・" in line_of(r) and line_of(r).startswith("📝 今週の宿題: 届いた 5 本／提出 0 本／まだ出していない 5 本（比較・") and "〆を過ぎた" not in line_of(r),
           line_of(r))
     r_d1 = B([D1], LO, HI, now_utc=NOW).get(D1) or {}
-    check("〆過ぎがあれば単元は K の後ろにそのまま「（関係詞・…）」", re.search(r"〆を過ぎた未提出 3 本（(関係詞|不定詞)・", line_of(r_d1)) is not None
-          and "未提出:" not in line_of(r_d1), line_of(r_d1))
+    check("〆過ぎがあれば単元は K の後ろにそのまま「（関係詞・…）」", re.search(r"まだ出していない 6 本（うち〆を過ぎた 3 本: (関係詞|不定詞)・", line_of(r_d1)) is not None
+          and "未提出" not in line_of(r_d1), line_of(r_d1))
 
     # ------------------------------------------------------------------
     print("\n[5] 1 行を出さない生徒・前の週からの未提出だけの生徒 (点検 correct-F1)・合図の境目")
@@ -375,7 +375,7 @@ def main():
     res = B([E1, E2, E3, E4], LO, HI, now_utc=NOW)
     check("今日の1問だけ・何も無い・前の週に出し終えた生徒は入らない", not ({E2, E3, E4} & set(res)), res)
     check("前の週からの未提出 (〆なしの 3日ドリル) だけの生徒にも 1 行「…0 本（未提出: 古い3日ドリル）」・合図にはしない",
-          line_of(res.get(E1)) == "📝 今週の宿題: 届いた 0 本／提出 0 本／〆を過ぎた未提出 0 本（未提出: 古い3日ドリル）"
+          line_of(res.get(E1)) == "📝 今週の宿題: 届いた 0 本／提出 0 本／まだ出していない 1 本（古い3日ドリル）"
           and (res.get(E1) or {}).get("pending_recent") == 0, res.get(E1))
     # 10/18 19:00 JST の日曜の実行 (窓 = 10/12 0:00 JST 〜 いま): 10/08 JST に届いた 3日ドリル (次の 3日ドリルを止めている) と
     #   10/10 に出した 〆10/25 の宿題が未提出 → 1 行に出る (前は {} = 何も届かなかった)
@@ -389,10 +389,10 @@ def main():
     res = B([OA, OC], LO, None, now_utc=SUN)
     ra, rc = res.get(OA) or {}, res.get(OC) or {}
     check("A: 前の週に届いた 3日ドリル + 〆がまだ先の宿題 → 1 行 (届いた 0・提出 0・〆過ぎ 0・未提出: 関係詞・仮定法)",
-          line_of(ra) == "📝 今週の宿題: 届いた 0 本／提出 0 本／〆を過ぎた未提出 0 本（未提出: 関係詞・仮定法）"
+          line_of(ra) == "📝 今週の宿題: 届いた 0 本／提出 0 本／まだ出していない 2 本（関係詞・仮定法）"
           and ra.get("pending") == 2 and ra.get("pending_recent") == 0, ra)
     check("C: 今週 1 本出しても、前の週からの未提出の単元を出す (全部出したように読ませない)",
-          line_of(rc) == "📝 今週の宿題: 届いた 1 本／提出 1 本／〆を過ぎた未提出 0 本（未提出: 仮定法）" and rc.get("pending") == 1, rc)
+          line_of(rc) == "📝 今週の宿題: 届いた 1 本／提出 1 本／まだ出していない 1 本（仮定法）" and rc.get("pending") == 1, rc)
     R1 = fx.student("Recent Due 28", email="recent-28@example.org")
     fx.homework(R1, "28 日前が 〆", created_at="2026-09-01 01:00:00", due="2026-09-21", topic="倒置")       # 10/19 JST − 28 日
     R2 = fx.student("Recent Due 29", email="recent-29@example.org")
@@ -441,7 +441,7 @@ def main():
     check("1 行が無いレポートの HTML には「今週の宿題」が無い", "今週の宿題" not in html0)
     html1 = mod._render_weekly_report_html({**ctx, "homework": hwx})
     check("1 行があるレポートの HTML: 文 (escape 済み) と「宿題を開く」のリンク (AIなし枠 = 塾生アプリ)",
-          "📝 今週の宿題: 届いた 1 本／提出 0 本／〆を過ぎた未提出 1 本（&lt;b&gt;関係詞&lt;/b&gt;）" in html1
+          "まだ出していない 1 本（うち〆を過ぎた 1 本: &lt;b&gt;関係詞&lt;/b&gt;）" in html1
           and f'href="{BASE}/class.html?tab=homework"' in html1 and "<b>関係詞</b>" not in html1, html1[:300])
 
     # ------------------------------------------------------------------
@@ -588,7 +588,7 @@ def main():
     check("P1: 届いた 3 (クラス自動宿題・3日ドリル・宿題)・提出 2 (前の週に届いた塾長のドリルも)・〆過ぎ 1・今日の1問は数えない",
           (h1.get("delivered"), h1.get("submitted"), h1.get("overdue")) == (3, 2, 1), h1)
     check("P1: 単元は 〆過ぎの「時制」・リンクはマイページ・文が載る", h1.get("units") == ["時制"] and h1.get("link") == "mypage"
-          and h1.get("line") == "📝 今週の宿題: 届いた 3 本／提出 2 本／〆を過ぎた未提出 1 本（時制）", h1)
+          and h1.get("line") == "📝 今週の宿題: 届いた 3 本／提出 2 本／まだ出していない 2 本（うち〆を過ぎた 1 本: 時制）", h1)
     h2 = (pv.get(P2) or {}).get("homework") or {}
     check("P2 (AIなし枠): 届いた 1 (15問ミッション)・〆過ぎ 1 (記号の宿題)・リンクは塾生アプリ",
           (h2.get("delivered"), h2.get("submitted"), h2.get("overdue"), h2.get("link")) == (1, 0, 1, "class")
@@ -596,7 +596,7 @@ def main():
     check("P3 (宿題なし) は 1 行なし (homework None)", P3 in pv and pv[P3].get("homework") is None, pv.get(P3))
     h4 = (pv.get(P4) or {}).get("homework") or {}
     check("P4 (前からの未提出 = 30 日前の 3日ドリルだけ) にも 1 行「…0 本（未提出: 古い3日ドリル）」(点検 correct-F1)",
-          h4.get("line") == "📝 今週の宿題: 届いた 0 本／提出 0 本／〆を過ぎた未提出 0 本（未提出: 古い3日ドリル）"
+          h4.get("line") == "📝 今週の宿題: 届いた 0 本／提出 0 本／まだ出していない 1 本（古い3日ドリル）"
           and h4.get("pending") == 1 and h4.get("pending_recent") == 0, h4)
     check("env ON: 演習の記録が無い Z1 が「今週は 0 問」に入る (via_homework・LINE は送らない)",
           pv.get(Z1, {}).get("zero_week") is True and pv.get(Z1, {}).get("zero_week_via_homework") is True
@@ -630,17 +630,17 @@ def main():
     check("A: 通常レポートは全部送る (席を奪わない)・「今週は 0 問」は 0 通で capped", isinstance(j, dict) and j.get("sent_email") == reg_emails
           and j.get("zero_week") == 0 and j.get("capped", 0) >= 3 and j.get("zero_week_queued") == 4, j)
     m1c, m1p = wire.mails_to("p1-child@example.org"), wire.mails_to("p1-parent@example.org")
-    line1 = "📝 今週の宿題: 届いた 3 本／提出 2 本／〆を過ぎた未提出 1 本（時制）"
+    line1 = "📝 今週の宿題: 届いた 3 本／提出 2 本／まだ出していない 2 本（うち〆を過ぎた 1 本: 時制）"
     check("P1: 生徒コピー (子) と保護者コピーの両方に 1 行と「宿題を開く」(マイページ)",
           len(m1c) == 1 and len(m1p) == 1 and all(line1 in m["html"] and f'href="{BASE}/mypage.html?focus=homework"' in m["html"]
                                                    for m in m1c + m1p), [m["html"][:200] for m in m1c + m1p])
     m2 = wire.mails_to("p2@example.org")
-    check("P2 (AIなし枠): 1 行と塾生アプリの宿題タブのリンク", len(m2) == 1 and "〆を過ぎた未提出 1 本（分詞構文）" in m2[0]["html"]
+    check("P2 (AIなし枠): 1 行と塾生アプリの宿題タブのリンク", len(m2) == 1 and "うち〆を過ぎた 1 本: 分詞構文）" in m2[0]["html"]
           and f'href="{BASE}/class.html?tab=homework"' in m2[0]["html"], m2[:1])
     m3, m4 = wire.mails_to("p3@example.org"), wire.mails_to("p4@example.org")
     check("P3: 1 行の無いレポート (今までどおり)", len(m3) == 1 and "今週の宿題" not in m3[0]["html"])
     check("P4: 前からの未提出の 1 行「（未提出: 古い3日ドリル）」と宿題のリンク", len(m4) == 1
-          and "〆を過ぎた未提出 0 本（未提出: 古い3日ドリル）" in m4[0]["html"] and f'href="{BASE}/mypage.html?focus=homework"' in m4[0]["html"],
+          and "まだ出していない 1 本（古い3日ドリル）" in m4[0]["html"] and f'href="{BASE}/mypage.html?focus=homework"' in m4[0]["html"],
           m4[:1])
     lines = {ln["to"]: ln["text"] for ln in wire.lines}
     check("LINE は前から受け取っている P1・P2・P3 だけ (「今週は 0 問」の Z1 には送らない)", sorted(lines) == ["U-fx-p1", "U-fx-p2", "U-fx-p3"], sorted(lines))
@@ -739,12 +739,12 @@ def main():
     all_zero = {m["to"]: m for m in b_mails + c3_mails + e_mails}
     z1h = (all_zero.get("z1@example.org") or {}).get("html", "")
     check("Z1 (演習の記録なし・AIなし枠): 1 行・ボタンは「📝 宿題を開く」(塾生アプリ)・「最後の演習」は書かない・「今日の 1 問」は出さない",
-          "📝 今週の宿題: 届いた 1 本／提出 0 本／〆を過ぎた未提出 0 本（未提出: 時制）" in z1h and "📝 宿題を開く" in z1h
+          "📝 今週の宿題: 届いた 1 本／提出 0 本／まだ出していない 1 本（時制）" in z1h and "📝 宿題を開く" in z1h
           and f'href="{BASE}/class.html?tab=homework"' in z1h and "最後の演習" not in z1h and "今日の 1 問" not in z1h, z1h[:600])
     z1s = (all_zero.get("z1@example.org") or {}).get("subject", "")
     check("Z1: 件名は「まだ出していない宿題があります」", "まだ出していない宿題があります" in z1s, z1s)
     z3h = (all_zero.get("z3@example.org") or {}).get("html", "")
-    check("Z3 (休眠): 「最後の演習: … 60 日前」を書く・〆過ぎの 1 行", "60 日前" in z3h and "〆を過ぎた未提出 1 本（比較）" in z3h, z3h[:600])
+    check("Z3 (休眠): 「最後の演習: … 60 日前」を書く・〆過ぎの 1 行", "60 日前" in z3h and "うち〆を過ぎた 1 本: 比較）" in z3h, z3h[:600])
     z7h = (all_zero.get("z7@example.org") or {}).get("html", "")
     check("Z7 (宿題なし・前からの対象): 今までどおり「今日の 1 問」・宿題の 1 行なし",
           "今日の 1 問を解く" in z7h and "今週の宿題" not in z7h and "5 日前" in z7h, z7h[:600])
