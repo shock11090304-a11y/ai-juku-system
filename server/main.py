@@ -59070,8 +59070,8 @@ def _winter_part_price(part: str) -> int:
 
 def _winter_error_page(message: str, page: str = "winter", status: int = 400, label: str = "", back_url: str = "", next_step: str = "",
                        same_tab: bool = False):
-    """label / back_url は共通テスト過去問 (kt)・英検準2級 (ep2) が使う。決済を新しいタブで開く ep2 は「このタブを閉じて」の文のまま。
-    kt も 2026-11-20 から同じ画面で開くので same_tab=True で「ブラウザの戻る」の文。
+    """label / back_url は共通テスト過去問 (kt)・英検準2級 (ep2) が使う。
+    kt は 2026-11-20、ep2 は 2026-11-24 から決済を同じ画面で開くので same_tab=True で「ブラウザの戻る」の文。
     冬期講習は 2026-11-20 から決済を同じ画面で開くので「ブラウザの戻る」の文。next_step を渡すとその段落を差し替える。"""
     from fastapi.responses import HTMLResponse
     def _esc(s):
@@ -60719,8 +60719,8 @@ def _ep2_back_url() -> str:
     return f"{EP2_SITE_URL}/{EP2_PAGE}.html"
 
 
-def _ep2_error_page(message: str, status: int = 400):
-    return _winter_error_page(message, status=status, label=EP2_LABEL, back_url=_ep2_back_url())
+def _ep2_error_page(message: str, status: int = 400, next_step: str = ""):
+    return _winter_error_page(message, status=status, label=EP2_LABEL, back_url=_ep2_back_url(), next_step=next_step, same_tab=True)
 
 
 def _ep2_access(email: str, today: Optional[str] = None, strict: bool = False) -> dict:
@@ -60823,6 +60823,14 @@ def _ep2_dup_page(access: dict, fields: dict):
             f"<p style=\"font-size:0.85rem;color:#6B7280;\">ご不明な点は 公式 LINE（{_esc(COURSE_LINE_URL)}）またはメール（{_esc(COURSE_CONTACT_EMAIL)}）までご連絡ください。</p>"
             "</div></body></html>")
     return HTMLResponse(content=html, status_code=200)
+
+
+@app.get("/api/ep2/checkout")
+def ep2_checkout_get():
+    """決済の入口を GET で開いた (送った中身が無い) ときの案内 (冬期講習・共通テスト過去問と同じ・2026-11-24)。"""
+    return _ep2_error_page("お支払いの画面を開けませんでした（お手続きの内容が届きませんでした）。", 400,
+                           next_step="お手数ですが、申込ページでもう一度ご入力のうえお進みください（同じ内容の申し込みが2回届いても問題ありません）。"
+                                     "アプリの中のブラウザ（Threads・Instagram など）でうまくいかない場合は、右上のメニューの「ブラウザで開く」か、Safari / Chrome でお試しください。")
 
 
 @app.post("/api/ep2/checkout")

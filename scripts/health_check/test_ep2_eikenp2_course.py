@@ -441,6 +441,14 @@ def main():
           and "お支払いの日から5か月" in sec and "#tokusho-eikenp2" in legal
           and mod.EP2_PRICE_PLUS - mod.EP2_PRICE_STD == 10000, sec[:200])
 
+    # ---- 決済を同じ画面で開く (2026-11-24)：GET の入口は日本語の案内・エラー画面は「ブラウザの戻る」の文 ----
+    rg = client.get("/api/ep2/checkout")
+    check("Z1. GET の決済入口は日本語の案内 (Not Found にしない)・戻り先は eiken-p2",
+          rg.status_code == 400 and "申込ページでもう一度" in rg.text and "Not Found" not in rg.text and "eiken-p2" in rg.text, (rg.status_code, rg.text[:200]))
+    eg = mod._ep2_error_page("テスト")
+    check("Z2. 英検準2級のエラー画面は「ブラウザの「戻る」」の文 (「このタブを閉じて」は出さない)",
+          "ブラウザの「戻る」" in eg.body.decode() and "このタブを閉じて" not in eg.body.decode())
+
     print()
     if FAILURES:
         print(f"❌ {len(FAILURES)} 件失敗: {FAILURES}")
