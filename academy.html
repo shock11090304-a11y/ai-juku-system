@@ -355,6 +355,10 @@
   .course .c3 dt{font-size:.72rem;font-weight:800;color:var(--gold-ink);letter-spacing:.05em}
   .course .c3 dd{margin:0;color:var(--ink-soft);line-height:1.75;line-break:strict}
   .course .c3 dd b{color:var(--navy);font-weight:800}
+  .course .c-week{margin:-.3rem 0 1rem;flex-grow:1}
+  .course .c3:has(+ .c-week){flex-grow:0}
+  .course .c-week-hd{font-size:.72rem;font-weight:800;color:var(--gold-ink);letter-spacing:.05em}
+  .course .c-week .mini-tbl{margin:.25rem 0 0}
   .course details{border-top:1px dashed var(--line);padding-top:.7rem}
   .course details summary{cursor:pointer;font-size:.82rem;font-weight:800;color:var(--gold-ink);list-style:none;display:flex;align-items:center;gap:.4em}
   .course details summary::-webkit-details-marker{display:none}
@@ -1936,6 +1940,7 @@
           </div>
           <div class="meta"><i>対象：GMARCH志望</i><i>水曜 2限</i></div>
           <dl class="c3"><div><dt>やること</dt><dd><b>ライブ授業</b>：志望大学・学部の出題傾向に合わせた過去問演習と弱点の補強（少人数制・志望に応じてテキストを変えます）<br><b>授業のない日</b>：授業の内容の演習問題を、解説動画つきで<br><b>足りない部分</b>：復習・補習の動画で補強<br><b>宿題</b>：塾生アプリで演習し、正解率を測ります。正解率を見て、必要な動画で抜けをなくします</dd></div><div><dt>こんな人に</dt><dd>GMARCH志望で、大学別の対策を本格的に始めたい生徒。志望校の問題形式に慣れていない生徒。</dd></div><div><dt>身につくこと</dt><dd>志望校の出題形式に慣れ、本番で実力を出し切れる状態。GMARCH合格に必要な英語力の完成。</dd></div></dl>
+          <div class="c-week"><div class="c-week-hd">1週間の流れ（例）</div><table class="mini-tbl wk-tbl"><tr><th>いつ</th><th>内容</th></tr><tr><td>水 20:25–21:25</td><td>GMARCHコース<span class="wk-sub">ライブ・志望大学・学部別の過去問演習（少人数制）</span></td></tr><tr><td>授業のない日</td><td>授業の内容の演習問題<span class="wk-sub">解説動画つき</span></td></tr><tr><td>空いた時間</td><td>復習・補習の動画<span class="wk-sub">授業だけでは足りない部分を補強</span></td></tr><tr><td>毎週</td><td>宿題を塾生アプリで<span class="wk-sub">正解率を測り、必要な動画で抜けをなくす</span></td></tr></table></div>
           <details><summary>詳細を見る</summary><div class="dbody">
             <div><div class="dt">授業の進め方</div><div>志望大学・学部ごとの出題傾向を分析し、過去問演習と弱点補強を繰り返します。少人数制で個別進捗に対応。</div></div>
             <div><div class="dt">使用教材</div><div>志望大学・学部別の過去問＋オリジナル演習教材（PDF）</div></div>
@@ -1949,6 +1954,7 @@
           </div>
           <div class="meta"><i>対象：早慶志望</i><i>毎週木曜に配信（アーカイブ）</i></div>
           <dl class="c3"><div><dt>やること</dt><dd>早稲田・慶應の学部ごとの出題形式に合わせた演習。授業は毎週木曜に届く動画で、好きな時間に何度でも受講できます。学部別の過去問対策と、レベルアップ演習問題の解説動画も配信します。</dd></div><div><dt>こんな人に</dt><dd>早慶を第一志望とする生徒。GMARCHは解けるが早慶になると歯が立たない生徒。他塾と併用したい生徒。</dd></div><div><dt>身につくこと</dt><dd>志望学部の傾向をつかみ、難度の高い語彙・長文・英作文で合格点を取りにいける力。</dd></div></dl>
+          <div class="c-week"><div class="c-week-hd">1週間の流れ（例）</div><table class="mini-tbl wk-tbl"><tr><th>いつ</th><th>内容</th></tr><tr><td>木</td><td>新しい授業の動画が届く<span class="wk-sub">アーカイブ・好きな時間に何度でも</span></td></tr><tr><td>空いた時間</td><td>学部別の過去問対策の動画</td></tr><tr><td>空いた時間</td><td>レベルアップ演習問題の解説動画<span class="wk-sub">語彙・文法、長文読解、英作文</span></td></tr></table></div>
           <details><summary>詳細を見る</summary><div class="dbody">
             <div><div class="dt">授業の進め方</div><div>早慶各学部の出題形式に特化した演習を、アーカイブ配信で受講。毎週木曜の授業に加えて、学部別の過去問対策動画・レベルアップ演習問題の動画で、難度の高い語彙・文法、長文読解、英作文まで学部別に対策します。他塾との併用もしやすい形です。</div></div>
             <div><div class="dt">体験</div><div>授業1回分のアーカイブ（録画）で体験できます（¥1,500・入塾された場合は全額返金）。</div></div>
@@ -1963,6 +1969,7 @@
           </div>
           <div class="meta"><i>1クラス目 月12,500円</i><i>2クラス目から 月6,000円</i><i>関関同立</i><i>旧帝大・神戸大</i><i>人気国公立</i><i>日東駒専・産近甲龍</i><i>毎週2本（各45分前後）</i><i>2026年12月開講</i></div>
           <dl class="c3"><div><dt>やること</dt><dd>志望校が入っているクラスを選び、毎週2本（各45分前後）の講義動画で受講します。火曜は解き方の講義と演習の解説（国公立の2クラスは、12月は共通テストのリーディング）、金曜は志望の大学の過去問の解説です。</dd></div><div><dt>こんな人に</dt><dd>ライブ授業の時間に参加しにくい生徒。部活や学校行事が忙しい生徒。志望大学の対策を自分のペースで進めたい生徒。</dd></div><div><dt>身につくこと</dt><dd>志望校の出題形式に合わせた解き方で、過去問の大問ごとに根拠を示して解ける力。</dd></div></dl>
+          <div class="c-week"><div class="c-week-hd">1週間の流れ（例）</div><table class="mini-tbl wk-tbl"><tr><th>いつ</th><th>内容</th></tr><tr><td>火</td><td>講義動画（45分前後）<span class="wk-sub">解き方の講義と、クラスのレベルに合わせた演習の解説（国公立の2クラスは、12月は共通テストのリーディング）</span></td></tr><tr><td>金</td><td>講義動画（45分前後）<span class="wk-sub">志望の大学の過去問を大問ごとに解説</span></td></tr><tr><td>空いた時間</td><td>動画ごとの課題を提出<span class="wk-sub">塾長が確認</span></td></tr><tr><td>いつでも</td><td>わからないところを公式 LINE で質問<span class="wk-sub">配布プリントと宿題は塾生アプリで</span></td></tr></table></div>
           <details><summary>詳細を見る</summary><div class="dbody">
             <div><div class="dt">受講料と受け方</div><div>関関同立／旧帝大・神戸大／人気国公立／日東駒専・産近甲龍の4つのクラスがあります。受講料は、対策クラスの1クラス目が月額12,500円、対策クラスを2つ以上受けるときは2クラス目から1クラスにつき月額6,000円です（例：【関関同立】だけなら月12,500円。併願校が別のクラスにあって2クラス受けるなら月18,500円、3クラスなら月24,500円、4クラスなら月30,500円）。2クラス目からが安いのは、【関関同立】と【日東駒専・産近甲龍】、国公立の2クラスどうしは火曜の講義が同じ動画になるためです（私立と国公立の組み合わせも、2クラス目からは同じく月6,000円です）。早慶クラス・GMARCHコースなど、ほかのコースとの組み合わせでは割り引きません。志望する大学・学部の出題形式に合わせて対策できるクラスで、各クラスとも、このクラスのために収録した講義動画を毎週2本配信します（ライブ授業の録画ではありません）。ライブ授業の時間に合わせる必要がなく、部活や学校行事のある生徒も、好きな時間に何度でも受講できます。動画は塾生アプリで配信し、課題の提出と確認、公式 LINE での質問、配布プリントと宿題まで、ライブのクラスと同じようにサポートします。別途、入塾金・設備費がかかります。</div></div>
             <div><div class="dt">クラス</div><div><b>【関関同立】</b>：関西大学・関西学院大学・同志社大学・立命館大学<br><b>【旧帝大・神戸大】</b>：北海道大学・東北大学・名古屋大学・大阪大学・九州大学・神戸大学<br><b>【人気国公立】</b>：<br>　都市部の公立・国立 … 大阪公立大学・千葉大学・横浜国立大学・東京都立大学・埼玉大学・兵庫県立大学など<br>　地方の国立 … 広島大学・新潟大学・静岡大学・信州大学・鹿児島大学など<br><b>【日東駒専・産近甲龍】</b>：日本大学・東洋大学・駒澤大学・専修大学・京都産業大学・近畿大学・甲南大学・龍谷大学<br>東京大学・京都大学・旧帝大をライブ授業で対策したい場合は、国公立難関大学コース（東大・京大・旧帝大志望）をお選びください。</div></div>
@@ -1981,6 +1988,7 @@
           </div>
           <div class="meta"><i>対象：中高合同</i><i>木曜 1限</i></div>
           <dl class="c3"><div><dt>やること</dt><dd><b>ライブ授業</b>：4技能を毎回バランスよく。ライティングは添削で弱点を直します<br><b>授業のない日</b>：授業の内容の演習問題を、解説動画つきで<br><b>足りない部分</b>：復習・補習の動画で補強<br><b>宿題</b>：塾生アプリで演習し、正解率を測ります。正解率を見て、必要な動画で抜けをなくします</dd></div><div><dt>こんな人に</dt><dd>準1級の取得を目指す中高生。2級を取って次のレベルに挑戦したい生徒。</dd></div><div><dt>身につくこと</dt><dd>準1級の合格に必要な4技能の力。大学入試の英検利用（加点・優遇）を活かせる英語力。</dd></div></dl>
+          <div class="c-week"><div class="c-week-hd">1週間の流れ（例）</div><table class="mini-tbl wk-tbl"><tr><th>いつ</th><th>内容</th></tr><tr><td>木 19:15–20:15</td><td>英検準1級対策<span class="wk-sub">ライブ・4技能（ライティングは添削）</span></td></tr><tr><td>授業のない日</td><td>授業の内容の演習問題<span class="wk-sub">解説動画つき</span></td></tr><tr><td>空いた時間</td><td>復習・補習の動画<span class="wk-sub">授業だけでは足りない部分を補強</span></td></tr><tr><td>毎週</td><td>宿題を塾生アプリで<span class="wk-sub">正解率を測り、必要な動画で抜けをなくす</span></td></tr></table></div>
           <details><summary>詳細を見る</summary><div class="dbody">
             <div><div class="dt">授業の進め方</div><div>4技能を毎回バランスよく扱います。特にライティングは添削指導で弱点を直します。</div></div>
             <div><div class="dt">使用教材</div><div>オリジナルPDF教材（技能別対策＋過去問演習＋ライティング添削）</div></div>
@@ -1994,6 +2002,7 @@
           </div>
           <div class="meta"><i>対象：中高合同</i><i>金曜 2限</i></div>
           <dl class="c3"><div><dt>やること</dt><dd><b>ライブ授業</b>：頻出の文法・語彙・読解の集中演習と、リスニング・ライティングの対策<br><b>授業のない日</b>：授業の内容の演習問題を、解説動画つきで<br><b>足りない部分</b>：復習・補習の動画で補強<br><b>宿題</b>：塾生アプリで演習し、正解率を測ります。正解率を見て、必要な動画で抜けをなくします</dd></div><div><dt>こんな人に</dt><dd>2級の取得を目指す中高生。大学入試に向けて英語の基礎力を証明したい生徒。</dd></div><div><dt>身につくこと</dt><dd>2級の合格に必要な、高校卒業レベルの英語力。大学入試の基礎としてもそのまま使える力。</dd></div></dl>
+          <div class="c-week"><div class="c-week-hd">1週間の流れ（例）</div><table class="mini-tbl wk-tbl"><tr><th>いつ</th><th>内容</th></tr><tr><td>金 20:25–21:25</td><td>英検2級対策<span class="wk-sub">ライブ・頻出の文法・語彙・読解とリスニング・ライティング</span></td></tr><tr><td>授業のない日</td><td>授業の内容の演習問題<span class="wk-sub">解説動画つき</span></td></tr><tr><td>空いた時間</td><td>復習・補習の動画<span class="wk-sub">授業だけでは足りない部分を補強</span></td></tr><tr><td>毎週</td><td>宿題を塾生アプリで<span class="wk-sub">正解率を測り、必要な動画で抜けをなくす</span></td></tr></table></div>
           <details><summary>詳細を見る</summary><div class="dbody">
             <div><div class="dt">授業の進め方</div><div>文法・語彙・読解・リスニング・ライティングを効率的に対策。頻出パターンを押さえた演習で合格力を養成。</div></div>
             <div><div class="dt">使用教材</div><div>オリジナルPDF教材（頻出パターン演習＋過去問＋ライティング対策）</div></div>
@@ -2007,6 +2016,7 @@
           </div>
           <div class="meta"><i>対象：高校生</i><i>面談なし</i></div>
           <dl class="c3"><div><dt>やること</dt><dd>通常授業2科目に加えて、塾生アプリに学習記録（例：単語帳30分、問題集2P）を入力し、週ごとの振り返りと講師のアドバイスで計画を調整します（面談なし・記録の入力は必須）。</dd></div><div><dt>こんな人に</dt><dd>何をどれだけやればよいか迷いやすい高校生。記録を続けて学習の習慣をつけたい生徒。</dd></div><div><dt>身につくこと</dt><dd>勉強した量を記録して振り返り、自分で計画を立て直せる習慣。</dd></div></dl>
+          <div class="c-week"><div class="c-week-hd">1週間の流れ（例）</div><table class="mini-tbl wk-tbl"><tr><th>いつ</th><th>内容</th></tr><tr><td>選んだ授業の日</td><td>通常授業2科目<span class="wk-sub">ライブ</span></td></tr><tr><td>毎日</td><td>塾生アプリに学習記録を入力<span class="wk-sub">例：単語帳30分、問題集2P</span></td></tr><tr><td>週ごと</td><td>振り返りと講師のアドバイス<span class="wk-sub">計画を調整（面談なし）</span></td></tr></table></div>
           <details><summary>詳細を見る</summary><div class="dbody">
             <div><div class="dt">内容</div><div>通常授業2科目＋学習管理（月額22,500円・面談なし）。塾生アプリへの記録入力が必須です。</div></div>
             <div><div class="dt">課題方針</div><div>塾生アプリへの学習記録入力（必須）。例：単語帳30分、問題集2P等。週ごとの振り返りと、講師のアドバイスに基づく調整を行います。</div></div>
@@ -2021,17 +2031,18 @@
           </div>
           <div class="meta"><i>対象：東大・京大・旧帝大志望</i><i>水・金・日 ライブ授業</i><i>動画・AI学習アプリ込み</i></div>
           <dl class="c3"><div><dt>やること</dt><dd><b>ライブ授業</b>：英語（水・金・国公立コース専用）と国語（日）を元大手予備校講師が担当。授業はすべて録画され、欠席した回も見返せます<br><b>授業のない日</b>：授業の内容の演習問題を、解説動画つきで<br><b>足りない部分</b>：復習・補習の動画で補強<br><b>宿題</b>：塾生アプリで演習し、正解率を測ります。正解率を見て、必要な動画で抜けをなくします<br><b>数学・理科・社会</b>：スタディサプリの講義動画を個別カリキュラムで。質問はAI学習アプリで</dd></div><div><dt>こんな人に</dt><dd>東大・京大・旧帝大を志望し、共通テストの全教科と二次の記述を1つの塾でまとめて対策したい生徒。</dd></div><div><dt>身につくこと</dt><dd>共通テストの全教科（情報Ⅰを含む）と、二次試験の記述の両方に対応できる総合力。</dd></div></dl>
-          <details><summary>詳細を見る</summary><div class="dbody">
-            <div><div class="dt">1週間の流れ（例）</div><div><table class="mini-tbl wk-tbl">
+          <div class="c-week"><div class="c-week-hd">1週間の流れ（例）</div><table class="mini-tbl wk-tbl">
               <tr><th>いつ</th><th>内容</th></tr>
               <tr><td>水 21:35–22:35</td><td>英文法<span class="wk-sub">国公立コース専用・ライブ</span></td></tr>
               <tr><td>金 21:35–22:35</td><td>長文読解<span class="wk-sub">国公立コース専用・ライブ</span></td></tr>
               <tr><td>日 21:15–22:15</td><td>高校国語<span class="wk-sub">現代文・古文・ライブ</span></td></tr>
+              <tr><td>授業のない日</td><td>授業の内容の演習問題<span class="wk-sub">解説動画つき・足りない部分は復習・補習の動画で補強</span></td></tr>
               <tr><td>空いた時間</td><td>数学・理科・社会の動画（スタディサプリ）、授業の録画で復習</td></tr>
               <tr><td>空いた時間</td><td>AI学習アプリで質問・ドリル（弱点の単元から3日ごとにドリル）</td></tr>
               <tr><td>毎週</td><td>課題を個別LINEで提出</td></tr>
               <tr><td>日曜</td><td>保護者の方へ学習状況のレポート（演習した週）</td></tr>
-            </table></div></div>
+            </table></div>
+          <details><summary>詳細を見る</summary><div class="dbody">
             <div><div class="dt">授業の進め方</div><div>英語は英文法（水）＋長文読解（金）の2本柱。国語（日）と合わせ、他教科はスタディサプリで個別カリキュラムを作成。</div></div>
             <div><div class="dt">使用教材</div><div>英語・国語：オリジナルPDF教材。その他教科：スタディサプリ＋個別カリキュラム（スタディサプリの利用料は月額 25,000円に含む）。全科目対応のAI学習アプリも受講料に含まれます。</div></div>
             <div><div class="dt">課題方針</div><div>毎週の課題提出が必須。英文法演習・長文実践問題・国語の記述課題・志望校の過去問演習など。提出は個別LINEにて。</div></div>
