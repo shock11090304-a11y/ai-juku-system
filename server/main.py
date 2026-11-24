@@ -37086,7 +37086,37 @@ def _compute_weekly_stats(student_id: int, days: int = 7, week_aligned: bool = T
         subject_stats[lbl]["total"] += 1
         if int(ic) == 1:
             subject_stats[lbl]["correct"] += 1
-    hours += qa_ms / 3_600_000.0
+    app_hours = (hours + qa_ms / 3_600_000.0)
+    # 📒 2026-11-24 塾長「直して」: 生徒が自分で付ける学習記録 (study_logs.minutes) も学習時間に入れる。
+    #   それまでは「アプリで解いた時間」(elapsed_ms) だけで、宿題ドリルの提出は elapsed_ms を持たないため、
+    #   毎日 1〜3 時間を記録していた生徒にも「🔥 学習時間: 0.0時間」が届き、朝のアドバイス (学習記録の分数) と食い違った。
+    #   学習記録にはアプリでの演習も含めて書く子が多い → 足し算すると二重に数えるので、多いほうを採る (水増ししない)。
+    #   studied_date は生徒が JST で入力した日付 → 集計窓を JST の日付に直して比べる。
+    self_min = 0
+    try:
+        _jst = timezone(timedelta(hours=9))
+        _from_d = since_dt.astimezone(_jst).date().isoformat()
+        _to_d = (until_dt.astimezone(_jst).date().isoformat() if until_dt is not None
+                 else (datetime.now(_jst).date() + timedelta(days=1)).isoformat())
+        conn3 = db()
+        try:
+            c3 = conn3.cursor()
+            c3.execute(
+                "SELECT COALESCE(SUM(minutes), 0) AS total_min FROM study_logs "
+                "WHERE student_id = ? AND studied_date >= ? AND studied_date < ?",
+                (int(student_id), _from_d, _to_d),
+            )
+            _r3 = c3.fetchone()
+            try:
+                self_min = int((_r3["total_min"] if _r3 is not None else 0) or 0)
+            except (TypeError, KeyError, IndexError):
+                self_min = int((_r3[0] if _r3 else 0) or 0)
+        finally:
+            conn3.close()
+    except Exception as _sl_e:
+        log.warning(f"[weekly_stats] study_logs sum failed sid={student_id}: {type(_sl_e).__name__}")
+        self_min = 0
+    hours = max(app_hours, self_min / 60.0)
 
     accuracy = round(100 * correct / total_answered) if total_answered > 0 else 0
     weakest_subject = None
@@ -37102,6 +37132,8 @@ def _compute_weekly_stats(student_id: int, days: int = 7, week_aligned: bool = T
         "weakest_subject": weakest_subject,
         "subject_stats": subject_stats,
         "days": days,
+        "app_hours": round(app_hours, 1),          # アプリで解いた時間 (elapsed_ms)
+        "self_reported_minutes": self_min,         # 学習記録の分数 (自己申告)
     }
 
 

@@ -257,6 +257,11 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   第3陣 (同日・同じファイルに追記): 不定詞・受動態・冠詞・関係詞・前置詞・助動詞・分詞・形容詞・副詞・疑問詞・間接疑問・話法 = 347 問。360 問から 13 問落とす (多数決 5・
   盲検で別解 2 (the season where／could で 1 回の達成)・答えが割れた 2・校閲で不自然な誤答 4 (tennises 等))。解説の校閲 24 件。v3 は計 686 問で、20 単元すべての basic が 37〜48 問。
 
+### 週次レポートの学習時間に学習記録を入れる (2026-11-24・塾長「直して」)
+- `_compute_weekly_stats` の `hours` は、アプリで解いた時間 (question_attempts.elapsed_ms) と学習記録 (study_logs.minutes・窓を JST の日付に直す) の**多いほう**。足すと二重に数える (学習記録にアプリの演習も書く子が多い) ので足さない。戻り値に `app_hours`・`self_reported_minutes`。
+- 理由: 宿題ドリルの提出は elapsed_ms を持たないので、毎日記録していた生徒にも「🔥 学習時間: 0.0時間」が届き、朝の学習アドバイス (学習記録の分数) と食い違っていた。学習記録だけの週は「今週は 0 問」でなく通常のレポートになる。
+- 回帰テスト `scripts/health_check/test_weekly_stats_study_logs.py` (server-tests に登録)。
+
 ### 3日ドリルのやさしめ出し・塾長メッセージの LINE 併送 (2026-11-18・塾長の選択)
 - 3日ドリル (`_weakness_routine_plan`): 弱点の正答率が `_ROUTINE_LOW_ACCURACY_EASY_BELOW` (0.5) 未満なら 基礎+標準 から出す (高校生・中3)。在庫が足りなければ学年どおりのレベルで選び直す。テストは `test_weakness_routine_auto_delivery.py` の [13]。
 - `POST /api/admin/messages/send` に `send_line` (個別だけ・一斉は 400)。LINE 連携済みならアプリ内と同じ文面を LINE でも送り、応答の `line` に sent / failed / not_linked / quota_low / not_configured。月の残りが `LINE_ADVICE_QUOTA_RESERVE` (既定 50) 以下なら送らない (2026-10-12〜 月の上限で 429 になった)。`GET /api/admin/line/quota` で今月の通数。テストは `test_admin_message_line.py`。
