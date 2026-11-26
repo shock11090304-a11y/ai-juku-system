@@ -307,6 +307,13 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_ep2_eikenp2_course.py
 
+      # 📗 英検準1級 4か月ステップアップ講座 (/api/ep1/checkout・ep1_purchases・準2級と同じ形) (2026-11-26)。Stripe とメールは偽物。
+      - name: 英検準1級講座 決済と視聴 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_ep1_eikenp1_course.py
+
       # 📺 月額講座「再生リストから取り込む」(2026-10-05)。YouTube (class_recording_assign.http_get) とメールは偽物。
       - name: 月額講座 再生リスト取り込み 回帰テスト
         if: ${{ !cancelled() }}

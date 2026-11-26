@@ -14655,7 +14655,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     function addEp2Options(list) {
       var sel = document.getElementById('cvCourse');
       if (!list.length || sel.querySelector('optgroup[data-ep2]')) return;
-      var g = document.createElement('optgroup'); g.label = '英検準2級講座'; g.setAttribute('data-ep2', '1');
+      var g = document.createElement('optgroup'); g.label = '英検講座（準2級・準1級）'; g.setAttribute('data-ep2', '1');
       list.forEach(function (c) { var o = document.createElement('option'); o.value = c.key; o.textContent = '📗 ' + c.name + '（視聴期間中 ' + c.active_members + ' 名）'; g.appendChild(o); });
       sel.appendChild(g);
     }
@@ -14696,7 +14696,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         var only = [];
         if ((m.winter_names || []).length) only.push('冬期講習');
         if ((m.kt_names || []).length) only.push('過去問');
-        if ((m.ep2_names || []).length) only.push('英検準2級');
+        if ((m.ep2_names || []).length) only.push('英検講座');
         return only.length ? '<span style="color:#93c5fd;">' + only.join('・') + 'のみ</span>' : '解約';
       }
       var el = m.ending_list || [];
