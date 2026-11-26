@@ -2981,6 +2981,18 @@
         <div id="cfList" style="margin-top:0.7rem;"></div>
       </div>
 
+      <!-- 👀 補強の取り組み (2026-11-26 塾長「誰がやったか、誰が動画を見たかわかるようにして」) -->
+      <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
+        <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.3rem;">👀 補強の取り組み（誰が開いた・やった・動画を見た）</div>
+        <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">クラスを選ぶと、そのクラスの受講生ごとに、配布ファイル（補強プリント・解答解説）を<b>開いたか</b>・生徒が<b>「やった」</b>を押したか、題名が「解説動画」で終わる録画を<b>再生したか・続けて見た割合</b>が出ます。記録は 2026年11月26日の夜から。塾長の確認入室では記録しません。見た割合は先へ飛ばした分を数えない目安です。</p>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+          <select id="cpClass" style="padding:0.55rem; min-width:190px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;"><option value="">クラスを選択…</option></select>
+          <label style="font-size:0.8rem; color:#cbd5e1;"><input id="cpAll" type="checkbox"> 授業録画もすべて出す</label>
+          <button id="cpLoadBtn" type="button" style="padding:0.55rem 1.1rem; background:linear-gradient(135deg,#818cf8,#6366f1); border:0; border-radius:8px; color:#fff; font-weight:800; cursor:pointer;">表示</button>
+        </div>
+        <div id="cpOut" style="margin-top:0.7rem;"></div>
+      </div>
+
       <!-- 🏫 クラス別 受講生 一括登録 (クラス→生徒チェック→保存) ※受講クラスの設定はまずここで -->
       <div style="background:rgba(6,199,85,0.06); border:1px solid rgba(6,199,85,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
         <div style="font-size:0.95rem; color:#34d399; font-weight:700; margin-bottom:0.3rem;">🏫 クラス別 受講生 一括登録 <span style="font-size:0.72rem; color:#86efac; font-weight:600;">(まずここで各クラスの受講生を登録)</span></div>
@@ -14297,7 +14309,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
 
     // 📎 クラス別ファイル配布 / 🙋 出欠記録 共通: クラス選択ドロップダウンを埋める
     async function populateClassDropdown() {
-      var sels = [document.getElementById('cfClass'), document.getElementById('atClass'), document.getElementById('hwClass'), document.getElementById('crClass')].filter(Boolean);
+      var sels = [document.getElementById('cfClass'), document.getElementById('atClass'), document.getElementById('hwClass'), document.getElementById('crClass'), document.getElementById('cpClass')].filter(Boolean);
       if (!sels.length || sels.every(function (s) { return s.options.length > 1; })) return;
       try {
         var d = await adminJson('/api/admin/class/timetable-classes');
@@ -14349,6 +14361,57 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       } catch (e) { msg.style.color = '#fca5a5'; msg.textContent = '失敗: ' + e.message; }
       finally { _cfAdd.disabled = false; }
     });
+    // 👀 補強の取り組み (GET /api/admin/class/progress)。1 つずつ「まだの人」を先に出し、内訳は開いて見る。
+    function cpWhen(iso) {
+      if (!iso) return '';
+      try { return new Date(iso).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; }
+    }
+    function cpCell(kind, g) {
+      if (!g || !g.opened) return '<span style="color:#71717a;">— まだ</span>';
+      if (kind === 'file') {
+        return (g.done ? '<span style="color:#6ee7b7; font-weight:800;">✅ やった</span> <span style="color:#a1a1aa;">' + esc(cpWhen(g.done_at)) + '</span>'
+                       : '<span style="color:#fde68a; font-weight:700;">👀 開いただけ</span>')
+          + (g.open_count ? ' <span style="color:#a1a1aa;">（開いた ' + g.open_count + '回・最後 ' + esc(cpWhen(g.last_opened_at)) + '）</span>' : '');
+      }
+      var pct = g.watched_pct;
+      var col = pct == null ? '#c7d2fe' : (pct >= 80 ? '#6ee7b7' : (pct >= 30 ? '#fde68a' : '#fca5a5'));
+      return '<span style="color:' + col + '; font-weight:800;">▶ ' + (pct == null ? '再生した' : ('見た ' + pct + '%')) + '</span>'
+        + ' <span style="color:#a1a1aa;">（再生 ' + (g.open_count || 0) + '回・最後 ' + esc(cpWhen(g.last_opened_at)) + '）</span>';
+    }
+    async function loadClassProgress() {
+      var label = document.getElementById('cpClass').value, out = document.getElementById('cpOut');
+      if (!label) { out.innerHTML = '<div style="color:#fca5a5; font-size:0.82rem;">クラスを選んでください</div>'; return; }
+      out.innerHTML = '<div style="color:#a1a1aa; font-size:0.82rem;">読み込み中…</div>';
+      try {
+        var d = await adminJson('/api/admin/class/progress?class_label=' + encodeURIComponent(label) + (document.getElementById('cpAll').checked ? '&scope=all' : ''));
+        var st = d.students || [], its = d.items || [], cells = d.cells || {};
+        if (!st.length) { out.innerHTML = '<div style="color:#a1a1aa; font-size:0.82rem;">このクラスを受講クラスにしている通塾生がいません（「🏫 クラス別 受講生 一括登録」で設定）。</div>'; return; }
+        if (!its.length) { out.innerHTML = '<div style="color:#a1a1aa; font-size:0.82rem;">このクラスの配布ファイル・解説動画はまだありません。</div>'; return; }
+        var n = st.length;
+        out.innerHTML = '<div style="font-size:0.78rem; color:#cbd5e1; margin-bottom:0.45rem;">受講生 ' + n + '人 ・ ' + its.length + '件</div>' + its.map(function (it) {
+          var k = it.kind + ':' + it.id;
+          var rows = st.map(function (s) { return { s: s, g: (cells[String(s.id)] || {})[k] || null }; });
+          var notYet = rows.filter(function (x) { return !(x.g && x.g.opened); });
+          var head = it.kind === 'file'
+            ? ('開いた ' + it.opened_n + '/' + n + '人 ・ <b style="color:#6ee7b7;">やった ' + it.done_n + '/' + n + '人</b>')
+            : ('再生 ' + it.opened_n + '/' + n + '人 ・ <b style="color:#6ee7b7;">半分以上見た ' + it.watched_half_n + '/' + n + '人</b>');
+          return '<div style="padding:0.55rem 0.65rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:8px; margin-bottom:0.45rem; font-size:0.84rem;">'
+            + '<div style="font-weight:800;">' + (it.kind === 'file' ? '📄 ' : '🎬 ') + esc(it.title) + ' <span style="color:#a1a1aa; font-weight:500; font-size:0.74rem;">' + esc(cpWhen(it.created_at)) + ' 配布</span></div>'
+            + '<div style="margin-top:0.2rem; color:#e4e4e7;">' + head + '</div>'
+            + (notYet.length ? '<div style="margin-top:0.2rem; color:#fca5a5; font-size:0.8rem;">まだ（' + notYet.length + '人）: ' + notYet.map(function (x) { return esc(x.s.name || ('ID:' + x.s.id)); }).join('、') + '</div>' : '<div style="margin-top:0.2rem; color:#6ee7b7; font-size:0.8rem;">全員が' + (it.kind === 'file' ? '開きました' : '再生しました') + '</div>')
+            + '<details style="margin-top:0.3rem;"><summary style="cursor:pointer; color:#a5b4fc; font-size:0.78rem;">一人ずつ見る</summary>'
+            + rows.map(function (x) {
+                return '<div style="display:flex; gap:0.5rem; flex-wrap:wrap; padding:0.25rem 0; border-top:1px solid rgba(255,255,255,0.05); font-size:0.8rem;">'
+                  + '<span style="min-width:90px; font-weight:700;">' + esc(x.s.name || ('ID:' + x.s.id)) + (x.s.grade ? (' <span style="color:#a1a1aa; font-weight:500;">' + esc(x.s.grade) + '</span>') : '') + '</span>'
+                  + '<span>' + cpCell(it.kind, x.g) + '</span></div>';
+              }).join('') + '</details></div>';
+        }).join('');
+      } catch (e) {
+        out.innerHTML = '<div style="color:#fca5a5; font-size:0.82rem;">' + (e.status === 401 ? 'ログインしてください。' : ('読み込み失敗: ' + esc(e.message))) + '</div>';
+      }
+    }
+    var _cpLoad = document.getElementById('cpLoadBtn');
+    if (_cpLoad) _cpLoad.addEventListener('click', loadClassProgress);
     var _cfListEl = document.getElementById('cfList');
     if (_cfListEl) _cfListEl.addEventListener('click', async function (e) {
       var t = e.target.closest('.cf-del'); if (!t) return;

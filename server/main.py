@@ -1890,6 +1890,24 @@ def init_db():
     );
     CREATE UNIQUE INDEX IF NOT EXISTS uq_sapuri_lesson_progress ON sapuri_lesson_progress(student_id, lesson_key);
     CREATE INDEX IF NOT EXISTS idx_sapuri_lesson_progress_student ON sapuri_lesson_progress(student_id, watched_at);
+    -- 👀 授業の補強プリント・解説動画を「誰が開いたか・やったか・動画をどこまで見たか」(2026-11-26 塾長「誰がやったか、誰が動画を見たかわかるようにして」)。
+    --   kind='file' は class_files.id・kind='video' は class_recordings.id。1 生徒×1 つに 1 行。題名は持たない。
+    --   student_id を持つ → 生徒の削除・統合の 5 つの一覧に入れてある。塾長の確認入室 (impersonation) は記録しない。
+    --   日時は書き込み側が必ず _utc_naive_iso() を入れる。watched_sec は「見た位置の最大」(早送りも含む・目安)。
+    CREATE TABLE IF NOT EXISTS class_content_progress (
+        id {pk},
+        student_id INTEGER NOT NULL,
+        kind TEXT NOT NULL,
+        item_id INTEGER NOT NULL,
+        first_opened_at TIMESTAMP,
+        last_opened_at TIMESTAMP,
+        open_count INTEGER DEFAULT 0,
+        watched_sec INTEGER DEFAULT 0,
+        duration_sec INTEGER,
+        done_at TIMESTAMP
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_class_content_progress ON class_content_progress(student_id, kind, item_id);
+    CREATE INDEX IF NOT EXISTS idx_class_content_progress_item ON class_content_progress(kind, item_id);
     -- 🎬 2026-11-24 単元の動画 (通塾 英文法の説明動画・問題演習の解説動画) の YouTube の動画 ID。
     --   動画の一覧と単元の対応はコードの定数 TG_VIDEOS が正典。ここは「どの動画に URL が入ったか」だけ (生徒の列は無い)。
     CREATE TABLE IF NOT EXISTS unit_video_links (
@@ -26491,6 +26509,7 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
             ("ai_tutor_solve_log", "student_id"),
             ("line_link_tokens", "student_id"),
             ("sapuri_lesson_progress", "student_id"),   # 📺 スタサプの見た回 (2026-10-10)
+            ("class_content_progress", "student_id"),   # 👀 補強プリント・解説動画の取り組み (2026-11-26)
             ("homework_sheets", "student_id"),   # 📝 記号の解答用紙 (2026-10-18)
             ("student_json_state", "student_id"),
             ("anthropic_usage_log", "student_id"),   # 削除ではなく参照解除だが、影響行数としてプレビューに出す
@@ -26596,6 +26615,7 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
             ("ai_tutor_solve_log", "DELETE FROM ai_tutor_solve_log WHERE student_id=?"),
             ("line_link_tokens", "DELETE FROM line_link_tokens WHERE student_id=?"),
             ("sapuri_lesson_progress", "DELETE FROM sapuri_lesson_progress WHERE student_id=?"),
+            ("class_content_progress", "DELETE FROM class_content_progress WHERE student_id=?"),   # 👀 (2026-11-26)
             ("homework_sheets", "DELETE FROM homework_sheets WHERE student_id=?"),   # 📝 記号の解答用紙 (2026-10-18)
             # ★AI利用コストの記録は「塾の会計データ」であって生徒のデータではない。消すと CEO ダッシュの
             #   費用合計 (SUM(cost_usd)) が過去にさかのぼって下がって見える。参照だけ外して行は残す。
@@ -30696,7 +30716,7 @@ _ORPHAN_SWEEP_TABLES = (
     "class_attend", "class_attendance", "ai_tutor_solve_log", "line_link_tokens",
     "study_logs", "study_plans", "exam_results", "curricula", "notifications", "usage_monthly",
     "mock_exam_sessions", "ai_tutor_messages", "homework_assignments", "student_json_state",
-    "sapuri_lesson_progress", "homework_sheets",
+    "sapuri_lesson_progress", "homework_sheets", "class_content_progress",
 )
 
 
@@ -30768,6 +30788,8 @@ _MERGE_STUDENT_TABLES = (
     ("student_json_state", ("kind",)), ("anthropic_usage_log", None), ("course_applications", None),
     # 📺 見た回: 同じ講は残す側が勝つ汎用処理の前に、admin_student_merge の中で残す側の watched_at を早い方へそろえる。
     ("sapuri_lesson_progress", ("lesson_key",)),
+    # 👀 補強プリント・解説動画の取り組み 2026-11-26: 同じものは残す側の行が勝つ = 消す側の重複行は捨てる
+    ("class_content_progress", ("kind", "item_id")),
     # 📝 記号の解答用紙 (2026-10-18): 宿題 1 行に 1 行 (homework_id が UNIQUE) なので生徒どうしで衝突しない = 全部付け替え
     ("homework_sheets", None),
 )
@@ -31167,6 +31189,7 @@ def admin_students_purge_stale(payload: dict = None, authorization: Optional[str
                 ("ai_tutor_solve_log", f"DELETE FROM ai_tutor_solve_log WHERE student_id IN ({placeholders})"),
                 ("line_link_tokens", f"DELETE FROM line_link_tokens WHERE student_id IN ({placeholders})"),
                 ("sapuri_lesson_progress", f"DELETE FROM sapuri_lesson_progress WHERE student_id IN ({placeholders})"),
+                ("class_content_progress", f"DELETE FROM class_content_progress WHERE student_id IN ({placeholders})"),   # 👀 (2026-11-26)
                 ("homework_sheets", f"DELETE FROM homework_sheets WHERE student_id IN ({placeholders})"),   # 📝 記号の解答用紙 (2026-10-18)
                 ("anthropic_usage_log", f"UPDATE anthropic_usage_log SET student_id=NULL WHERE student_id IN ({placeholders})"),
             ]
@@ -57099,6 +57122,232 @@ class AttendanceReportRequest(BaseModel):
 
 
 # ============================ 生徒側 (通塾生限定) ============================
+# ===== 👀 補強プリント・解説動画の取り組み (2026-11-26 塾長「誰がやったか、誰が動画を見たかわかるようにして」) =====
+#   表 class_content_progress。生徒: 開く (プリントは download で自動・動画は ▶ 再生) / ✓ やった / 動画の見た位置。
+#   塾長: GET /api/admin/class/progress?class_label= でクラスの受講生×補強の一覧。
+_CCP_KINDS = ("file", "video")
+
+
+def _ccp_ready() -> bool:
+    return _table_has_column("class_content_progress", "item_id")
+
+
+def _ccp_record(conn, sid: int, kind: str, item_id: int, opened: bool = False, watched_sec=None, duration_sec=None, done=None):
+    """1 生徒×1 つの行を作って更新する。失敗は握りつぶす (配信や再生を止めない)。戻り値は更新後の行 (dict) か None。"""
+    if kind not in _CCP_KINDS or not _ccp_ready():
+        return None
+    try:
+        c = conn.cursor()
+        now = _utc_naive_iso()
+        sel = ("SELECT id, kind, item_id, first_opened_at, last_opened_at, open_count, watched_sec, duration_sec, done_at "
+               "FROM class_content_progress WHERE student_id = ? AND kind = ? AND item_id = ?")
+        c.execute(sel, (sid, kind, item_id))
+        r = c.fetchone()
+        if not r:
+            try:
+                c.execute("INSERT INTO class_content_progress (student_id, kind, item_id, first_opened_at, last_opened_at, open_count, watched_sec) "
+                          "VALUES (?, ?, ?, ?, ?, 0, 0)", (sid, kind, item_id, now, now))
+                conn.commit()
+            except Exception:
+                conn.rollback()   # 同時に 2 本来て UNIQUE に当たった = もう 1 本が作った行を使う
+            c.execute(sel, (sid, kind, item_id))
+            r = c.fetchone()
+            if not r:
+                return None
+        sets, args = [], []
+        if opened or watched_sec is not None:
+            sets.append("last_opened_at = ?"); args.append(now)
+        if opened:
+            sets.append("open_count = COALESCE(open_count, 0) + 1")
+        if watched_sec is not None:
+            ws = max(0, min(int(watched_sec), 6 * 3600))
+            if ws > int(r["watched_sec"] or 0):
+                sets.append("watched_sec = ?"); args.append(ws)
+        if duration_sec:
+            ds = max(0, min(int(duration_sec), 6 * 3600))
+            if ds:
+                sets.append("duration_sec = ?"); args.append(ds)
+        if done is True and not r["done_at"]:
+            sets.append("done_at = ?"); args.append(now)
+        elif done is False:
+            sets.append("done_at = NULL")
+        if sets:
+            c.execute("UPDATE class_content_progress SET " + ", ".join(sets) + " WHERE id = ?", tuple(args) + (r["id"],))
+            conn.commit()
+        c.execute(sel, (sid, kind, item_id))
+        return c.fetchone()
+    except Exception as e:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        log.warning(f"[ccp] record failed sid={sid} {kind}:{item_id}: {type(e).__name__}")
+        return None
+
+
+def _ccp_pct(watched, dur):
+    try:
+        w, d = int(watched or 0), int(dur or 0)
+    except Exception:
+        return None
+    if d <= 0:
+        return None
+    return max(0, min(100, int(round(100.0 * w / d))))
+
+
+def _ccp_cell(r) -> dict:
+    return {"opened": bool(r["first_opened_at"]), "open_count": int(r["open_count"] or 0),
+            "first_opened_at": _utc_iso_or_none(r["first_opened_at"]), "last_opened_at": _utc_iso_or_none(r["last_opened_at"]),
+            "done": bool(r["done_at"]), "done_at": _utc_iso_or_none(r["done_at"]),
+            "watched_sec": int(r["watched_sec"] or 0), "duration_sec": int(r["duration_sec"] or 0) or None,
+            "watched_pct": _ccp_pct(r["watched_sec"], r["duration_sec"])}
+
+
+def _ccp_my_map(c, sid) -> dict:
+    """feed 用: 自分の取り組み。表が無い・失敗は {} (画面は「未」のまま出るだけ)。"""
+    if not _ccp_ready():
+        return {}
+    try:
+        c.execute("SELECT kind, item_id, first_opened_at, last_opened_at, open_count, watched_sec, duration_sec, done_at "
+                  "FROM class_content_progress WHERE student_id = ?", (int(sid),))
+        out = {}
+        for r in c.fetchall():
+            cell = _ccp_cell(r)
+            out[f"{r['kind']}:{r['item_id']}"] = {"opened": cell["opened"], "done": cell["done"], "watched_pct": cell["watched_pct"]}
+        return out
+    except Exception:
+        try:
+            c.connection.rollback()
+        except Exception:
+            pass
+        return {}
+
+
+def _ccp_item_allowed(c, sid: int, kind: str, item_id: int):
+    """生徒がその配布ファイル / 録画を見られるか (feed と同じ決まり)。見られれば (True, duration_sec)。"""
+    c.execute("SELECT class_labels FROM students WHERE id = ?", (sid,))
+    _r = c.fetchone()
+    mine = _parse_labels(_r["class_labels"]) if _r else []
+    if kind == "file":
+        c.execute("SELECT f.is_published, f.session_id, f.class_label, s.is_published AS sess_pub, s.title AS sess_title "
+                  "FROM class_files f LEFT JOIN class_sessions s ON s.id = f.session_id WHERE f.id = ?", (item_id,))
+        r = c.fetchone()
+        if not r or not r["is_published"]:
+            return False, None
+        if r["session_id"] is not None:
+            if not r["sess_pub"]:
+                return False, None
+            if (r["sess_title"] or "") in _ARCHIVE_CLASS_LABELS and r["sess_title"] not in mine:
+                return False, None
+            return True, None
+        if r["class_label"] and r["class_label"] not in mine:
+            return False, None
+        return True, None
+    c.execute("SELECT r.is_published, r.session_id, r.duration_sec, s.is_published AS sess_pub, s.title AS sess_title "
+              "FROM class_recordings r LEFT JOIN class_sessions s ON s.id = r.session_id WHERE r.id = ?", (item_id,))
+    r = c.fetchone()
+    if not r or not r["is_published"]:
+        return False, None
+    if r["session_id"] is not None and (not r["sess_pub"] or (r["sess_title"] or "") not in mine):
+        return False, None
+    return True, r["duration_sec"]
+
+
+class ClassProgressRequest(BaseModel):
+    kind: str                    # file / video
+    item_id: int
+    event: str                   # open / watch / done / undone
+    watched_sec: Optional[int] = None
+    duration_sec: Optional[int] = None
+
+
+@app.post("/api/student/class/progress")
+def student_class_progress(payload: ClassProgressRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """👀 通塾生: 補強プリント・解説動画の取り組みを残す。本人のトークンだけ・見られるものだけ (feed と同じ決まり)。
+    塾長の確認入室は残さない (recorded=false)。AI 呼び出しなし。"""
+    _check_rate_limit_caller(request, authorization, bucket="class_progress", limit=120, window=60)
+    student = _get_current_student(authorization)
+    _require_tsujuku_student(student)
+    kind = str(payload.kind or "")
+    ev = str(payload.event or "")
+    if kind not in _CCP_KINDS or ev not in ("open", "watch", "done", "undone"):
+        raise HTTPException(status_code=400, detail="記録できない種類です")
+    if ev == "watch" and kind != "video":
+        raise HTTPException(status_code=400, detail="記録できない種類です")
+    if _is_impersonation_auth(authorization):
+        return {"ok": True, "recorded": False}
+    if not _ccp_ready():
+        raise HTTPException(status_code=503, detail="表の準備待ちです (デプロイ直後は数分かかります)")
+    sid, iid = int(student["id"]), int(payload.item_id)
+    conn = db()
+    try:
+        c = conn.cursor()
+        ok, rec_dur = _ccp_item_allowed(c, sid, kind, iid)
+        if not ok:
+            raise HTTPException(status_code=404, detail="見つかりません")
+        dur = payload.duration_sec if (payload.duration_sec and payload.duration_sec > 0) else (rec_dur or None)
+        r = _ccp_record(conn, sid, kind, iid, opened=(ev == "open"),
+                        watched_sec=(payload.watched_sec if ev in ("watch", "open") and payload.watched_sec is not None else None),
+                        duration_sec=(dur if kind == "video" else None),
+                        done=(True if ev == "done" else (False if ev == "undone" else None)))
+        if r is None:
+            return JSONResponse(status_code=500, content={"ok": False, "error": "記録できませんでした。もう一度お試しください"})
+        cell = _ccp_cell(r)
+        return {"ok": True, "recorded": True, "progress": {"opened": cell["opened"], "done": cell["done"], "watched_pct": cell["watched_pct"]}}
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/class/progress")
+def admin_class_progress(class_label: str, scope: str = "explain", authorization: Optional[str] = Header(None)):
+    """👀 塾長: クラスの受講生 × 補強 (配布ファイル + 「解説動画」で終わる録画) の取り組み。scope=all で録画をすべて。
+    受講生 = 通塾生の名簿のうち受講クラスにこのクラスがある生徒 (未設定の生徒は配布物が見えないので載せない)。"""
+    _verify_admin_required(authorization)
+    cl = _sanitize_text(class_label, 100)
+    if not cl or cl not in _TIMETABLE_LABELS:
+        raise HTTPException(status_code=400, detail="class_label が時間割クラスと一致しません")
+    conn = db()
+    try:
+        c = conn.cursor()
+        students = []
+        for r in _tsujuku_roster(c):
+            if cl in _parse_labels(r["class_labels"]):
+                students.append({"id": r["id"], "name": r["name"], "grade": r["grade"]})
+        items = []
+        c.execute("SELECT f.id, f.title, f.created_at FROM class_files f LEFT JOIN class_sessions s ON s.id = f.session_id "
+                  "WHERE f.is_published = 1 AND ((f.session_id IS NULL AND f.class_label = ?) OR (s.is_published = 1 AND s.title = ?)) "
+                  "ORDER BY f.created_at DESC, f.id DESC", (cl, cl))
+        for r in c.fetchall():
+            items.append({"kind": "file", "id": r["id"], "title": r["title"], "created_at": _utc_iso_or_none(r["created_at"]), "duration_sec": None})
+        c.execute("SELECT r.id, r.title, r.created_at, r.duration_sec FROM class_recordings r JOIN class_sessions s ON s.id = r.session_id "
+                  "WHERE r.is_published = 1 AND s.is_published = 1 AND s.title = ? ORDER BY r.created_at DESC, r.id DESC", (cl,))
+        for r in c.fetchall():
+            if scope != "all" and not re.search(r"解説動画\s*$", r["title"] or ""):
+                continue
+            items.append({"kind": "video", "id": r["id"], "title": r["title"], "created_at": _utc_iso_or_none(r["created_at"]), "duration_sec": r["duration_sec"]})
+        cells = {}
+        if items and students and _ccp_ready():
+            sids = [s["id"] for s in students]
+            ph = ",".join("?" * len(sids))
+            c.execute("SELECT student_id, kind, item_id, first_opened_at, last_opened_at, open_count, watched_sec, duration_sec, done_at "
+                      f"FROM class_content_progress WHERE student_id IN ({ph})", tuple(sids))
+            want = {(it["kind"], it["id"]) for it in items}
+            for r in c.fetchall():
+                if (r["kind"], r["item_id"]) not in want:
+                    continue
+                cells.setdefault(str(r["student_id"]), {})[f"{r['kind']}:{r['item_id']}"] = _ccp_cell(r)
+        for it in items:
+            k = f"{it['kind']}:{it['id']}"
+            got = [cells.get(str(s["id"]), {}).get(k) for s in students]
+            it["opened_n"] = sum(1 for g in got if g and g["opened"])
+            it["done_n"] = sum(1 for g in got if g and g["done"])
+            it["watched_half_n"] = sum(1 for g in got if g and (g["watched_pct"] or 0) >= 50)
+        return {"ok": True, "class_label": cl, "scope": "all" if scope == "all" else "explain",
+                "students": students, "items": items, "cells": cells, "tracking_ready": _ccp_ready()}
+    finally:
+        conn.close()
+
+
 @app.get("/api/student/class/feed")
 def student_class_feed(authorization: Optional[str] = Header(None)):
     """通塾生: 授業スケジュール + 各授業のファイル/録画/自分の出欠状況を一括取得。
@@ -57152,6 +57401,8 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
             }
         # 📎 [file-open-link] リンク遷移で開くための短命トークン付き URL を各ファイルに付ける
         _dl = _make_download_token(student["id"])
+        # 👀 塾長の確認入室では開いた記録を残さない (dl トークンでは入室か分からないので URL に印を付ける)
+        _imp_q = "&imp=1" if _is_impersonation_auth(authorization) else ""
         # 公開中のファイル (data_b64 は重いので取得しない)
         loose_files = []
         labeled_files = []   # 時間割クラスに紐づくファイル (class_label でグループ表示)
@@ -57163,7 +57414,7 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
             item = {"id": r["id"], "title": r["title"], "filename": r["filename"],
                     "mime": r["mime"], "file_size": r["file_size"],
                     # 📎 通常のリンクとして開ける URL (相対。生徒側が BACKEND_URL を前置する)
-                    "open_url": f"/api/student/class/files/{r['id']}/download?inline=1&t={_dl}"}
+                    "open_url": f"/api/student/class/files/{r['id']}/download?inline=1&t={_dl}{_imp_q}"}
             sid_ = r["session_id"]
             if sid_ is not None:
                 if sid_ in sessions:
@@ -57257,13 +57508,15 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
             "archive_from": _cutoff,
             "archive_full": _archive_full,
             "hidden_recordings": _hidden_recordings,
+            # 👀 [2026-11-26] 自分の取り組み {"file:12": {opened, done, watched_pct}, "video:5": {...}}
+            "my_progress": _ccp_my_map(c, student["id"]),
         }
     finally:
         conn.close()
 
 
 @app.get("/api/student/class/files/{file_id}/download")
-def student_class_file_download(file_id: int, authorization: Optional[str] = Header(None), t: Optional[str] = None, inline: int = 0):
+def student_class_file_download(file_id: int, authorization: Optional[str] = Header(None), t: Optional[str] = None, inline: int = 0, imp: int = 0):
     """通塾生: 授業ファイルをダウンロード。認証 + 通塾生ゲート後に DB から復号して配信。
     ファイルは通塾生で共有 (個別所有ではない) ため、コホートゲートのみで十分。
     📎 ?t=<dlトークン> でも認証できる (リンク遷移用)。?inline=1 で端末のビューアに開かせる。"""
@@ -57308,6 +57561,9 @@ def student_class_file_download(file_id: int, authorization: Optional[str] = Hea
             conn.commit()
         except Exception:
             pass
+        # 👀 誰が開いたか (2026-11-26)。塾長の確認入室 (imp=1 / impersonation) は残さない。失敗しても配信は続ける
+        if not imp and not _is_impersonation_auth(authorization):
+            _ccp_record(conn, int(student["id"]), "file", int(file_id), opened=True)
         return _safe_attachment_response(
             row["filename"] or "lesson_file", row["mime"] or "application/octet-stream", data,
             inline=bool(inline),

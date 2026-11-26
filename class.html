@@ -331,6 +331,83 @@
       var m = String(mime || '').toLowerCase();
       return (m === 'application/pdf' || m.indexOf('image/') === 0) ? '📄 開く' : '⬇ 取得';
     }
+    // 👀 [2026-11-26 塾長「誰がやったか、誰が動画を見たかわかるようにして」] 補強プリント・解説動画の取り組みを残す。
+    //   プリント: 開いたら (サーバの download で自動) + 「☐ やった」ボタン。動画: ▶ 再生で「開いた」+ 続けて見た位置 (YouTube の再生 API)。
+    //   塾長の確認入室はサーバが記録しない。記録に失敗しても再生・閲覧は止めない (catch で黙る)。
+    function myProg(kind, id) { var m = (feedData && feedData.my_progress) || {}; return m[kind + ':' + id] || null; }
+    function ccpPost(kind, id, ev, extra) {
+      return api('/api/student/class/progress', { method: 'POST', body: JSON.stringify(Object.assign({ kind: kind, item_id: Number(id), event: ev }, extra || {})) })
+        .then(function (r) {
+          if (r && r.progress && feedData) { feedData.my_progress = feedData.my_progress || {}; feedData.my_progress[kind + ':' + id] = r.progress; }
+          return r;
+        });
+    }
+    function watchBadge(rid) {
+      var p = rid ? myProg('video', rid) : null;
+      if (!p || !p.opened) return '';
+      return '<span class="res-sub ccp-badge"> ・ ' + (p.watched_pct != null && p.watched_pct > 0 ? ('見た ' + esc(String(p.watched_pct)) + '%') : '再生済み') + '</span>';
+    }
+    var _ytApiP = null;
+    function loadYtApi() {
+      if (window.YT && window.YT.Player) return Promise.resolve(window.YT);
+      if (_ytApiP) return _ytApiP;
+      _ytApiP = new Promise(function (res, rej) {
+        var prev = window.onYouTubeIframeAPIReady;
+        window.onYouTubeIframeAPIReady = function () { try { if (prev) prev(); } catch (e) {} res(window.YT); };
+        var sc = document.createElement('script'); sc.src = 'https://www.youtube.com/iframe_api'; sc.async = true;
+        sc.onerror = function () { _ytApiP = null; rej(new Error('yt api')); };
+        document.head.appendChild(sc);
+        setTimeout(function () { if (!(window.YT && window.YT.Player)) { _ytApiP = null; rej(new Error('yt api timeout')); } }, 20000);
+      });
+      return _ytApiP;
+    }
+    function ytEmbedHtml(vid) {
+      return '<div class="video-wrap"><iframe src="https://www.youtube.com/embed/' + encodeURIComponent(vid)
+        + '?rel=0&enablejsapi=1&origin=' + encodeURIComponent(location.origin) + '" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>';
+    }
+    // 続けて見た位置だけを進める (先へ飛ばした分は数えない・目安)。30 秒ごと・止めたとき・閉じたとき・画面を離れたときに送る。
+    var _ccpLive = [];
+    function trackVideo(holder, rid) {
+      if (!rid || !holder) return;
+      ccpPost('video', rid, 'open').catch(function () {});
+      var iframe = holder.querySelector('iframe');
+      if (!iframe) return;
+      loadYtApi().then(function (YT) {
+        var maxT = 0, prevT = 0, sent = 0, dur = 0, timer = null, pl = null;
+        function tick() {
+          try {
+            var t = pl.getCurrentTime() || 0;
+            if (!dur) dur = pl.getDuration() || 0;
+            if (t > maxT && prevT >= maxT - 2 && t - prevT <= 8) maxT = t;
+            prevT = t;
+          } catch (e) {}
+        }
+        function send() {
+          if (maxT >= sent + 1) {
+            sent = maxT;
+            var ex = { watched_sec: Math.floor(maxT) }; if (dur) ex.duration_sec = Math.round(dur);
+            ccpPost('video', rid, 'watch', ex).catch(function () {});
+          }
+        }
+        function stop() { if (timer) { clearInterval(timer); timer = null; } }
+        var rec = { flush: function () { tick(); send(); stop(); }, iframe: iframe };
+        _ccpLive.push(rec);
+        pl = new YT.Player(iframe, { events: { onStateChange: function (ev) {
+          if (ev.data === 1) {
+            if (!timer) timer = setInterval(function () {
+              if (!document.body.contains(iframe)) { stop(); return; }
+              tick(); if (maxT - sent >= 30) send();
+            }, 4000);
+          } else { tick(); send(); if (ev.data !== 3) stop(); }
+        } } });
+        holder._ccpFlush = rec.flush;
+      }).catch(function () {});
+    }
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState !== 'hidden') return;
+      _ccpLive = _ccpLive.filter(function (r) { try { r.flush(); } catch (e) {} return document.body.contains(r.iframe); });
+    });
+    function closePlayer(holder) { try { if (holder._ccpFlush) holder._ccpFlush(); } catch (e) {} holder._ccpFlush = null; holder.innerHTML = ''; holder.hidden = true; }
     var TABS = ['schedule', 'homework', 'videos', 'messages'];
     var curTab = '';
 
@@ -719,13 +796,19 @@
     //   従来の「fetch → blob → <a download> を JS でクリック」は iPhone/iPad の Safari や LINE 内ブラウザで
     //   無反応・白紙・開けないファイルになることがある。open_url (短命トークン付き) が来ていれば
     //   **普通のリンクを新しいタブで開く** = 端末の PDF ビューアで確実に開く。無ければ従来ボタン (旧API互換)。
-    function fileRow(f) {
+    function fileRow(f, track) {
       var sub = f.file_size ? ('<span class="res-sub"> ・ ' + esc(fmtKB(f.file_size)) + '</span>') : '';
+      // 👀 補強プリント (クラス別 配布ファイル) には「やった」ボタン (押すと塾長に伝わる・もう一度押すと取り消し)
+      var doneBtn = '';
+      if (track) {
+        var pg = myProg('file', f.id), dn = !!(pg && pg.done);
+        doneBtn = '<button class="btn ' + (dn ? 'btn-primary' : 'btn-ghost') + ' ccp-done" data-id="' + f.id + '" data-done="' + (dn ? '1' : '0') + '" style="margin-left:0.35rem;">' + (dn ? '✅ やった' : '☐ やった') + '</button>';
+      }
       var action = f.open_url
         ? '<a class="btn btn-primary file-open" href="' + esc(BACKEND_URL + f.open_url) + '" target="_blank" rel="noopener" data-id="' + f.id + '">' + fileOpenLabel(f.mime) + '</a>'
         : '<button class="btn btn-primary file-dl" data-id="' + f.id + '" data-fn="' + esc(f.filename || f.title) + '">⬇ 取得</button>';
       return '<div class="res-row"><span class="res-icon">📄</span>'
-        + '<span class="res-name">' + esc(f.title) + sub + '</span>' + action + '</div>';
+        + '<span class="res-name">' + esc(f.title) + sub + '</span>' + action + doneBtn + '</div>';
     }
     // 📎 クラス別 配布ファイル (時間割クラスごと・自分の受講クラスの分だけ。絞り込みはサーバ側 2026-11-13)
     // 🎬 [2026-11-26 塾長「各授業の補強動画とテキスト、解答解説はここにアップしてほしい」]
@@ -746,10 +829,10 @@
       var id = r.provider === 'youtube' ? ytId(r.video_url) : null;
       var sub = r.duration_sec ? ('<span class="res-sub"> ・ ' + esc(fmtDur(r.duration_sec)) + '</span>') : '';
       var action = id
-        ? '<button class="btn btn-primary lf-vid" data-yt="' + esc(id) + '">▶ 再生</button>'
+        ? '<button class="btn btn-primary lf-vid" data-yt="' + esc(id) + '" data-rid="' + esc(String(r.id || '')) + '">▶ 再生</button>'
         : '<a class="btn btn-primary" href="' + esc(safeHref(r.video_url)) + '" target="_blank" rel="noopener">↗ 開く</a>';
       return '<div class="res-row"><span class="res-icon">🎬</span>'
-        + '<span class="res-name">' + esc(r.title) + sub + '</span>' + action + '</div>'
+        + '<span class="res-name">' + esc(r.title) + sub + watchBadge(r.id) + '</span>' + action + '</div>'
         + (id ? '<div class="lf-vid-player" hidden></div>' : '');
     }
     function labeledFilesHtml() {
@@ -769,7 +852,7 @@
       order.forEach(function (k) {
         h += '<div class="card"><div class="card-title" style="font-size:0.98rem;">' + esc(k) + '</div>'
           + (vids[k] || []).map(explainVideoRow).join('')
-          + groups[k].map(fileRow).join('') + '</div>';
+          + groups[k].map(function (f) { return fileRow(f, true); }).join('') + '</div>';
       });
       return h;
     }
@@ -862,10 +945,22 @@
           var pl = btn.parentNode && btn.parentNode.nextElementSibling;
           if (!pl || !pl.classList.contains('lf-vid-player')) return;
           if (pl.hidden) {
-            pl.innerHTML = '<div class="video-wrap"><iframe src="https://www.youtube.com/embed/' + encodeURIComponent(btn.getAttribute('data-yt'))
-              + '?rel=0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>';
+            pl.innerHTML = ytEmbedHtml(btn.getAttribute('data-yt'));
             pl.hidden = false; btn.textContent = '■ 閉じる';
-          } else { pl.innerHTML = ''; pl.hidden = true; btn.textContent = '▶ 再生'; }
+            trackVideo(pl, btn.getAttribute('data-rid'));
+          } else { closePlayer(pl); btn.textContent = '▶ 再生'; }
+        });
+      });
+      // 👀 「やった」の切り替え (押した直後に見た目を変え、失敗したら戻す)
+      scheduleBody.querySelectorAll('button.ccp-done').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var was = btn.getAttribute('data-done') === '1', id = btn.getAttribute('data-id');
+          var paint = function (on) { btn.setAttribute('data-done', on ? '1' : '0'); btn.className = 'btn ' + (on ? 'btn-primary' : 'btn-ghost') + ' ccp-done'; btn.textContent = on ? '✅ やった' : '☐ やった'; };
+          paint(!was); btn.disabled = true;
+          ccpPost('file', id, was ? 'undone' : 'done')
+            .then(function (r) { if (r && r.recorded === false) toast('確認用の入室のため記録していません'); else if (!was) toast('「やった」を塾長に伝えました'); })
+            .catch(function (e) { paint(was); toast((e && e.message) || '記録できませんでした', true); })
+            .then(function () { btn.disabled = false; });
         });
       });
       scheduleBody.querySelectorAll('button.file-dl').forEach(function (btn) {
@@ -1028,12 +1123,12 @@
         var ctx = (x.sess || dl) ? ('<div class="card-meta">' + (dl ? (esc(dl) + (x.sess ? ' ・ ' : '')) : '') + (x.sess ? esc(x.sess) : '') + '</div>') : '';
         var player;
         if (id) {
-          player = '<button class="btn btn-ghost rec-toggle" data-yt="' + esc(id) + '" data-i="' + i + '">▶ 再生</button>'
+          player = '<button class="btn btn-ghost rec-toggle" data-yt="' + esc(id) + '" data-rid="' + esc(String(r.id || '')) + '" data-i="' + i + '">▶ 再生</button>'
             + '<div class="rec-player" data-pi="' + i + '" hidden></div>';
         } else {
           player = '<a class="btn btn-ghost" href="' + esc(safeHref(r.video_url)) + '" target="_blank" rel="noopener">↗ 開く</a>';
         }
-        return '<div class="card"><div class="card-title" style="font-size:0.98rem;">🎬 ' + esc(r.title) + '<span class="res-sub">' + dur + '</span></div>'
+        return '<div class="card"><div class="card-title" style="font-size:0.98rem;">🎬 ' + esc(r.title) + '<span class="res-sub">' + dur + '</span>' + watchBadge(r.id) + '</div>'
           + ctx + '<div class="row-actions">' + player + '</div></div>';
       }).join('');
       body.querySelectorAll('.vid-filter').forEach(function (b) {
@@ -1044,10 +1139,10 @@
           var pl = body.querySelector('.rec-player[data-pi="' + btn.getAttribute('data-i') + '"]');
           if (!pl) return;
           if (pl.hidden) {
-            pl.innerHTML = '<div class="video-wrap"><iframe src="https://www.youtube.com/embed/' + encodeURIComponent(btn.getAttribute('data-yt'))
-              + '?rel=0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>';
+            pl.innerHTML = ytEmbedHtml(btn.getAttribute('data-yt'));
             pl.hidden = false; btn.textContent = '■ 閉じる';
-          } else { pl.innerHTML = ''; pl.hidden = true; btn.textContent = '▶ 再生'; }
+            trackVideo(pl, btn.getAttribute('data-rid'));
+          } else { closePlayer(pl); btn.textContent = '▶ 再生'; }
         });
       });
     }
