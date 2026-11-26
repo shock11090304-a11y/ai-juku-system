@@ -728,18 +728,47 @@
         + '<span class="res-name">' + esc(f.title) + sub + '</span>' + action + '</div>';
     }
     // 📎 クラス別 配布ファイル (時間割クラスごと・自分の受講クラスの分だけ。絞り込みはサーバ側 2026-11-13)
+    // 🎬 [2026-11-26 塾長「各授業の補強動画とテキスト、解答解説はここにアップしてほしい」]
+    //   授業の補強・演習の解説動画 (題名が「解説動画」で終わる録画) を、そのクラスの配布ファイルの欄にも出す。
+    //   録画はサーバ側で受講クラスの分だけ返る (student_class_feed) ので、ここで絞り直す必要はない。
+    //   授業の題名 = 時間割クラス名 (サーバのコメントどおり完全一致の運用)。動画タブにも従来どおり残る。
+    function classExplainVideos() {
+      var m = {};
+      ((feedData && feedData.sessions) || []).forEach(function (s) {
+        (s.recordings || []).forEach(function (r) {
+          if (!/解説動画\s*$/.test(String(r.title || ''))) return;
+          (m[s.title] = m[s.title] || []).push(r);
+        });
+      });
+      return m;
+    }
+    function explainVideoRow(r) {
+      var id = r.provider === 'youtube' ? ytId(r.video_url) : null;
+      var sub = r.duration_sec ? ('<span class="res-sub"> ・ ' + esc(fmtDur(r.duration_sec)) + '</span>') : '';
+      var action = id
+        ? '<button class="btn btn-primary lf-vid" data-yt="' + esc(id) + '">▶ 再生</button>'
+        : '<a class="btn btn-primary" href="' + esc(safeHref(r.video_url)) + '" target="_blank" rel="noopener">↗ 開く</a>';
+      return '<div class="res-row"><span class="res-icon">🎬</span>'
+        + '<span class="res-name">' + esc(r.title) + sub + '</span>' + action + '</div>'
+        + (id ? '<div class="lf-vid-player" hidden></div>' : '');
+    }
     function labeledFilesHtml() {
       var lf = (feedData && feedData.labeled_files) || [];
-      if (!lf.length) return '';
+      var vids = classExplainVideos();
+      if (!lf.length && !Object.keys(vids).length) return '';
       var groups = {}, order = [];
       lf.forEach(function (f) {
         var k = f.class_label || 'その他';
         if (!groups[k]) { groups[k] = []; order.push(k); }
         groups[k].push(f);
       });
+      Object.keys(vids).forEach(function (k) {
+        if (!groups[k]) { groups[k] = []; order.push(k); }
+      });
       var h = '<div class="sec-divider">📎 クラス別 配布ファイル</div>';
       order.forEach(function (k) {
         h += '<div class="card"><div class="card-title" style="font-size:0.98rem;">' + esc(k) + '</div>'
+          + (vids[k] || []).map(explainVideoRow).join('')
           + groups[k].map(fileRow).join('') + '</div>';
       });
       return h;
@@ -827,6 +856,18 @@
       toast('ファイルを開けませんでした。アプリを閉じて開き直してください', true);
     }
     function wireSchedule() {
+      // 🎬 配布ファイル欄の解説動画: その場で YouTube を開閉する (動画タブの ▶ 再生と同じ埋め込み)
+      scheduleBody.querySelectorAll('button.lf-vid').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var pl = btn.parentNode && btn.parentNode.nextElementSibling;
+          if (!pl || !pl.classList.contains('lf-vid-player')) return;
+          if (pl.hidden) {
+            pl.innerHTML = '<div class="video-wrap"><iframe src="https://www.youtube.com/embed/' + encodeURIComponent(btn.getAttribute('data-yt'))
+              + '?rel=0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>';
+            pl.hidden = false; btn.textContent = '■ 閉じる';
+          } else { pl.innerHTML = ''; pl.hidden = true; btn.textContent = '▶ 再生'; }
+        });
+      });
       scheduleBody.querySelectorAll('button.file-dl').forEach(function (btn) {
         btn.addEventListener('click', function () { downloadFile(btn); });
       });
