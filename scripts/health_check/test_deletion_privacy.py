@@ -81,8 +81,8 @@ def main():
     email = "delete-me@example.org"
     conn = mod.db(); c = conn.cursor()
     far = (datetime.datetime.utcnow() + datetime.timedelta(days=365)).isoformat()
-    c.execute("INSERT INTO students (name, email, status, plan, trial_end, stripe_customer_id) VALUES (?,?,?,?,?,?)",
-              ("Delete Me", email, "paid", "premium", far, "cus_test_del"))
+    c.execute("INSERT INTO students (name, email, status, plan, trial_end, stripe_customer_id, line_user_id) VALUES (?,?,?,?,?,?,?)",
+              ("Delete Me", email, "paid", "premium", far, "cus_test_del", "Udeletemetestline0000000000000000"))
     conn.commit(); c.execute("SELECT id FROM students WHERE email = ?", (email,)); sid = c.fetchone()["id"]
     insert_generic(c, "course_applications", {"student_id": sid, "name": "Delete Me", "email": email, "phone": "090-0000-0000", "note": "秘密のメモ"})
     insert_generic(c, "support_tickets", {"name": "Delete Me", "email": email, "message": "困っています"})
@@ -121,6 +121,8 @@ def main():
     props = json.loads(c.fetchone()["props"])
     check("監査記録に name / email が無い", "name" not in props and "email" not in props and "Delete Me" not in json.dumps(props, ensure_ascii=False) and email not in json.dumps(props), props)
     check("監査記録に email_hash がある", props.get("email_hash") == mod._student_email_hash(email), props.get("email_hash"))
+    check("監査記録に LINE 連携していたか (line_linked=True) が残る (2026-11-26)", props.get("line_linked") is True, props.get("line_linked"))
+    check("監査記録に LINE の userId 自体は残さない", "Udeletemetestline" not in json.dumps(props), props)
     c.execute("SELECT name, email, phone, note, student_id FROM course_applications")
     ca = [dict(x) for x in c.fetchall()]
     check("申込履歴は氏名/電話/メモも匿名化 (行は残る)", len(ca) == 1 and ca[0]["name"] == "削除済み" and ca[0]["phone"] is None and ca[0]["note"] is None and email not in (ca[0]["email"] or "") and ca[0]["student_id"] is None, ca)

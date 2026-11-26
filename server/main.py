@@ -26390,7 +26390,7 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
     conn = db()
     c = conn.cursor()
     try:
-        c.execute("SELECT id, name, email, status, plan, course, stripe_subscription_id, stripe_customer_id, created_at FROM students WHERE id=?", (student_id,))
+        c.execute("SELECT id, name, email, status, plan, course, stripe_subscription_id, stripe_customer_id, created_at, line_user_id FROM students WHERE id=?", (student_id,))
         student = c.fetchone()
         if not student:
             raise HTTPException(status_code=404, detail="生徒が見つかりません")
@@ -26515,6 +26515,9 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
             "stripe_customer_id": student["stripe_customer_id"],
             "stripe_subscription_id": student["stripe_subscription_id"],
             "related_counts": related_counts,
+            # 🔗 2026-11-26 塾長「入れて」: 消した生徒が LINE 連携していたか (真偽値だけ・userId は残さない)。
+            #   削除で line_user_id ごと消えるため、作り直しで連携が消えた生徒を後から探せなかった (西嶋さんの件)。
+            "line_linked": bool(student["line_user_id"]),
         }
 
         if payload.dry_run:
