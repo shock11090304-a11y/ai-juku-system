@@ -131,6 +131,11 @@ def main():
           mod._kt_plan(["kt-r-2026"], family="kk")["unknown"] == ["kt-r-2026"] and mod._kt_plan(["kk-handai-subun-2026"], family="kt")["unknown"] == ["kk-handai-subun-2026"])
     pp = mod._kt_priced_parts(["kk-kyodai-suri-set3"], {"kk-kyodai-suri-2026"})
     check("A9. 1 年分を持つ人の 3 年セットは 1,980 円を差し引き (2,820 円)", pp[0]["price"] == 2820 and "2026年度分を差し引き" in pp[0]["name"], pp)
+    kkc = {k for k in KC if k.startswith("kk-")}
+    check("A13. 回の表 (KK_EPISODES) は国公立の講座と同じ 24 講座・118 回", set(mod.KK_EPISODES) == kkc and len(kkc) == 24
+          and sum(len(v) for v in mod.KK_EPISODES.values()) == 118, (len(kkc), sum(len(v) for v in mod.KK_EPISODES.values())))
+    src = read("server/main.py")
+    check("A14. 受付の初日の既定は 2026-11-28 (塾長「今日から」)", 'KK_SALES_FROM = os.getenv("KK_SALES_FROM", "2026-11-28")' in src)
     pp2 = mod._kt_priced_parts(["kk-kyodai-suri-set3"], {"kk-kyodai-suri-2026", "kk-kyodai-suri-2025"})
     check("A10. 2 年分を持つ人の 3 年セットは 840 円 (1 年分につき 1,980 円・下限で上げない)", pp2[0]["price"] == 840, pp2)
     pp3 = mod._kt_priced_parts(["kt-r-set6"], {f"kt-r-{y}" for y in (2026, 2025, 2024, 2023, 2022)})
@@ -205,6 +210,15 @@ def main():
           len(MAILS) == 1 and "国公立大学 過去問 解説動画" in MAILS[0]["subject"] and "共通テスト" not in MAILS[0]["subject"] + body0
           and "・国公立大学 過去問 京都大学 数学（理系） 2024年度\n" in body0 and "配信 " not in body0 and "配信日" not in body0
           and "動画（4本）は、下のリンクから" in body0 and "2028年3月31日（金）" in body0 and "course-videos.html?t=" in body0, MAILS)
+    check("C2b. 一部しか登録していないうちは「準備中・2026年12月5日（土）ごろまでに順に公開（全23本）・翌朝8時ごろにまとめて」と PDF の案内",
+          "いま公開している動画（4本）" in body0 and "2026年12月5日（土）ごろまでに順に公開します（全23本）" in body0
+          and "翌朝8時ごろにまとめて" in body0 and "問題冊子・解答用紙の PDF" in body0, body0)
+    check("C2c. 回の番号の読み取り (最初の「第N問」・全角・空白・後ろの「理系第6問と共通」に引っぱられない)",
+          mod._kk_ep_no("第5問 最大値の期待値（理系第6問と共通）") == 5 and mod._kk_ep_no("京大 理系 2024 第１０問") == 10
+          and mod._kk_ep_no("第 3 問 x") == 3 and mod._kk_ep_no("予告") is None)
+    rnew = add("kk-kyodai-suri-2025", "第1問 複素数と定積分", "FFFFFFFFF01", pub=mod._winter_today(), notify=True)
+    check("C2d. 国公立は登録の場では知らせない (翌朝 8 時のまとめに回す)", rnew.status_code == 200
+          and (rnew.json().get("notified") or {}).get("deferred"), rnew.text[:200])
     welcome = [l for l in body0.splitlines() if "course-videos.html?t=" in l]
 
     MAILS.clear()
@@ -220,9 +234,12 @@ def main():
     me = client.get("/api/course/me", headers=H).json() if H else {}
     vids = sorted(v["title"] for v in me.get("videos", []))
     check("D1. 国公立だけの人もログインでき、自分の組の動画だけ見られる (阪大・国語は出ない)",
-          vr.status_code == 200 and vids == sorted(["京大 理系 2024 第1問", "京大 理系 2024 第2問", "京大 理系 2026 第1問", "京大 文系 2026 第1問"]), (vr.status_code, vids))
+          vr.status_code == 200 and vids == sorted(["京大 理系 2024 第1問", "京大 理系 2024 第2問", "京大 理系 2026 第1問", "京大 文系 2026 第1問", "第1問 複素数と定積分"]), (vr.status_code, vids))
     check("D2. /me の kk 欄 (配信日なし・視聴期限)・kt 欄は空", [w["key"] for w in me.get("kk", [])] == exp_keys and all(w["delivery"] is None for w in me.get("kk", []))
           and me.get("kk_view_until") == "2028-03-31" and me.get("kt") == [] and me.get("kt_view_until") is None, json.dumps(me, ensure_ascii=False)[:400])
+    k24 = next((w for w in me.get("kk", []) if w["key"] == "kk-kyodai-suri-2024"), {})
+    check("D2b. /me の kk 欄に回の表 (京大理系2024 は第1〜6問)・全部そろう目安 kk_all_by",
+          [e["q"] for e in k24.get("episodes", [])] == [1, 2, 3, 4, 5, 6] and me.get("kk_all_by") == "2026-12-05", k24)
     # 共通テストも買った人は欄が分かれる
     mod._kt_webhook_record({"id": "cs_live_kk2", "payment_status": "paid", "amount_total": 1980, "livemode": True, "customer_email": "buyer@example.invalid",
                             "metadata": {"system": "juku-payment-kakomon", "items": "kt-r-2026"}})
@@ -258,6 +275,10 @@ def main():
           and f"{mod.KK_PRICE_SET3:,}円" in legal and f"{mod.KK_PRICE_YEAR:,}円" in legal and "2028年3月31日まで" in legal)
     cv = read("course-videos.html")
     check("E2. 視聴ページに国公立の案内文 (me.kk)", 'id="kkNote"' in cv and "me.kk" in cv and "国公立大学の過去問" in cv)
+    check("E2b. 視聴ページは登録前の回を「準備中」と出す (回の表・大問の番号で照合)", "video pending" in cv and "準備中" in cv and "winter[k].episodes" in cv)
+    i = legal.find('id="tokusho-kokkoritsu"'); sec = legal[i:legal.find("</section>", i)]
+    check("E1b. 特商法の国公立の節: PDF を渡す・順次公開 (2026年12月5日ごろ)・「お渡しはありません」は消えた",
+          "問題冊子・解答用紙は、視聴ページ" in sec and "2026年12月5日（土）ごろまで" in sec and "公開されない回がある場合を含みます" in sec and "お渡しはありません" not in sec, sec[:300])
     ceo = read("ceo.html")
     check("E3. CEO の講座の選択肢に「国公立大学 過去問」の組", "国公立大学 過去問" in ceo and "/^kk-/.test(c.key)" in ceo)
     adm = client.get("/api/admin/course/videos", headers=ADMIN).json()

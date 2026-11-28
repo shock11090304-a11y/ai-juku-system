@@ -58768,8 +58768,11 @@ def course_me(authorization: Optional[str] = Header(None)):
             "kt": [{"key": k, "name": _course_key_name(k), "delivery": KT_COURSES[k]["delivery"]} for k in (member.get("kt") or [])
                    if _kt_family(k) == "kt"],
             "kt_view_until": KT_VIEW_UNTIL if any(_kt_family(k) == "kt" for k in (member.get("kt") or [])) else None,
-            # 🏛 国公立大学の過去問 (記録は kt と同じ表・配信日なし = 買った日からすべて見られる)
-            "kk": [{"key": k, "name": _course_key_name(k), "delivery": None} for k in (member.get("kt") or []) if _kt_family(k) == "kk"],
+            # 🏛 国公立大学の過去問 (記録は kt と同じ表・配信日なし = 公開済みの回から見られる)
+            "kk": [{"key": k, "name": _course_key_name(k), "delivery": None,
+                    "episodes": [{"q": q, "title": t} for q, t in KK_EPISODES.get(k, [])]}
+                   for k in (member.get("kt") or []) if _kt_family(k) == "kk"],
+            "kk_all_by": KK_ALL_BY if any(_kt_family(k) == "kk" for k in (member.get("kt") or [])) else None,
             "kk_view_until": KT_VIEW_UNTIL if any(_kt_family(k) == "kk" for k in (member.get("kt") or [])) else None,
             # 📗 英検準2級講座: 視聴期限は人ごと (一番遅い期限)
             "ep2": [{"key": k, "name": _course_key_name(k)} for k in (member.get("ep2") or [])],
@@ -58821,7 +58824,11 @@ def admin_course_video_create(payload: CourseVideoCreateRequest, request: Reques
         except Exception as e:
             log.warning(f"[winter] no-auto mark failed: {type(e).__name__}")
     if (payload.notify is None or payload.notify) and pub <= _course_today_jst():
-        result["notified"] = _course_notify_video({"id": vid, "course_key": key, "title": title, "note": note})
+        if _kt_family(key) == "kk" and key in KT_COURSES:
+            # 🏛 国公立は 1 回ずつ登録していくので、その場では送らず、毎朝 8:03 の _kt_notify_due で 1 人 1 通にまとめる
+            result["notified"] = {"deferred": "毎朝8時のまとめで知らせる"}
+        else:
+            result["notified"] = _course_notify_video({"id": vid, "course_key": key, "title": title, "note": note})
     return result
 
 
@@ -60342,12 +60349,12 @@ for _subj, _sname in KT_SUBJECTS.items():
 #   - 3 年 (2024〜2026) そろった組は 3 年セット (kk-…-set3) 4,800 円だけを売る。1 年分しかない組は 1 年分 1,980 円 (11-28 塾長)。
 #     あとで残りの年度ができて 3 年そろったら、その組の years を足すだけで 3 年セットに変わる。1 年分を買った人は、その年度の分
 #     (1,980 円) を差し引いた金額でセットを買える (_kt_priced_parts)。
-#   - 動画は買った日からすべて見られる (配信日なし・delivery=None)。視聴期限・申込の締切は共通テスト過去問と同じ (11-28 塾長)。
-#   - 決済の入口は KK_SALES_FROM (YYYY-MM-DD・JST) の日から開く。空なら閉じたまま (申込ページの公開と同じ日に入れる)。
+#   - 配信日なし (delivery=None)。登録済みの回は買った日から見られる。11-28 受付開始時点では動画を順次登録中 (KK_ALL_BY ごろまでに全本)。視聴期限・申込の締切は共通テスト過去問と同じ (11-28 塾長)。
+#   - 決済の入口は KK_SALES_FROM (YYYY-MM-DD・JST) の日から開く。既定は 2026-11-28 (塾長「今日から」)。env を空にすると閉じる。
 #   - KK_HOLD の組は、講座 (動画の登録先) はあるが、まだ売らない (塾長確認ページで OK になってから外す)。
 KK_LABEL = "国公立大学 過去問 解説動画"
 KK_PAGE = "kokkoritsu"
-KK_SALES_FROM = os.getenv("KK_SALES_FROM", "").strip()
+KK_SALES_FROM = os.getenv("KK_SALES_FROM", "2026-11-28").strip()
 KK_PRICE_YEAR = KT_PRICE_YEAR   # 1 年分 1,980 円 (共通テスト過去問の 1 年分と同じ・11-28 塾長)
 KK_PRICE_SET3 = 4800            # 1 大学・1 科目の 3 年セット (11-28 塾長)
 KK_SET_YEARS = (2026, 2025, 2024)
@@ -60363,6 +60370,58 @@ KK_GROUPS = {
     "kk-kyodai-kokugo": (2026,),
 }
 KK_HOLD = {"kk-kyodai-kokugo"}   # 11-28 時点で塾長確認ページが「確認待ち」(id 355〜357)。OK になったら外す
+# 講座ごとの回 (大問の番号, 題)。視聴ページで、まだ登録していない回を「準備中」と出すのに使う (動画は CEO で順に登録する)
+KK_EPISODES = {
+    'kk-handai-subun-2026': [(1, '第1問 対数をとる漸化式'), (2, '第2問 空間ベクトルと最小値（理系第2問と共通）'), (3, '第3問 積分で定めた3次関数の最小値')],
+    'kk-handai-suri-2026': [(1, '第1問 接線と三角形'), (2, '第2問 空間ベクトルと最小値'), (3, '第3問 複素数と交点の個数'), (4, '第4問 不等式と積分の極限'), (5, '第5問 さいころと条件付き確率')],
+    'kk-handai-suri-2025': [(1, '第1問 平面図形と内積'), (2, '第2問 極値と変曲点の軌跡'), (3, '第3問 空間の角度と最大最小'), (4, '第4問 積分評価と極限'), (5, '第5問 文字の交換と確率')],
+    'kk-handai-suri-2024': [(1, '第1問 指数関数と解の極限'), (2, '第2問 複素数の円板と係数'), (3, '第3問 ねじれの位置と共通垂線'), (4, '第4問 円と回転体の体積'), (5, '第5問 互いに素な数の個数')],
+    'kk-kyodai-butsuri-2026': [(1, '第1問 斜面台の運動と磁場中の衝突'), (2, '第2問 ターンテーブル上の電流と磁場'), (3, '第3問 可動壁のある容器の気体と液体中のサイクル')],
+    'kk-kyodai-kagaku-2026': [(1, '第1問 硫化鉱物の結晶と鉛蓄電池による電気分解'), (2, '第2問 吸着と化学平衡の組み合わせ'), (3, '第3問 アセタールの交換と不斉炭素の見分け'), (4, '第4問 スフィンゴ糖脂質と血液型物質')],
+    'kk-kyodai-kokugo-2026': [(1, '第1問 坂口安吾『恋愛論』'), (2, '第2問 高浜虚子「写生趣味と空想趣味」'), (3, '第3問 古文・『木草物語』')],
+    'kk-kyodai-nihonshi-2026': [(1, '第1問 応仁の乱・南鐐二朱銀・婦選の史料'), (2, '第2問 古代から現代までの空欄補充20問'), (3, '第3問 儒教と出版・明治の法令・小作地と産業構造'), (4, '第4問 摂関政治の特徴と鎌倉時代の経済（論述）')],
+    'kk-kyodai-sekaishi-2026': [(1, '第1問 中華民国初期の工業化と社会の変化'), (2, '第2問 西アジアの騎馬軍団と中国の大運河'), (3, '第3問 両大戦間期の国家の経済介入'), (4, '第4問 古代の歴史叙述とアフリカ分割')],
+    'kk-kyodai-subun-2026': [(1, '第1問 円の接線と放物線で囲む面積'), (2, '第2問 正四面体と球面（理系第2問と共通）'), (3, '第3問 3と素数pで表せない数の個数'), (4, '第4問 ガウス記号と対数の和'), (5, '第5問 最大値の期待値（理系第6問と共通）')],
+    'kk-kyodai-suri-2026': [(1, '第1問 対数関数と2つの交点'), (2, '第2問 正四面体と球面'), (3, '第3問 係数と2の累乗'), (4, '第4問 正方形と正三角形'), (5, '第5問 三角関数と回転体'), (6, '第6問 最大値の期待値')],
+    'kk-kyodai-suri-2025': [(1, '第1問 複素数と定積分'), (2, '第2問 整数と因数分解'), (3, '第3問 接線と値域'), (4, '第4問 四面体と定点'), (5, '第5問 直線と軌跡'), (6, '第6問 硬貨と奇偶の確率')],
+    'kk-kyodai-suri-2024': [(1, '第1問 立方体の塗り分け'), (2, '第2問 複素数と円環'), (3, '第3問 ねじれの位置'), (4, '第4問 奇数が続く数列'), (5, '第5問 指数関数と面積'), (6, '第6問 桁数と対数')],
+    'kk-kyudai-suri-2026': [(1, '第1問 球と円柱の切り口'), (2, '第2問 複素数の軌跡と回転体の体積'), (3, '第3問 玉の並びと確率の漸化式'), (4, '第4問 二重根号と無理数'), (5, '第5問 定積分で表された関数と極限')],
+    'kk-kyudai-suri-2025': [(1, '第1問 平面に垂直な直線と最短距離'), (2, '第2問 tanの微分と定積分'), (3, '第3問 平方数の余りと指数方程式'), (4, '第4問 円に内接する四角形と面積'), (5, '第5問 さいころと3次方程式の解の個数')],
+    'kk-kyudai-suri-2024': [(1, '第1問 空間の3点と三角形の面積'), (2, '第2問 複素数の方程式と解の回転'), (3, '第3問 階乗を含む方程式'), (4, '第4問 格子点を通る直線の本数'), (5, '第5問 対数を含む定積分の漸化式と極限')],
+    'kk-meidai-suri-2026': [(1, '第1問 双曲線と面積の最小'), (2, '第2問 平面と線分の共有点'), (3, '第3問 互いに素な3数の組の個数'), (4, '第4問 帯の中を動く点の確率と漸化式')],
+    'kk-todai-suri-2026': [(1, '第1問 三角関数と積分評価'), (2, '第2問 格子点と確率'), (3, '第3問 空間図形と通過領域'), (4, '第4問 接線と面積'), (5, '第5問 複素数平面と領域'), (6, '第6問 約数と余り')],
+    'kk-todai-suri-2025': [(1, '第1問 内分点と曲線'), (2, '第2問 対数と積分極限'), (3, '第3問 長方形の面積と最大値'), (4, '第4問 平方数と素数'), (5, '第5問 札の並べ替え'), (6, '第6問 逆数と複素数平面')],
+    'kk-todai-suri-2024': [(1, '第1問 空間の角と領域'), (2, '第2問 絶対値を含む積分'), (3, '第3問 対称移動と確率'), (4, '第4問 共通接線と円'), (5, '第5問 回転体と円環'), (6, '第6問 素数と因数分解')],
+    'kk-tohoku-subun-2026': [(1, '第1問 放物線の接線と垂直二等分線（理系第1問と共通）'), (2, '第2問 平方数の等式と偶奇（理系第2問と共通）'), (3, '第3問 直交する2線分とベクトル'), (4, '第4問 4次関数の2重接線と面積の比')],
+    'kk-tohoku-suri-2026': [(1, '第1問 放物線の接線と垂直二等分線'), (2, '第2問 平方数の等式と偶奇'), (3, '第3問 微分可能な条件と最小値'), (4, '第4問 格子点の移動と条件付き確率'), (5, '第5問 曲線の回転体の体積'), (6, '第6問 球面上の点とベクトル')],
+    'kk-tohoku-suri-2025': [(1, '第1問 硬貨とさいころの反復試行'), (2, '第2問 対数で解く連立漸化式'), (3, '第3問 4次関数の極大条件'), (4, '第4問 接する2曲線と面積の極限'), (5, '第5問 球面上の点の射影と円'), (6, '第6問 正五角形の回転と周の長さ')],
+    'kk-tohoku-suri-2024': [(1, '第1問 放物線と接線で囲む面積'), (2, '第2問 対数の不等式と整数'), (3, '第3問 文字列の確率と複素数'), (4, '第4問 二つの球面と交わりの円'), (5, '第5問 対数を含む関数と整数の組'), (6, '第6問 円錐の側面と平面の交線')],
+}
+KK_ALL_BY = os.getenv("KK_ALL_BY", "2026-12-05").strip()   # 全部の動画を出しそろえる目安 (申込ページ・視聴ページ・案内メールに出す)
+
+
+def _kk_fmt_all_by() -> str:
+    """KK_ALL_BY を「2026年12月5日（土）」の形に (形が違えば「12月上旬」)。"""
+    try:
+        d = datetime.strptime(KK_ALL_BY or "", "%Y-%m-%d").date()
+    except Exception:
+        return "12月上旬"
+    return f"{d.year}年{d.month}月{d.day}日（{'月火水木金土日'[d.weekday()]}）"
+
+
+_KK_EP_RE = re.compile(r"第\s*([0-9０-９]+)\s*問")
+
+
+def _kk_ep_no(title: str):
+    """題の中で最初に出てくる「第N問」の N (全角数字も可)。視聴ページの照合 (course-videos.html) と同じ決まり。"""
+    m = _KK_EP_RE.search(str(title or ""))
+    return int(m.group(1).translate(str.maketrans("０１２３４５６７８９", "0123456789"))) if m else None
+
+
+def _kk_ready_count(keys, ready) -> int:
+    """国公立の講座で、公開済みの回の数 (同じ回の重複・回の表にない動画は数えない)。"""
+    have = {(v["course_key"], _kk_ep_no(v.get("title"))) for v in ready if _kt_family(v.get("course_key")) == "kk"}
+    return sum(1 for k in keys for q, _t in KK_EPISODES.get(k, []) if (k, q) in have)
 
 
 def _kk_group_name(group: str) -> str:
@@ -60705,7 +60764,7 @@ def _kt_checkout_impl(request: Request, body: bytes, family: str):
 
 
 def _kt_keys_text(keys: list) -> str:
-    # 🏛 国公立 (delivery=None) は配信日が無い (買った日からすべて見られる)
+    # 🏛 国公立 (delivery=None) は配信日が無い (公開済みの回から見られる)
     return "".join(f"・{KT_COURSES[k]['name']}" + (f"（配信 {_winter_fmt_date(KT_COURSES[k]['delivery'])}〜）" if KT_COURSES[k]["delivery"] else "") + "\n"
                    for k in keys if k in KT_COURSES)
 
@@ -60813,16 +60872,31 @@ def _kt_webhook_record(session: dict) -> bool:
         lines = [f"{_lb}のお申し込みとお支払い（合計 {amount:,}円・税込）を確認しました。ありがとうございます。", "",
                  "■ お申し込みの講座", _kt_keys_text(keys).rstrip("\n"), ""]
         if _lb == KK_LABEL:
-            # 🏛 国公立は配信日が無い (動画は販売の前に全部登録しておく)
-            lines.append(f"動画（{len(ready)}本）は、下のリンクから視聴ページを開くとすぐにご覧いただけます。" if ready else
-                         "動画の準備ができしだい、視聴ページに並びます。準備ができたらメールでお知らせします。")
+            # 🏛 国公立は配信日が無い。動画は順次登録 (KK_ALL_BY ごろまでに全本)。新しく並んだ回は朝のお知らせメールで知らせる
+            _total = sum(len(KK_EPISODES.get(k, [])) for k in keys)
+            _have = _kk_ready_count(keys, ready)
+            if ready and _have >= _total:
+                lines.append(f"動画（{len(ready)}本）は、下のリンクから視聴ページを開くとすぐにご覧いただけます。")
+                lines.append("各動画の「📄 教材（PDF）」から、問題冊子・解答用紙の PDF を開けます。")
+            elif ready:
+                lines.append(f"いま公開している動画（{_have}本）は、下のリンクから視聴ページを開くとすぐにご覧いただけます。"
+                             f"残りの回は「準備中」と表示しており、{_kk_fmt_all_by()}ごろまでに順に公開します（全{_total}本）。"
+                             "新しく公開した回は、翌朝8時ごろにまとめてメールでお知らせします。")
+                lines.append("問題冊子・解答用紙の PDF は、公開した各動画の「📄 教材（PDF）」から開けます。")
+            else:
+                lines.append(f"お申し込みの講座の動画は、いま準備中です。{_kk_fmt_all_by()}ごろまでに全{_total}本を順に公開し、"
+                             "公開した回から視聴ページで見られるようになります。新しく公開した回は、翌朝8時ごろにまとめてメールでお知らせします。")
+                lines.append("問題冊子・解答用紙の PDF は、公開した各動画の「📄 教材（PDF）」から開けます。")
         elif ready:
             lines.append(f"すでに配信している動画（{len(ready)}本）は、下のリンクから視聴ページを開くとすぐにご覧いただけます。"
                          "まだの年度は、配信日の朝にメールでお知らせします。")
         else:
             lines.append("動画は配信日から視聴ページに並びます。配信日の朝にメールでお知らせします。")
         if _lb != KK_LABEL and any(_kt_family(k) == "kk" for k in keys):
-            lines.append("国公立大学の過去問の動画は、配信日を待たずにすぐすべてご覧いただけます。")   # 共通テストと一緒に買った人
+            _kk_keys = [k for k in keys if _kt_family(k) == "kk"]
+            if _kk_ready_count(_kk_keys, ready) < sum(len(KK_EPISODES.get(k, [])) for k in _kk_keys):   # 共通テストと一緒に買った人
+                lines.append(f"国公立大学の過去問の動画は、配信日を待たずに公開した回から順にご覧いただけます（{_kk_fmt_all_by()}ごろまでにすべての回を公開します）。")
+            lines.append("国公立大学の過去問の問題冊子・解答用紙の PDF は、公開した各動画の「📄 教材（PDF）」から開けます。")
         lines.append(f"視聴は {_kt_fmt_until()} までです。")
         res = _course_send_login_link(member, intro="\n".join(lines),
                                       subject=f"【トリリオン英語塾】{_lb} お支払いの確認と視聴ページのご案内")
@@ -60939,7 +61013,8 @@ def _kt_notice_mail(member: dict, videos: list) -> tuple:
     for key, vs in by_course.items():
         listing += f"【{_course_key_name(key)}】\n" + "".join(f"・{v['title']}\n" for v in vs)
     _lb = _kt_label_for([v["course_key"] for v in videos])
-    subject = f"【{_lb}】動画を配信しました（{len(videos)}本）"
+    _verb = "公開" if _lb == KK_LABEL else "配信"   # 🏛 国公立は配信日がないので「公開」
+    subject = f"【{_lb}】動画を{_verb}しました（{len(videos)}本）"
     if member.get("id"):
         token = _sign_session_token(member["id"], ttl_seconds=COURSE_MAGIC_TTL_SEC, token_type="coursemagic")
         how = (f"■ 視聴はこちら（このリンクを開くとそのままログインできます・7 日間有効）\n{_course_portal_url()}?t={token}\n"
@@ -60947,7 +61022,9 @@ def _kt_notice_mail(member: dict, videos: list) -> tuple:
     else:
         how = (f"■ 視聴はこちら\n{_course_portal_url()}\n（お支払い時のメールアドレスを入力すると、ログイン用のリンクが届きます。"
                f"一度ログインすると、同じブラウザでは 30 日間そのまま開けます）\n")
-    body = (f"{greeting}\n\nトリリオン英語塾です。\n{_lb}の動画を配信しました。\n\n■ 今回の動画\n{listing}\n" + how +
+    _pdf = ("各動画の「📄 教材（PDF）」から、問題冊子・解答用紙の PDF を開けます。\n"
+            if any(_kt_family(v["course_key"]) == "kk" for v in videos) else "")
+    body = (f"{greeting}\n\nトリリオン英語塾です。\n{_lb}の動画を{_verb}しました。\n\n■ 今回の動画\n{listing}\n" + how + _pdf +
             f"視聴は {_kt_fmt_until()} までです。\n\n"
             f"ご不明な点は 公式 LINE（{COURSE_LINE_URL}）またはメール（{COURSE_CONTACT_EMAIL}）までご連絡ください。\n\n"
             f"トリリオン英語塾（Trillion English Academy）")

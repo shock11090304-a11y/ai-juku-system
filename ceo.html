@@ -14711,7 +14711,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       var sel = document.getElementById('cvCourse');
       if (!list.length || sel.querySelector('optgroup[data-kt]')) return;
       var g = document.createElement('optgroup'); g.label = '共通テスト過去問'; g.setAttribute('data-kt', '1');
-      // 🏛 国公立大学の過去問 (kk-…) は同じ一覧で届く。配信日が無い (公開日を販売開始日にすると、買った人はすぐ全部見られる)
+      // 🏛 国公立大学の過去問 (kk-…) は同じ一覧で届く。配信日が無い (公開日=登録の日。登録の場では知らせず、翌朝 8 時に購入者へまとめて知らせる)
       var g2 = document.createElement('optgroup'); g2.label = '国公立大学 過去問';
       list.forEach(function (c) {
         var o = document.createElement('option'); o.value = c.key;

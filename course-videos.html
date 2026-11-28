@@ -43,6 +43,9 @@
     .video .head { display:flex; justify-content:space-between; gap:0.75rem; align-items:flex-start; flex-wrap:wrap; }
     .video .ttl { font-weight:600; font-size:0.98rem; }
     .video .date { font-size:0.75rem; color:var(--muted); white-space:nowrap; }
+    .video.pending { background:#f9fafb; border-style:dashed; }
+    .video.pending .ttl { color:var(--muted); }
+    .video.pending .date { font-weight:700; }
     .video .note { font-size:0.85rem; color:var(--muted); margin-top:0.25rem; white-space:pre-wrap; }
     .video .play { margin-top:0.6rem; display:flex; gap:0.5rem; flex-wrap:wrap; }
     .btn-pdf { background:#fff; color:var(--navy); border:1px solid var(--navy); text-decoration:none; }
@@ -200,7 +203,8 @@
         }
         $('kkNote').hidden = !(me.kk || []).length;
         if ((me.kk || []).length) {
-          $('kkNote').textContent = '国公立大学の過去問の解説動画は、大学・科目・年度ごとに大問の順で並びます（上から第1問）。視聴は ' + fmtDateJpY(me.kk_view_until) + ' までです。';
+          $('kkNote').textContent = '国公立大学の過去問の解説動画は、大学・科目・年度ごとに大問の順で並びます（上から第1問）。'
+            + '各動画の「📄 教材（PDF）」から、問題冊子・解答用紙の PDF を開けます。視聴は ' + fmtDateJpY(me.kk_view_until) + ' までです。';
         }
         $('ep2Note').hidden = !(me.ep2 || []).length;
         if ((me.ep2 || []).length) {
@@ -210,7 +214,7 @@
         if ((me.ep1 || []).length) {
           $('ep1Note').textContent = '英検準1級 4か月ステップアップ講座の動画は、第1週から順に並びます（上から第1週）。各動画の「📄 教材（PDF）」から、その週のテキストの PDF（本冊・解答解説・単語帳）を開けます。視聴は ' + fmtDateJpY(me.ep1_view_until) + ' までです。';
         }
-        var byCourse = {};
+        var byCourse = {}, kkPending = 0;
         (me.courses || []).forEach(function (c) { byCourse[c.key] = { name: c.name, videos: [] }; });
         (me.videos || []).forEach(function (v) { if (byCourse[v.course_key]) byCourse[v.course_key].videos.push(v); });
         Object.keys(winter).forEach(function (k) { if (byCourse[k]) byCourse[k].videos.reverse(); });
@@ -218,26 +222,48 @@
         Object.keys(byCourse).forEach(function (k) {
           var b = byCourse[k];
           html += '<div class="course-block"><h3>' + esc(b.name) + '</h3>';
-          if (!b.videos.length && winter[k] && !winter[k].delivery) {   // 📗 英検準2級講座 (配信日なし)
+          var eps = (winter[k] && winter[k].episodes) || [];
+          if (/^kk-/.test(k) && eps.length) {   // 🏛 国公立: 回の表どおりに並べ、まだ登録していない回は「準備中」
+            var used = {};
+            var rows = eps.map(function (e) {
+              // 同じ回が 2 本あれば新しい方 (後ろ) を使う。番号は題の中で最初の「第N問」(サーバの _kk_ep_no と同じ決まり)
+              var v = null;
+              for (var i = b.videos.length - 1; i >= 0; i--) { var x = b.videos[i]; if (!used[x.id] && kkEpNo(x.title) === e.q) { v = x; break; } }
+              if (v) { used[v.id] = 1; return videoHtml(v, k); }
+              kkPending++;
+              return '<div class="video pending"><div class="head"><div class="ttl">' + esc('第' + e.q + '問 ' + String(e.title || '').replace(/^第[0-9]+問\s*/, '')) + '</div><div class="date">準備中</div></div>'
+                + '<div class="note">公開しだい、ここで動画と問題冊子・解答用紙の PDF が見られるようになります。</div></div>';
+            });
+            b.videos.forEach(function (v) { if (!used[v.id]) rows.push(videoHtml(v, k)); });
+            html += rows.join('');
+          } else if (!b.videos.length && winter[k] && !winter[k].delivery) {   // 📗 英検準2級講座 (配信日なし)
             html += '<div class="empty">動画の準備ができしだい、ここに並びます。お手数ですが、公式 LINE またはメールでお問い合わせください。</div>';
           } else if (!b.videos.length && winter[k]) {
             html += '<div class="empty">' + esc(fmtDateJp(winter[k].delivery)) + ' に配信します。配信した日の朝にメールでお知らせします。</div>';
           } else if (!b.videos.length) {
             html += '<div class="empty">まだ動画はありません。初回の動画は ' + esc(me.first_delivery ? fmtDateJp(me.first_delivery) : 'お支払いの翌週の月曜') + ' に追加する予定です。追加したときはメールでお知らせします。</div>';
           } else {
-            b.videos.forEach(function (v) {
-              html += '<div class="video" data-id="' + esc(v.id) + '">'
-                // 🏛 国公立 (kk-) は買った日から全部見られるので、公開日は出さない (配信日と取られる)
-                + '<div class="head"><div class="ttl">' + esc(v.title) + '</div><div class="date">' + (/^kk-/.test(k) ? '' : esc(fmtDateJp(v.publish_date))) + '</div></div>'
-                + (v.note ? '<div class="note">' + esc(v.note) + '</div>' : '')
-                + '<div class="play"><button type="button" class="btn play-btn" data-yt="' + (ytOk(v.youtube_id) ? esc(v.youtube_id) : '') + '">▶ 再生する</button>'
-                + (/^https:\/\//.test(v.material_url || '') ? ' <a class="btn btn-pdf" href="' + esc(v.material_url) + '" target="_blank" rel="noopener">📄 教材（PDF）</a>' : '') + '</div>'
-                + '<div class="player"></div></div>';
-            });
+            b.videos.forEach(function (v) { html += videoHtml(v, k); });
           }
           html += '</div>';
         });
         $('videoList').innerHTML = html || '<div class="empty">有効な講座がありません。</div>';
+        if (kkPending && me.kk_all_by) {   // 準備中の回があるうちだけ、順次公開の案内を足す
+          $('kkNote').textContent += '「準備中」の回は ' + fmtDateJpY(me.kk_all_by) + 'ごろまでに順に公開します。新しく公開した回は、翌朝8時ごろにまとめてメールでお知らせします。';
+        }
+      }
+      function kkEpNo(t) {
+        var m = /第\s*([0-9０-９]+)\s*問/.exec(String(t || ''));
+        return m ? +m[1].replace(/[０-９]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }) : null;
+      }
+      function videoHtml(v, k) {
+        return '<div class="video" data-id="' + esc(v.id) + '">'
+          // 🏛 国公立 (kk-) は配信日がないので、公開日は出さない (配信日と取られる)
+          + '<div class="head"><div class="ttl">' + esc(v.title) + '</div><div class="date">' + (/^kk-/.test(k) ? '' : esc(fmtDateJp(v.publish_date))) + '</div></div>'
+          + (v.note ? '<div class="note">' + esc(v.note) + '</div>' : '')
+          + '<div class="play"><button type="button" class="btn play-btn" data-yt="' + (ytOk(v.youtube_id) ? esc(v.youtube_id) : '') + '">▶ 再生する</button>'
+          + (/^https:\/\//.test(v.material_url || '') ? ' <a class="btn btn-pdf" href="' + esc(v.material_url) + '" target="_blank" rel="noopener">📄 教材（PDF）</a>' : '') + '</div>'
+          + '<div class="player"></div></div>';
       }
       $('videoList').addEventListener('click', function (e) {
         var btn = e.target.closest('.play-btn');
