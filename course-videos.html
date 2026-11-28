@@ -249,7 +249,7 @@
         });
         $('videoList').innerHTML = html || '<div class="empty">有効な講座がありません。</div>';
         if (kkPending && me.kk_all_by) {   // 準備中の回があるうちだけ、順次公開の案内を足す
-          $('kkNote').textContent += '「準備中」の回は ' + fmtDateJpY(me.kk_all_by) + 'ごろまでに順に公開します。新しく公開した回は、翌朝8時ごろにまとめてメールでお知らせします。';
+          $('kkNote').textContent += '「準備中」の回は順に公開します（すべての回がそろう目安は ' + fmtDateJpY(me.kk_all_by) + '）。新しく公開した回は、翌朝8時ごろにまとめてメールでお知らせします。';
         }
       }
       function kkEpNo(t) {

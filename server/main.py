@@ -60880,11 +60880,11 @@ def _kt_webhook_record(session: dict) -> bool:
                 lines.append("各動画の「📄 教材（PDF）」から、問題冊子・解答用紙の PDF を開けます。")
             elif ready:
                 lines.append(f"いま公開している動画（{_have}本）は、下のリンクから視聴ページを開くとすぐにご覧いただけます。"
-                             f"残りの回は「準備中」と表示しており、{_kk_fmt_all_by()}ごろまでに順に公開します（全{_total}本）。"
+                             f"残りの回は「準備中」と表示しており、順に公開します（全{_total}本・すべての回がそろう目安は{_kk_fmt_all_by()}）。"
                              "新しく公開した回は、翌朝8時ごろにまとめてメールでお知らせします。")
                 lines.append("問題冊子・解答用紙の PDF は、公開した各動画の「📄 教材（PDF）」から開けます。")
             else:
-                lines.append(f"お申し込みの講座の動画は、いま準備中です。{_kk_fmt_all_by()}ごろまでに全{_total}本を順に公開し、"
+                lines.append(f"お申し込みの講座の動画は、いま準備中です。全{_total}本を順に公開し（すべての回がそろう目安は{_kk_fmt_all_by()}）、"
                              "公開した回から視聴ページで見られるようになります。新しく公開した回は、翌朝8時ごろにまとめてメールでお知らせします。")
                 lines.append("問題冊子・解答用紙の PDF は、公開した各動画の「📄 教材（PDF）」から開けます。")
         elif ready:
@@ -60895,7 +60895,7 @@ def _kt_webhook_record(session: dict) -> bool:
         if _lb != KK_LABEL and any(_kt_family(k) == "kk" for k in keys):
             _kk_keys = [k for k in keys if _kt_family(k) == "kk"]
             if _kk_ready_count(_kk_keys, ready) < sum(len(KK_EPISODES.get(k, [])) for k in _kk_keys):   # 共通テストと一緒に買った人
-                lines.append(f"国公立大学の過去問の動画は、配信日を待たずに公開した回から順にご覧いただけます（{_kk_fmt_all_by()}ごろまでにすべての回を公開します）。")
+                lines.append(f"国公立大学の過去問の動画は、配信日を待たずに公開した回から順にご覧いただけます（すべての回がそろう目安は{_kk_fmt_all_by()}）。")
             lines.append("国公立大学の過去問の問題冊子・解答用紙の PDF は、公開した各動画の「📄 教材（PDF）」から開けます。")
         lines.append(f"視聴は {_kt_fmt_until()} までです。")
         res = _course_send_login_link(member, intro="\n".join(lines),

@@ -210,8 +210,8 @@ def main():
           len(MAILS) == 1 and "国公立大学 過去問 解説動画" in MAILS[0]["subject"] and "共通テスト" not in MAILS[0]["subject"] + body0
           and "・国公立大学 過去問 京都大学 数学（理系） 2024年度\n" in body0 and "配信 " not in body0 and "配信日" not in body0
           and "動画（4本）は、下のリンクから" in body0 and "2028年3月31日（金）" in body0 and "course-videos.html?t=" in body0, MAILS)
-    check("C2b. 一部しか登録していないうちは「準備中・2026年12月5日（土）ごろまでに順に公開（全23本）・翌朝8時ごろにまとめて」と PDF の案内",
-          "いま公開している動画（4本）" in body0 and "2026年12月5日（土）ごろまでに順に公開します（全23本）" in body0
+    check("C2b. 一部しか登録していないうちは「準備中・順に公開（全23本・目安2026年12月5日（土））・翌朝8時ごろにまとめて」と PDF の案内",
+          "いま公開している動画（4本）" in body0 and "順に公開します（全23本・すべての回がそろう目安は2026年12月5日（土））" in body0
           and "翌朝8時ごろにまとめて" in body0 and "問題冊子・解答用紙の PDF" in body0, body0)
     check("C2c. 回の番号の読み取り (最初の「第N問」・全角・空白・後ろの「理系第6問と共通」に引っぱられない)",
           mod._kk_ep_no("第5問 最大値の期待値（理系第6問と共通）") == 5 and mod._kk_ep_no("京大 理系 2024 第１０問") == 10
@@ -277,8 +277,8 @@ def main():
     check("E2. 視聴ページに国公立の案内文 (me.kk)", 'id="kkNote"' in cv and "me.kk" in cv and "国公立大学の過去問" in cv)
     check("E2b. 視聴ページは登録前の回を「準備中」と出す (回の表・大問の番号で照合)", "video pending" in cv and "準備中" in cv and "winter[k].episodes" in cv)
     i = legal.find('id="tokusho-kokkoritsu"'); sec = legal[i:legal.find("</section>", i)]
-    check("E1b. 特商法の国公立の節: PDF を渡す・順次公開 (2026年12月5日ごろ)・「お渡しはありません」は消えた",
-          "問題冊子・解答用紙は、視聴ページ" in sec and "2026年12月5日（土）ごろまで" in sec and "公開されない回がある場合を含みます" in sec and "お渡しはありません" not in sec, sec[:300])
+    check("E1b. 特商法の国公立の節: PDF を渡す・順次公開 (目安2026年12月5日)・返金の約束と「お渡しはありません」は消えた",
+          "問題冊子・解答用紙は、視聴ページ" in sec and "すべての回がそろう目安は2026年12月5日（土）" in sec and "公開されない回がある場合を含みます" not in sec and "お渡しはありません" not in sec, sec[:300])
     ceo = read("ceo.html")
     check("E3. CEO の講座の選択肢に「国公立大学 過去問」の組", "国公立大学 過去問" in ceo and "/^kk-/.test(c.key)" in ceo)
     adm = client.get("/api/admin/course/videos", headers=ADMIN).json()
