@@ -300,6 +300,14 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_kt_kakomon_course.py
 
+      # 🏛 国公立大学 過去問 解説動画 (/api/kk/checkout・共通テスト過去問と同じ表 kt_purchases・3 年セット 4,800 円／1 年分 1,980 円) (2026-11-28)。
+      #   KK_SALES_FROM までは閉じていること、入口ごとに売る商品を分けること、案内メール・視聴ページの欄が国公立の名前になることを見る。
+      - name: 国公立大学 過去問 決済と視聴 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_kk_kokkoritsu_course.py
+
       # 📗 英検準2級 ステップアップ講座 (/api/ep2/checkout・ep2_purchases・人ごとの視聴期限 (支払い日+5か月)・切りかえの差額・返金) (2026-11-19)。Stripe とメールは偽物。
       - name: 英検準2級講座 決済と視聴 回帰テスト
         if: ${{ !cancelled() }}

@@ -110,10 +110,10 @@ def main():
     # ---- A. 料金 ----
     P = mod._kt_plan
     check("A1. 売るもの 6 (国語・英語R の 2026・2025 の 1 年分 4 と直前セット 2)・講座 12",
-          list(mod.KT_PRODUCTS) == ["kt-kokugo-2026", "kt-kokugo-2025", "kt-kokugo-set6", "kt-r-2026", "kt-r-2025", "kt-r-set6"]
-          and len(mod.KT_COURSES) == 12, list(mod.KT_PRODUCTS))
+          [k for k in mod.KT_PRODUCTS if k.startswith("kt-")] == ["kt-kokugo-2026", "kt-kokugo-2025", "kt-kokugo-set6", "kt-r-2026", "kt-r-2025", "kt-r-set6"]
+          and len([k for k in mod.KT_COURSES if k.startswith("kt-")]) == 12, list(mod.KT_PRODUCTS))
     check("A2. 1 年分は 1,980 円・直前セットは 8,800 円",
-          all(v["price"] == 1980 for k, v in mod.KT_PRODUCTS.items() if not k.endswith("set6"))
+          all(v["price"] == 1980 for k, v in mod.KT_PRODUCTS.items() if k.startswith("kt-") and not k.endswith("set6"))
           and all(v["price"] == 8800 for k, v in mod.KT_PRODUCTS.items() if k.endswith("set6")))
     check("A3. 直前セットは 2026〜2021 の 6 年度", mod.KT_PRODUCTS["kt-r-set6"]["keys"] == [f"kt-r-{y}" for y in (2026, 2025, 2024, 2023, 2022, 2021)])
     a4 = P(["kt-r-2025", "kt-kokugo-2026", "kt-r-2025"])
@@ -372,7 +372,7 @@ def main():
     adm = client.get("/api/admin/course/videos", headers=ADMIN).json()
     kc = {c["key"]: c["active_members"] for c in adm.get("kt_courses", [])}
     check("D10. CEO の一覧に過去問の講座と購入者数 (月額講座・冬期講習の欄は変えない)", kc.get("kt-r-2026") == 1 and kc.get("kt-r-2025") == 3
-          and kc.get("kt-kokugo-2025") == 0 and len(kc) == 12 and [c["key"] for c in adm["courses"]] == list(mod.COURSE_KEYS)
+          and kc.get("kt-kokugo-2025") == 0 and len([k for k in kc if k.startswith("kt-")]) == 12 and [c["key"] for c in adm["courses"]] == list(mod.COURSE_KEYS)
           and len(adm.get("winter_courses", [])) == len(mod.WINTER_ITEMS), kc)
     vnames = {v["title"]: v["course_name"] for v in adm["videos"]}
     check("D11. 動画の講座名は過去問の講座名", vnames.get("国語 2025 第1問") == "共通テスト過去問 国語 2025年度 本試験", vnames)

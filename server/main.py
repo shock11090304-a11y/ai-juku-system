@@ -34873,7 +34873,7 @@ def stripe_webhook(
                 _kt_on_refund(charge)
             except Exception as _kr_e:
                 log.error(f"[kt] refund handling failed: {type(_kr_e).__name__}: {str(_kr_e)[:200]}")
-                _refund_fail_alert("共通テスト過去問", event_id, charge, _kr_e)
+                _refund_fail_alert("共通テスト過去問・国公立大学 過去問", event_id, charge, _kr_e)   # 同じタグ (どちらの返金かはここでは分からない)
                 _stripe_event_forget(event_id)
                 raise HTTPException(status_code=500, detail="kt refund handling failed (Stripe will retry)")
         if ((charge.get("metadata") or {}).get("system") or "").strip() == EP2_SYSTEM_TAG:
@@ -58765,8 +58765,12 @@ def course_me(authorization: Optional[str] = Header(None)):
                        for k in (member.get("winter") or [])],
             "winter_view_until": WINTER_VIEW_UNTIL if member.get("winter") else None,
             # 📝 共通テスト過去問: 買った講座 (年度) と配信日・視聴期限 (配信前の年度は「○月○日配信」と出す)
-            "kt": [{"key": k, "name": _course_key_name(k), "delivery": KT_COURSES[k]["delivery"]} for k in (member.get("kt") or [])],
-            "kt_view_until": KT_VIEW_UNTIL if member.get("kt") else None,
+            "kt": [{"key": k, "name": _course_key_name(k), "delivery": KT_COURSES[k]["delivery"]} for k in (member.get("kt") or [])
+                   if _kt_family(k) == "kt"],
+            "kt_view_until": KT_VIEW_UNTIL if any(_kt_family(k) == "kt" for k in (member.get("kt") or [])) else None,
+            # 🏛 国公立大学の過去問 (記録は kt と同じ表・配信日なし = 買った日からすべて見られる)
+            "kk": [{"key": k, "name": _course_key_name(k), "delivery": None} for k in (member.get("kt") or []) if _kt_family(k) == "kk"],
+            "kk_view_until": KT_VIEW_UNTIL if any(_kt_family(k) == "kk" for k in (member.get("kt") or [])) else None,
             # 📗 英検準2級講座: 視聴期限は人ごと (一番遅い期限)
             "ep2": [{"key": k, "name": _course_key_name(k)} for k in (member.get("ep2") or [])],
             "ep2_view_until": (member.get("ep2_until") or None) if member.get("ep2") else None,
@@ -59360,7 +59364,7 @@ def winter_seats():
 
 # 申込ページの閲覧数 (2026-11-18 塾長「申し込みのページにどれだけの人がアクセスしているのか」)。
 # Netlify の無料プランは 24 時間分しか残らないので、ページの JS が 1 回の表示につき 1 回ここへ送る (ロボットは JS を動かさないので数えない)。
-_WINTER_PV_PAGES = ("winter", "winter-chugaku", "kakomon")   # kakomon = 共通テスト過去問の申込ページ (2026-11-18)
+_WINTER_PV_PAGES = ("winter", "winter-chugaku", "kakomon", "kokkoritsu")   # kakomon = 共通テスト過去問・kokkoritsu = 国公立大学の過去問の申込ページ
 _WINTER_PV_SRCS = ("threads", "instagram", "x", "line", "facebook", "hp", "note", "youtube", "google", "yahoo", "mail", "direct", "other")
 
 
@@ -60197,8 +60201,9 @@ def admin_winter_pageviews(days: int = 14, authorization: Optional[str] = Header
     if not _admin_or_cron_authed(authorization, x_cron_secret):
         raise HTTPException(status_code=401, detail="未認証")
     rows = _winter_pageviews(days)
-    return {"rows": rows, "total": sum(r["n"] for r in rows if r["page"] != KT_PAGE),   # total は冬期講習のページだけ
-            "kt_total": sum(r["n"] for r in rows if r["page"] == KT_PAGE), "bonus_left": _winter_bonus_left(), "bonus_cap": WINTER_BONUS_CAP}
+    return {"rows": rows, "total": sum(r["n"] for r in rows if r["page"] not in (KT_PAGE, KK_PAGE)),   # total は冬期講習のページだけ
+            "kt_total": sum(r["n"] for r in rows if r["page"] == KT_PAGE), "kk_total": sum(r["n"] for r in rows if r["page"] == KK_PAGE),
+            "bonus_left": _winter_bonus_left(), "bonus_cap": WINTER_BONUS_CAP}
 
 
 @app.get("/api/admin/winter/purchases")
@@ -60328,6 +60333,93 @@ for _subj, _sname in KT_SUBJECTS.items():
     KT_PRODUCTS[f"kt-{_subj}-set6"] = {"name": f"{_sname} 直前セット（2026〜2021年度の6年分）", "price": KT_PRICE_SET6,
                                        "keys": [f"kt-{_subj}-{_y}" for _y in KT_YEARS], "subject": _subj}
 
+# --------------------------------------------------------------------------
+# 🏛 国公立大学 過去問 解説動画 (2026-11-28 塾長の選択式「共通テスト過去問と同じ仕組みに足す」)
+# --------------------------------------------------------------------------
+#   共通テスト過去問と同じ表 (kt_purchases)・同じ webhook のタグ (juku-payment-kakomon)・同じ返金と取りこぼしの補いを使う。
+#   違うのは 申込ページ (kokkoritsu.html)・決済の入口 (/api/kk/checkout)・メールや画面の名前 (KK_LABEL) だけ。
+#   - 講座のキー = "kk-<大学>-<科目>-<年度>" (例 kk-kyodai-subun-2026)。組 (大学×科目) = "kk-<大学>-<科目>"。
+#   - 3 年 (2024〜2026) そろった組は 3 年セット (kk-…-set3) 4,800 円だけを売る。1 年分しかない組は 1 年分 1,980 円 (11-28 塾長)。
+#     あとで残りの年度ができて 3 年そろったら、その組の years を足すだけで 3 年セットに変わる。1 年分を買った人は、その年度の分
+#     (1,980 円) を差し引いた金額でセットを買える (_kt_priced_parts)。
+#   - 動画は買った日からすべて見られる (配信日なし・delivery=None)。視聴期限・申込の締切は共通テスト過去問と同じ (11-28 塾長)。
+#   - 決済の入口は KK_SALES_FROM (YYYY-MM-DD・JST) の日から開く。空なら閉じたまま (申込ページの公開と同じ日に入れる)。
+#   - KK_HOLD の組は、講座 (動画の登録先) はあるが、まだ売らない (塾長確認ページで OK になってから外す)。
+KK_LABEL = "国公立大学 過去問 解説動画"
+KK_PAGE = "kokkoritsu"
+KK_SALES_FROM = os.getenv("KK_SALES_FROM", "").strip()
+KK_PRICE_YEAR = KT_PRICE_YEAR   # 1 年分 1,980 円 (共通テスト過去問の 1 年分と同じ・11-28 塾長)
+KK_PRICE_SET3 = 4800            # 1 大学・1 科目の 3 年セット (11-28 塾長)
+KK_SET_YEARS = (2026, 2025, 2024)
+KK_UNIVS = {"todai": "東京大学", "kyodai": "京都大学", "handai": "大阪大学", "kyudai": "九州大学", "tohoku": "東北大学", "meidai": "名古屋大学"}
+KK_SUBJECTS = {"suri": "数学（理系）", "subun": "数学（文系）", "butsuri": "物理", "kagaku": "化学",
+               "nihonshi": "日本史", "sekaishi": "世界史", "kokugo": "国語"}
+# 組 → 動画がそろっている年度 (並び = 申込ページ・決済画面・視聴ページの並び)。東大の数学は「理科」の問題
+KK_GROUPS = {
+    "kk-todai-suri": (2026, 2025, 2024), "kk-kyodai-suri": (2026, 2025, 2024), "kk-handai-suri": (2026, 2025, 2024),
+    "kk-kyudai-suri": (2026, 2025, 2024), "kk-tohoku-suri": (2026, 2025, 2024), "kk-meidai-suri": (2026,),
+    "kk-kyodai-subun": (2026,), "kk-handai-subun": (2026,), "kk-tohoku-subun": (2026,),
+    "kk-kyodai-butsuri": (2026,), "kk-kyodai-kagaku": (2026,), "kk-kyodai-nihonshi": (2026,), "kk-kyodai-sekaishi": (2026,),
+    "kk-kyodai-kokugo": (2026,),
+}
+KK_HOLD = {"kk-kyodai-kokugo"}   # 11-28 時点で塾長確認ページが「確認待ち」(id 355〜357)。OK になったら外す
+
+
+def _kk_group_name(group: str) -> str:
+    _u, _s = group.split("-")[1:3]
+    sname = "数学（理科）" if (_u == "todai" and _s == "suri") else KK_SUBJECTS[_s]
+    return f"{KK_UNIVS[_u]} {sname}"
+
+
+for _g, _yrs in KK_GROUPS.items():
+    for _y in _yrs:
+        KT_COURSES[f"{_g}-{_y}"] = {"name": f"国公立大学 過去問 {_kk_group_name(_g)} {_y}年度", "subject": _g, "year": _y, "delivery": None}
+# ★1 年分の商品は、売るのをやめても (3 年そろった・KK_HOLD に入れた) 表に残す (on_sale=False)。
+#   入口 (_kt_plan(family=…)) では売らないが、やめる前に開いた決済画面 (23 時間有効) で払われた分を webhook・Stripe からの補いで記録できるように。
+#   KK_SET_YEARS より古い年度・新しい年度 (2023・2027) を足すときは、売り方 (4 年分のセット等) を決め直す。
+for _g, _yrs in KK_GROUPS.items():
+    _full = set(KK_SET_YEARS) <= set(_yrs)
+    if _full and _g not in KK_HOLD:
+        KT_PRODUCTS[f"{_g}-set3"] = {"name": f"{_kk_group_name(_g)} 3年セット（2024〜2026年度）", "price": KK_PRICE_SET3,
+                                     "keys": [f"{_g}-{_y}" for _y in KK_SET_YEARS], "subject": _g}
+    for _y in _yrs:
+        KT_PRODUCTS[f"{_g}-{_y}"] = {"name": f"{_kk_group_name(_g)} {_y}年度（1年分）", "price": KK_PRICE_YEAR,
+                                     "keys": [f"{_g}-{_y}"], "subject": _g, "on_sale": not _full and _g not in KK_HOLD}
+
+
+def _kt_family(key: str) -> str:
+    """講座キー・商品 (sku) が 共通テスト過去問 (kt) か 国公立大学の過去問 (kk) か。"""
+    return "kk" if str(key or "").startswith("kk-") else "kt"
+
+
+def _kt_label_for(keys) -> str:
+    """メールや画面に出す名前。国公立だけなら KK_LABEL・共通テストだけなら KT_LABEL・両方なら「過去問 解説動画」。"""
+    fams = {_kt_family(k) for k in (keys or [])}
+    if fams == {"kk"}:
+        return KK_LABEL
+    if fams == {"kt"} or not fams:
+        return KT_LABEL
+    return "過去問 解説動画"
+
+
+def _kt_tag_for(keys) -> str:
+    """塾長あてのメールの件名の [ ] の中・締切の文に使う短い名前 (共通テストは今までどおり「共通テスト過去問」)。"""
+    fams = {_kt_family(k) for k in (keys or [])}
+    if fams == {"kk"}:
+        return "国公立大学 過去問"
+    if fams == {"kt"} or not fams:
+        return "共通テスト過去問"
+    return "過去問"
+
+
+def _kk_sales_open(today: Optional[str] = None) -> bool:
+    """KK_SALES_FROM (YYYY-MM-DD) の日から開く。空・形が違うときは閉じたまま (文字の比べ方で日がずれないように)。"""
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", KK_SALES_FROM or ""):
+        if KK_SALES_FROM:
+            log.warning("[kk] KK_SALES_FROM の形が YYYY-MM-DD でないので、受付は閉じたまま")
+        return False
+    return (today or _winter_today()) >= KK_SALES_FROM
+
 
 def _kt_priced_parts(parts: list, owned) -> list:
     """決済の明細 [{sku, name, price}]。以前に買った同じ科目の 1 年分がある人が直前セットを買うときは、
@@ -60339,7 +60431,9 @@ def _kt_priced_parts(parts: list, owned) -> list:
         if _kt_is_set(p):
             have = [k for k in prod["keys"] if k in (owned or ())]
             if have and len(have) < len(prod["keys"]):
-                price = max(price - KT_PRICE_YEAR * len(have), KT_PRICE_YEAR)
+                # 共通テストの直前セットは下限 1 年分 (8,800 − 5×1,980 が負になる)。国公立の 3 年セットは「持っている年度 1 年分につき
+                # 1,980 円を引く」の約束どおり下限なし (2 年分を持つ人は 840 円。3 年とも持つ人はここに来ない = 確認画面)
+                price = max(price - KT_PRICE_YEAR * len(have), 0 if p.endswith("-set3") else KT_PRICE_YEAR)
                 yrs = "・".join(str(KT_COURSES[k]["year"]) for k in have)
                 name = f"{name}（購入済みの{yrs}年度分を差し引き）"
         out.append({"sku": p, "name": name, "price": price})
@@ -60389,19 +60483,21 @@ def _refund_fail_alert(label: str, event_id, charge: dict, err: Exception):
 
 
 def _kt_is_set(sku: str) -> bool:
-    return sku.endswith("-set6")
+    return sku.endswith("-set6") or sku.endswith("-set3")
 
 
-def _kt_plan(skus: list) -> dict:
+def _kt_plan(skus: list, family: Optional[str] = None) -> dict:
     """選んだ商品 → {parts (決済の明細・sku), keys (見られる講座), total, unknown}。
-    同じ科目の直前セットを選んだら、その科目の 1 年分は外す (セットに含まれるので二重に払わせない)。"""
+    同じ科目の直前セットを選んだら、その科目の 1 年分は外す (セットに含まれるので二重に払わせない)。
+    family ("kt" / "kk") を渡すと、もう一方の申込ページの商品は unknown にする (入口ごとに売るものを分ける)。"""
     seen, picked, unknown = set(), [], []
     for k in skus or []:
         k = (k or "").strip()
         if not k or k in seen:
             continue
         seen.add(k)
-        (picked if k in KT_PRODUCTS else unknown).append(k)
+        ok = k in KT_PRODUCTS and (family is None or (_kt_family(k) == family and KT_PRODUCTS[k].get("on_sale", True)))
+        (picked if ok else unknown).append(k)   # family 付き (= 申込の入口) では売るのをやめた商品も unknown
     set_subj = {KT_PRODUCTS[k]["subject"] for k in picked if _kt_is_set(k)}
     parts = [k for k in picked if _kt_is_set(k) or KT_PRODUCTS[k]["subject"] not in set_subj]
     order = list(KT_PRODUCTS)
@@ -60419,12 +60515,13 @@ def _kt_fmt_until() -> str:
     return f"{KT_VIEW_UNTIL[:4]}年{_winter_fmt_date(KT_VIEW_UNTIL)}"
 
 
-def _kt_back_url() -> str:
-    return f"{KT_SITE_URL}/{KT_PAGE}.html"
+def _kt_back_url(family: str = "kt") -> str:
+    return f"{KT_SITE_URL}/{KK_PAGE if family == 'kk' else KT_PAGE}.html"
 
 
-def _kt_error_page(message: str, status: int = 400, next_step: str = ""):
-    return _winter_error_page(message, status=status, label=KT_LABEL, back_url=_kt_back_url(), next_step=next_step, same_tab=True)
+def _kt_error_page(message: str, status: int = 400, next_step: str = "", family: str = "kt"):
+    return _winter_error_page(message, status=status, label=(KK_LABEL if family == "kk" else KT_LABEL), back_url=_kt_back_url(family),
+                              next_step=next_step, same_tab=True)
 
 
 def _kt_keys_for_email(email: str, today: Optional[str] = None) -> list:
@@ -60483,7 +60580,8 @@ def _kt_published_videos(keys, today: Optional[str] = None) -> list:
     conn = db()
     try:
         c = conn.cursor()
-        c.execute("SELECT * FROM course_videos WHERE is_published = 1 AND course_key LIKE ? ORDER BY publish_date, id", ("kt-%",))
+        c.execute("SELECT * FROM course_videos WHERE is_published = 1 AND (course_key LIKE ? OR course_key LIKE ?) ORDER BY publish_date, id",
+                  ("kt-%", "kk-%"))
         rows = c.fetchall()
     finally:
         conn.close()
@@ -60502,6 +60600,31 @@ def kt_checkout_get():
 @app.post("/api/kt/checkout")
 def kt_checkout(request: Request, body: bytes = Depends(_raw_body_dep)):
     """📝 共通テスト過去問の申込ページの「カードでお支払いへ進む」(フォーム送信) → Stripe Checkout へ 303。だめなときは日本語の HTML。"""
+    return _kt_checkout_impl(request, body, "kt")
+
+
+@app.get("/api/kk/checkout")
+def kk_checkout_get():
+    """🏛 国公立大学の過去問: 決済の入口を GET で開いたときの案内 (kt_checkout_get と同じ)。"""
+    return _kt_error_page("お支払いの画面を開けませんでした（お手続きの内容が届きませんでした）。", 400, family="kk",
+                          next_step="お手数ですが、申込ページでもう一度ご入力のうえお進みください（同じ内容の申し込みが2回届いても問題ありません）。"
+                                    "アプリの中のブラウザ（Threads・Instagram など）でうまくいかない場合は、右上のメニューの「ブラウザで開く」か、Safari / Chrome でお試しください。")
+
+
+@app.post("/api/kk/checkout")
+def kk_checkout(request: Request, body: bytes = Depends(_raw_body_dep)):
+    """🏛 国公立大学の過去問の申込ページ (kokkoritsu.html) の「カードでお支払いへ進む」→ Stripe Checkout へ 303。"""
+    return _kt_checkout_impl(request, body, "kk")
+
+
+def _kt_checkout_impl(request: Request, body: bytes, family: str):
+    """共通テスト過去問 (kt)・国公立大学の過去問 (kk) の決済の入口。中身は同じで、売る商品・名前・戻り先だけが違う。
+    kk は KK_SALES_FROM の日まで閉じている。記録 (webhook)・返金・取りこぼしの補いは同じタグ (KT_SYSTEM_TAG) で共通。"""
+    label = KK_LABEL if family == "kk" else KT_LABEL
+    page = KK_PAGE if family == "kk" else KT_PAGE
+
+    def _err(message, status=400, next_step=""):
+        return _kt_error_page(message, status, next_step=next_step, family=family)
     try:
         form = urllib.parse.parse_qs((body or b"")[:8192].decode("utf-8", "replace"), keep_blank_values=True)
     except Exception:
@@ -60511,33 +60634,35 @@ def kt_checkout(request: Request, body: bytes = Depends(_raw_body_dep)):
         return (v[0] or "").strip()
     try:
         # ★Netlify のページから Vercel の rewrite 経由で届くので IP は共有される → 上限は緩め。本当の歯止めはメール単位
-        _check_rate_limit_ip(request, bucket="kt_checkout", limit=60, window=60)
+        _check_rate_limit_ip(request, bucket=f"{family}_checkout", limit=60, window=60)
     except HTTPException:
-        return _kt_error_page("混み合っています。1 分ほど待ってから、申込ページの「カードでお支払いへ進む」をもう一度押してください。", 429)
+        return _err("混み合っています。1 分ほど待ってから、申込ページの「カードでお支払いへ進む」をもう一度押してください。", 429)
     if os.getenv("KT_CHECKOUT_ENABLED", "1").strip().lower() in ("0", "false", "off", "no"):
-        return _kt_error_page("ただいまお支払いの受付を止めています。公式 LINE またはメールでお問い合わせください。", 503)
+        return _err("ただいまお支払いの受付を止めています。公式 LINE またはメールでお問い合わせください。", 503)
+    if family == "kk" and not _kk_sales_open():
+        return _err(f"{label}のお申し込みの受付はまだ始まっていません。受付を始めたら、申込ページでお知らせします。", 503)
     if not STRIPE_SECRET_KEY:
-        return _kt_error_page("お支払いの準備ができていません（設定の不足）。お手数ですが公式 LINE またはメールでご連絡ください。", 503)
+        return _err("お支払いの準備ができていません（設定の不足）。お手数ですが公式 LINE またはメールでご連絡ください。", 503)
     email = _course_norm_email(_f("email"))
     if not email or not _WINTER_EMAIL_RE.match(email):
-        return _kt_error_page("メールアドレスの形が正しくありません。申込ページに戻って入力し直してください。")
+        return _err("メールアドレスの形が正しくありません。申込ページに戻って入力し直してください。")
     try:
-        _check_rate_limit_value(email, bucket="kt_checkout", limit=10, window=600)
+        _check_rate_limit_value(email, bucket="kt_checkout", limit=10, window=600)   # メール単位の上限は kt と kk で分け合う
     except HTTPException:
-        return _kt_error_page("短い時間に何度もお手続きがありました。10 分ほど待ってからもう一度お試しください。", 429)
+        return _err("短い時間に何度もお手続きがありました。10 分ほど待ってからもう一度お試しください。", 429)
     raw_items = []
     for v in form.get("items") or []:
         raw_items.extend((v or "").split(","))
-    plan = _kt_plan(raw_items[:30])
+    plan = _kt_plan(raw_items[:30], family=family)
     if plan["unknown"]:
-        return _kt_error_page("講座の指定が正しくありません。申込ページを開き直して、もう一度お選びください。")
+        return _err("講座の指定が正しくありません。申込ページを開き直して、もう一度お選びください。")
     if not plan["parts"]:
-        return _kt_error_page("講座が選ばれていません。申込ページに戻って講座を選んでください。")
+        return _err("講座が選ばれていません。申込ページに戻って講座を選んでください。")
     app_id = _f("app_id")
     if not _WINTER_APP_ID_RE.match(app_id):
         app_id = ""
     if _winter_today() > KT_SALES_UNTIL:
-        return _kt_error_page("共通テスト過去問の解説動画のお申し込みの受付は終了しました。", 410)
+        return _err(f"{_kt_tag_for([family + '-'])}の解説動画のお申し込みの受付は終了しました。", 410)
     owned = set(_kt_keys_for_email(email))
     # 二重払いの歯止め: 中身がすべて支払い済みの商品が含まれていたら、一度確かめてもらう (「このまま進む」で confirm_dup=1)
     if _f("confirm_dup") != "1":
@@ -60545,12 +60670,12 @@ def kt_checkout(request: Request, body: bytes = Depends(_raw_body_dep)):
         if dup:
             return _winter_dup_page([KT_PRODUCTS[p]["name"] for p in dup],
                                     {"items": ",".join(plan["parts"]), "email": email, "app_id": app_id},
-                                    KT_PAGE, label=KT_LABEL, back_url=_kt_back_url())
+                                    page, label=label, back_url=_kt_back_url(family))
     priced = _kt_priced_parts(plan["parts"], owned)
     total = sum(x["price"] for x in priced)
-    meta = {"system": KT_SYSTEM_TAG, "items": ",".join(plan["parts"]), "total": str(total), "app_id": app_id, "page": KT_PAGE}
+    meta = {"system": KT_SYSTEM_TAG, "items": ",".join(plan["parts"]), "total": str(total), "app_id": app_id, "page": page}
     line_items = [{"price_data": {"currency": "jpy", "unit_amount": int(x["price"]),
-                                  "product_data": {"name": f"{KT_LABEL} {x['name']}"[:250]}},
+                                  "product_data": {"name": f"{label} {x['name']}"[:250]}},
                    "quantity": 1} for x in priced]
     import time as _t
     params = {
@@ -60559,28 +60684,30 @@ def kt_checkout(request: Request, body: bytes = Depends(_raw_body_dep)):
         "customer_email": email,
         "locale": "ja",
         "payment_method_types": ["card"],
-        "success_url": f"{KT_SITE_URL}/{KT_PAGE}-thanks.html?session_id={{CHECKOUT_SESSION_ID}}",
-        "cancel_url": f"{KT_SITE_URL}/{KT_PAGE}.html?canceled=1",
+        "success_url": f"{KT_SITE_URL}/{page}-thanks.html?session_id={{CHECKOUT_SESSION_ID}}",
+        "cancel_url": f"{KT_SITE_URL}/{page}.html?canceled=1",
         "expires_at": int(_t.time()) + 23 * 3600,   # 締切が無いので Stripe の上限 (24 時間) の少し手前
         "metadata": meta,
-        "payment_intent_data": {"metadata": meta, "description": KT_LABEL},
+        "payment_intent_data": {"metadata": meta, "description": label},
     }
     if app_id:
-        params["client_reference_id"] = f"kt-{app_id}"
+        params["client_reference_id"] = f"{family}-{app_id}"
     try:
         sess = get_stripe().checkout.Session.create(**params)
         url = sess.get("url") if isinstance(sess, dict) else getattr(sess, "url", None)
     except Exception as e:
-        log.error(f"[kt] checkout create failed: {type(e).__name__}: {str(e)[:200]}")
-        return _kt_error_page("お支払いの画面を用意できませんでした。少し時間をおいて、もう一度お試しください。", 502)
+        log.error(f"[{family}] checkout create failed: {type(e).__name__}: {str(e)[:200]}")
+        return _err("お支払いの画面を用意できませんでした。少し時間をおいて、もう一度お試しください。", 502)
     if not url:
-        return _kt_error_page("お支払いの画面を用意できませんでした。少し時間をおいて、もう一度お試しください。", 502)
-    log.info(f"[kt] checkout created parts={plan['parts']} total={total}")
+        return _err("お支払いの画面を用意できませんでした。少し時間をおいて、もう一度お試しください。", 502)
+    log.info(f"[{family}] checkout created parts={plan['parts']} total={total}")
     return RedirectResponse(url=url, status_code=303)
 
 
 def _kt_keys_text(keys: list) -> str:
-    return "".join(f"・{KT_COURSES[k]['name']}（配信 {_winter_fmt_date(KT_COURSES[k]['delivery'])}〜）\n" for k in keys if k in KT_COURSES)
+    # 🏛 国公立 (delivery=None) は配信日が無い (買った日からすべて見られる)
+    return "".join(f"・{KT_COURSES[k]['name']}" + (f"（配信 {_winter_fmt_date(KT_COURSES[k]['delivery'])}〜）" if KT_COURSES[k]["delivery"] else "") + "\n"
+                   for k in keys if k in KT_COURSES)
 
 
 def _kt_alert_owner(session, email: str, keys, reason: str):
@@ -60591,8 +60718,9 @@ def _kt_alert_owner(session, email: str, keys, reason: str):
         pass
     try:
         names = "・".join(_course_key_name(k) for k in (keys or []))
-        _course_send_email(COURSE_CONTACT_EMAIL, "[共通テスト過去問] ★視聴の案内メールが送れませんでした",
-                           f"共通テスト過去問の解説動画の支払いは記録しましたが、購入者への視聴ページの案内メールが送れませんでした（理由: {str(reason)[:200]}）。\n\n"
+        _lb = _kt_tag_for(keys)
+        _course_send_email(COURSE_CONTACT_EMAIL, f"[{_lb}] ★視聴の案内メールが送れませんでした",
+                           f"{_lb}の解説動画の支払いは記録しましたが、購入者への視聴ページの案内メールが送れませんでした（理由: {str(reason)[:200]}）。\n\n"
                            f"購入者のメール: {email}\n講座: {names}\nStripe の決済: {(session or {}).get('id')}\n\n"
                            "購入者に、視聴ページ https://trillion-ai-juku.com/course-videos.html を開いて、お支払いに使ったメールアドレスで"
                            "ログインリンクを取り直すよう伝えてください。")
@@ -60607,8 +60735,9 @@ def _kt_alert_unknown_items(session, email: str, unknown: list):
     except Exception:
         pass
     try:
-        _course_send_email(COURSE_CONTACT_EMAIL, "[共通テスト過去問] ★視聴を付けられない商品の支払いがありました",
-                           f"共通テスト過去問の決済に、いまのサーバの商品表 (KT_PRODUCTS) に無い商品が含まれていました: {', '.join(unknown)[:200]}\n"
+        _lb = _kt_tag_for(unknown)
+        _course_send_email(COURSE_CONTACT_EMAIL, f"[{_lb}] ★視聴を付けられない商品の支払いがありました",
+                           f"{_lb}の決済に、いまのサーバの商品表 (KT_PRODUCTS) に無い商品が含まれていました: {', '.join(unknown)[:200]}\n"
                            "その分の視聴は付いていません。視聴を付けるか返金するかを決めてください（Claude に頼めます）。\n\n"
                            f"購入者のメール: {email}\nStripe の決済: {(session or {}).get('id')}")
     except Exception as e:
@@ -60680,16 +60809,23 @@ def _kt_webhook_record(session: dict) -> bool:
             _kt_alert_owner(session, email, keys, "受講者の行を作れなかった")
             return True
         ready = _kt_published_videos(keys)
-        lines = [f"{KT_LABEL}のお申し込みとお支払い（合計 {amount:,}円・税込）を確認しました。ありがとうございます。", "",
+        _lb = _kt_label_for(keys)
+        lines = [f"{_lb}のお申し込みとお支払い（合計 {amount:,}円・税込）を確認しました。ありがとうございます。", "",
                  "■ お申し込みの講座", _kt_keys_text(keys).rstrip("\n"), ""]
-        if ready:
+        if _lb == KK_LABEL:
+            # 🏛 国公立は配信日が無い (動画は販売の前に全部登録しておく)
+            lines.append(f"動画（{len(ready)}本）は、下のリンクから視聴ページを開くとすぐにご覧いただけます。" if ready else
+                         "動画の準備ができしだい、視聴ページに並びます。準備ができたらメールでお知らせします。")
+        elif ready:
             lines.append(f"すでに配信している動画（{len(ready)}本）は、下のリンクから視聴ページを開くとすぐにご覧いただけます。"
                          "まだの年度は、配信日の朝にメールでお知らせします。")
         else:
             lines.append("動画は配信日から視聴ページに並びます。配信日の朝にメールでお知らせします。")
+        if _lb != KK_LABEL and any(_kt_family(k) == "kk" for k in keys):
+            lines.append("国公立大学の過去問の動画は、配信日を待たずにすぐすべてご覧いただけます。")   # 共通テストと一緒に買った人
         lines.append(f"視聴は {_kt_fmt_until()} までです。")
         res = _course_send_login_link(member, intro="\n".join(lines),
-                                      subject=f"【トリリオン英語塾】{KT_LABEL} お支払いの確認と視聴ページのご案内")
+                                      subject=f"【トリリオン英語塾】{_lb} お支払いの確認と視聴ページのご案内")
         if res.get("sent") and ready:
             _winter_mark_noticed(email, [v["id"] for v in ready])
         log.info(f"[kt] welcome mail sent={res.get('sent')}")
@@ -60781,10 +60917,10 @@ def _kt_on_refund(charge: dict) -> dict:
         msg = "全額返金を確認しましたが、購入の記録が見つからず、視聴の停止はしていません（記録が無ければ視聴もできない状態です）。"
     else:
         msg = (f"一部返金（{refunded_amt:,}円 / {amount:,}円）を確認しました。どの年度の視聴を止めるかは自動では決めていません。"
-               f"止める年度があれば、POST /api/admin/kt/purchases/{row['id'] if row else '?'}/status に remove_items（kt-…）で外してください（Claude に頼めます）。")
+               f"止める年度があれば、POST /api/admin/kt/purchases/{row['id'] if row else '?'}/status に remove_items（kt-… / kk-…）で外してください（Claude に頼めます）。")
     log.info(f"[kt] refund handled: full={full} purchase={row['id'] if row else None}")
     try:
-        _course_send_email(COURSE_CONTACT_EMAIL, "[共通テスト過去問] 返金を確認しました",
+        _course_send_email(COURSE_CONTACT_EMAIL, f"[{_kt_tag_for(keys) if keys else '過去問'}] 返金を確認しました",
                            f"{msg}\n\n購入者のメール: {row['email'] if row else '-'}\n講座: {names}\nStripe の決済: {sid or pi}")
     except Exception:
         pass
@@ -60802,7 +60938,8 @@ def _kt_notice_mail(member: dict, videos: list) -> tuple:
     listing = ""
     for key, vs in by_course.items():
         listing += f"【{_course_key_name(key)}】\n" + "".join(f"・{v['title']}\n" for v in vs)
-    subject = f"【{KT_LABEL}】動画を配信しました（{len(videos)}本）"
+    _lb = _kt_label_for([v["course_key"] for v in videos])
+    subject = f"【{_lb}】動画を配信しました（{len(videos)}本）"
     if member.get("id"):
         token = _sign_session_token(member["id"], ttl_seconds=COURSE_MAGIC_TTL_SEC, token_type="coursemagic")
         how = (f"■ 視聴はこちら（このリンクを開くとそのままログインできます・7 日間有効）\n{_course_portal_url()}?t={token}\n"
@@ -60810,7 +60947,7 @@ def _kt_notice_mail(member: dict, videos: list) -> tuple:
     else:
         how = (f"■ 視聴はこちら\n{_course_portal_url()}\n（お支払い時のメールアドレスを入力すると、ログイン用のリンクが届きます。"
                f"一度ログインすると、同じブラウザでは 30 日間そのまま開けます）\n")
-    body = (f"{greeting}\n\nトリリオン英語塾です。\n{KT_LABEL}の動画を配信しました。\n\n■ 今回の動画\n{listing}\n" + how +
+    body = (f"{greeting}\n\nトリリオン英語塾です。\n{_lb}の動画を配信しました。\n\n■ 今回の動画\n{listing}\n" + how +
             f"視聴は {_kt_fmt_until()} までです。\n\n"
             f"ご不明な点は 公式 LINE（{COURSE_LINE_URL}）またはメール（{COURSE_CONTACT_EMAIL}）までご連絡ください。\n\n"
             f"トリリオン英語塾（Trillion English Academy）")
@@ -60974,7 +61111,7 @@ def admin_kt_purchases(authorization: Optional[str] = Header(None), x_cron_secre
                     "status": r["status"], "app_id": r["app_id"] or "", "livemode": bool(r["livemode"]),
                     "session_id": r["session_id"], "paid_at": r["paid_at"]})
     return {"purchases": out, "paid_total": total, "view_until": KT_VIEW_UNTIL,
-            "products": [{"sku": k, "name": v["name"], "price": v["price"], "keys": v["keys"]} for k, v in KT_PRODUCTS.items()],
+            "products": [{"sku": k, "name": v["name"], "price": v["price"], "keys": v["keys"], "on_sale": v.get("on_sale", True)} for k, v in KT_PRODUCTS.items()],
             "courses": [{"key": k, "name": v["name"], "delivery": v["delivery"], "buyers": counts[k]} for k, v in KT_COURSES.items()]}
 
 
